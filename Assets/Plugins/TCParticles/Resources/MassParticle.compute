@@ -1,0 +1,938 @@
+//==================================================
+//kernel definitions
+#pragma kernel Emit
+
+
+#pragma kernel UpdateAll
+#pragma kernel UpdateForces
+#pragma kernel UpdateTurbulenceForces
+#pragma kernel UpdateColliders
+#pragma kernel Clear
+
+#pragma kernel BoidsFlockInit
+#pragma kernel BoidsFlockSum
+#pragma kernel BoidsFlockUpdate
+
+//===============================
+//variables
+//Groupsize is the number of threads in X direction in a thread group. 256 comes from multiple constraints:
+//->Mutliple of 64 (nvidia warps are sized 64)
+//->Must be smaller than 1024 (or 768 for DX10, if unity would support that...)
+//->Memory is shared between groups
+//->Driver must be able to handle sharing memory between the number of threads in the group
+#define groupSize 128
+
+//Particle struct and buffer. Buffer is maxParticles length and 44 bytes stride
+struct Particle
+{
+	float3 pos;
+	float3 velocity;
+	float baseSize;
+
+	float life;
+	float deltLife;
+
+	float rotation;
+	float mass;
+};
+RWStructuredBuffer<Particle> particles;
+
+//Forces and colliders define a certain volume. These variables mathematically describe the shape
+//The mathematics involved to check volume bounds are quite tricky. I'd like to call it the 'virtual sphere' method
+struct Force
+{
+	uint type;
+	uint attenType;
+	float force;
+
+	float3 axis;
+	float attenuation;
+
+	float minRadius;
+	float inwardForce;
+
+	float enclosingRadius;
+
+	float3 pos;//position of volume
+	float radius;//radius of virtual sphere
+	float3 size;//Freedom of movement for virtual sphere
+	
+	float3 axisX;
+	float3 axisY;
+	float3 axisZ;
+
+	float3 velocity;//velocity of sphere
+
+	uint vtype;//aditional identifier
+
+	float turbulencePosFac;
+};
+StructuredBuffer<Force> forces;
+StructuredBuffer<Force> turbulenceForces;
+
+
+
+struct Collider
+{
+	float bounciness;
+	float lifeLoss;
+	
+	float3 pos;//position of volume
+	float radius;//radius of virtual sphere
+	float3 size;//Freedom of movement for virtual sphere
+	
+	float3 axisX;
+	float3 axisY;
+	float3 axisZ;
+
+	float3 velocity;//velocity of sphere
+
+	uint vtype;
+	uint isInverse;
+
+	float stickiness;
+}; 
+StructuredBuffer<Collider> colliders;
+
+
+
+struct TCEmitter
+{
+	float3 pos;
+	float3 vel;
+	float3 accel;
+
+	//emitter properties
+	float lifeMin;
+    float lifeMax;
+
+	float sizeMin;
+    float sizeMax;
+
+    float speedMin;
+    float speedMax;        
+	
+	float rotationMin;
+    float rotationMax;
+
+	uint shape;
+
+	//General parameters
+	float radiusMax;
+	float radiusMin;
+
+	//BOX
+	float3 cubeSize;
+	
+	//CONE
+	float coneHeight;
+	float3 conePointUnder;
+
+	//LINE
+	float lineLength;
+
+	//MESH
+	uint meshVertLen;
+
+	uint velType;
+
+	float randomAngle;
+	float3 startSpeed;
+
+	float massVariance;
+
+
+	uint time;
+	uint emitOffset;
+	float3 scale;
+	uint onSurface;
+};
+StructuredBuffer<TCEmitter> emitter;
+
+
+float4x4 emitterMatrix;
+
+//Matrices for emission
+float3x3 emitterRotationMatrix;
+//Vector start direction
+float3x3 emitterStartRotationMatrix;
+
+//Number of particles to emit in this emit call
+uint numToGo = 0;
+
+
+//Mesh emitter faces
+struct Face
+{
+	float3 a;
+    float3 b;
+    float3 c;
+
+    float3 na;
+    float3 nb;
+    float3 nc;
+	
+	float cweight;
+};
+StructuredBuffer<Face> emitFaces;
+
+//global parameters
+struct SystemParameters
+{
+	float3 constantForce;
+	float angularVelocity;
+	float damping;
+	float maxSpeed;
+	float velocitySampleScale;
+
+	float particleThickness;
+	float deltTime;
+	uint offset;
+	uint maxParticles;
+};
+StructuredBuffer<SystemParameters> systemParameters;
+
+
+
+#define S_SPHERE 0
+#define S_CAPSULE 1
+#define S_BOX 2 
+#define S_HEMISPHERE 3
+#define S_DISC 4
+#define S_DISC_HALF 5
+#define S_DISC_QUARTER 6
+#define S_SPECIAL 7
+
+#define FORCE_RADIAL 0
+#define FORCE_VECTOR 1
+
+#define FORCE_DRAG 2
+#define FORCE_VORTEX 3
+
+#define FORCE_ATTEN_LINEAR 0
+#define FORCE_ATTEN_DIVIDE 1
+#define FORCE_ATTEN_EASEINOUT 2
+
+Texture2D lifetimeTexture;
+Texture2D terrainTexture;
+
+Texture3D turbulenceTexture;
+
+SamplerState samplerterrainTexture;
+SamplerState samplerlifetimeTexture;
+SamplerState TurbulenceLinearRepeatSampler;
+
+float3x3 turbulenceRotation;
+float3x3 invTurbulenceRotation;
+
+uint kernelOffset = 0;
+
+#define PI2 6.28318530717
+uint rng_state;
+
+
+//Random number system
+uint WangHash(uint id, uint time)
+{
+	//wang hash, to randomize seed and make sure xorshift isn't coherent.
+	rng_state = id + time;
+    rng_state = (rng_state ^ 61) ^ (rng_state >> 16);
+    rng_state *= 9;
+    rng_state = rng_state ^ (rng_state >> 4);
+    rng_state *= 0x27d4eb2d;
+    rng_state = rng_state ^ (rng_state >> 15);
+	return rng_state;
+}
+
+
+float FirstRandom(uint id, uint time) {
+	return WangHash(id, time) * 1.0f /  4294967295.0f;
+}
+
+uint NextXor() {
+    rng_state ^= (rng_state << 13);
+    rng_state ^= (rng_state >> 17);
+    rng_state ^= (rng_state << 5);
+    return rng_state;
+}
+//end internal
+
+//public Random API
+float Random()
+{
+	return NextXor() * 1.0f /  4294967295.0f;
+}
+
+float3 RandomInUnitSphere()
+{
+
+	float3 rand = float3(	Random() * 2.0f - 1.0f, 
+							Random() * 2.0f - 1.0f,
+							Random() * 2.0f - 1.0f);
+	
+	uint count = 0;
+	while(dot(rand, rand) > 1 && ++count < 8)
+	{
+		rand = float3(	Random() * 2.0f - 1.0f, 
+						Random() * 2.0f - 1.0f,
+						Random() * 2.0f - 1.0f);
+	}
+
+
+	return rand;
+}
+
+float3 RandomInUnitCircle()
+{
+
+	float3 rand = float3(Random() * 2.0f - 1.0f,
+						 Random() * 2.0f - 1.0f,
+						 0);
+
+	uint count = 0;
+	while(dot(rand, rand) > 1 && ++count < 8)
+	{
+		rand = float3(Random() * 2.0f - 1.0f, 
+					  Random() * 2.0f - 1.0f,
+					  0);
+	}
+
+    return rand;
+}
+
+float3 RandomOnUnitSphere()
+{
+	float u = Random();
+    float theta = Random() * PI2;
+	float sq = sqrt(1 - u * u);
+			
+    return float3(sq * cos(theta), 
+				  sq * sin(theta), u);
+}
+
+float RandomRange(float minVal, float maxVal)
+{
+	return lerp(minVal, maxVal, Random());
+}
+
+int RandomRangeInt(int minVal, int maxVal)
+{
+	return minVal + NextXor() % (maxVal - minVal);
+}
+
+uint GetId(uint id, SystemParameters syst) { 
+	return (id + syst.offset) % syst.maxParticles; 
+}
+
+uint GetEmitId(uint id, uint offset, uint maxParticles){
+	return (id + offset) % maxParticles;
+}
+
+
+//Emit shapes
+#define ES_SPHERE		0
+#define ES_BOX			1
+#define ES_HEMISPHERE	2
+#define ES_CONE			3
+#define ES_RING			4
+#define ES_LINE			5
+#define ES_MESH			6
+
+//Emit velocities
+#define EV_VECTOR 0
+#define EV_NORMAL 1
+#define EV_RANDOM 2
+
+[numthreads(64, 1, 1)]
+void Emit(uint3 DTid : SV_DispatchThreadID)
+{
+	if (DTid.x > (uint)numToGo){
+		return;
+	}
+
+	//read emitter from global memory into local memory
+	TCEmitter tcEmit = emitter[0];
+	
+	//If we have emitted enough particles, return
+	SystemParameters syst = systemParameters[0];
+
+	//Set properties for current particles.
+	Particle emitPart;
+
+	//Note the FirstRandom, first random wang hashes the ID, to get rid of correlation between threads 
+	emitPart.mass = 1.0f - FirstRandom(DTid.x, tcEmit.time) * tcEmit.massVariance;
+	
+	//Setup size properties of the particle
+	emitPart.baseSize = RandomRange(tcEmit.sizeMin, tcEmit.sizeMax);
+
+	//Life ranges from 0 (birth) to 1 (death)
+	emitPart.life = 0.0f;
+
+	//Calculate rate of decay
+	emitPart.deltLife = 1.0f / RandomRange(tcEmit.lifeMin, tcEmit.lifeMax);
+
+	//Randomly rotate the particle
+	emitPart.rotation = RandomRange(tcEmit.rotationMin, tcEmit.rotationMax);
+
+	emitPart.pos = 0.0f;
+	emitPart.velocity = 0.0f;
+
+
+	if (tcEmit.shape == ES_SPHERE){
+		float3 sdir = RandomInUnitSphere();
+		float sl = length(sdir);
+		sdir /= sl;
+			
+		emitPart.pos = sdir * lerp(tcEmit.radiusMin, tcEmit.radiusMax, sl);
+
+		if (tcEmit.velType == EV_NORMAL){
+			emitPart.velocity = sdir;
+		}
+	}
+	else if (tcEmit.shape == ES_BOX){
+		emitPart.pos = float3(Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f, Random() * 2.0f - 1.0f) * tcEmit.cubeSize;
+			
+		if (tcEmit.velType == EV_NORMAL)
+		{
+			float3 norm = float3(1, 0, 0);
+			float m = emitPart.pos.x;
+
+			float val = -emitPart.pos.x;
+			if (val > m) { m = val; norm = -float3(1, 0, 0); }
+
+			val = emitPart.pos.y;
+			if (val > m) { m = val; norm = float3(0, 1, 0); }
+
+			val = -emitPart.pos.y;
+			if (val > m) { m = val; norm = -float3(0, 1, 0); }
+
+			val = emitPart.pos.z;
+			if (val > m) { m = val; norm = float3(0, 0, 1); }
+
+			val = -emitPart.pos.z;
+			if (val > m) { m = val; norm = -float3(0, 0, 1); }
+
+			emitPart.velocity = norm;
+		}
+	}
+	else if (tcEmit.shape == ES_HEMISPHERE){
+		float3 hdir = RandomInUnitSphere();
+		float hl = length(hdir);
+		hdir /= hl;
+			
+		if (hdir.y < 0.0f)
+			hdir = -hdir;
+
+		emitPart.pos = hdir * lerp(tcEmit.radiusMin, tcEmit.radiusMax, hl);
+
+		if (tcEmit.velType == EV_NORMAL){
+			emitPart.velocity = hdir * lerp(tcEmit.speedMin, tcEmit.speedMax, Random());
+		}
+	}
+	else if (tcEmit.shape == ES_CONE){
+		float h = Random();
+		float3 circRand = RandomInUnitCircle() * lerp(tcEmit.radiusMin, tcEmit.radiusMax, h);
+
+		emitPart.pos = tcEmit.coneHeight * float3(0, 0, h) + circRand;
+
+		if (tcEmit.velType == EV_NORMAL) {
+			emitPart.velocity = normalize(emitPart.pos - tcEmit.conePointUnder);
+		}
+	}
+	else if (tcEmit.shape == ES_RING){
+		float th = RandomRange(0, PI2);
+		float3 circ = float3(cos(th), sin(th), 0) * tcEmit.radiusMin;
+
+		float3 sph = RandomInUnitSphere() * tcEmit.radiusMax;
+
+		emitPart.pos = sph + circ;
+
+		if (tcEmit.velType == EV_NORMAL){
+			emitPart.velocity = normalize(sph);
+		}
+	}
+	else if (tcEmit.shape == ES_LINE){
+
+		float3 lineDir = RandomInUnitSphere();
+		emitPart.pos = Random() * tcEmit.lineLength * float3(0, 0, 1) + lineDir * tcEmit.radiusMax;
+	
+		if (tcEmit.velType == EV_NORMAL){
+			emitPart.velocity = lineDir;
+		}
+	}
+	else if (tcEmit.shape == ES_MESH){
+		float val = Random();
+
+		Face face = emitFaces[(uint)(val * tcEmit.meshVertLen)];
+
+		//weights of corners (aka barycentric coordinates)
+		float a = 0.0f, b = 0.0f, c = 0.0f;
+
+		if (tcEmit.onSurface == 1 || tcEmit.onSurface == 2)
+		{
+			if (tcEmit.onSurface == 1)
+			{
+				for(uint j = 0; j < tcEmit.meshVertLen; ++j)
+				{
+					if (val < emitFaces[j].cweight)
+					{
+						face = emitFaces[j];
+						break;
+					}
+				}
+			}
+				
+			//random number in parralelogram
+			b = Random();
+			c = Random();
+
+			//flip if outside triangle
+			if (b + c > 1)
+			{
+				b = 1 - b;
+				c = 1 - c;
+			}
+				
+			a = 1 - b - c;
+		}
+		else
+		{
+			if (val < 0.33f) {
+				a = 1.0f;
+			}
+			else if (val < 0.66f) {
+				b = 1.0f;
+			}
+			else {
+				c = 1.0f;
+			}
+		}
+			
+		emitPart.pos = face.a * a + face.b * b + face.c *c;
+			
+		//weighed average of normals
+		if (tcEmit.velType == EV_NORMAL){
+			emitPart.velocity = face.na * a + face.nb * b + face.nc * c;
+		}
+	}
+
+	if (tcEmit.velType == EV_VECTOR){
+		//choose random cone, rotate to start rotation
+		float phi = RandomRange(0, PI2);
+		float z = RandomRange(tcEmit.randomAngle, 1);
+		float sq = sqrt(1 - z * z);
+		//rotate cone and set velocity
+		emitPart.velocity = mul(emitterStartRotationMatrix, float3(sq * cos(phi), sq * sin(phi), z));
+	}
+	else if (tcEmit.velType == EV_RANDOM){
+		emitPart.velocity = RandomInUnitSphere();
+	}
+
+	//Scale velocity to proper speed
+	emitPart.velocity = emitPart.velocity * lerp(tcEmit.speedMin, tcEmit.speedMax, Random()) + tcEmit.startSpeed;
+
+
+	//adjust position to emitter position, rotation, and scale
+	emitPart.velocity = mul(emitterRotationMatrix, normalize(tcEmit.scale) * emitPart.velocity);
+	emitPart.pos = mul(emitterMatrix, float4(emitPart.pos, 1.0f)).xyz;
+
+	float fr =  (float)(DTid.x) / (float)numToGo;
+
+	//interpolate of current and previous tcEmit position
+	emitPart.pos += tcEmit.pos + tcEmit.vel * fr + tcEmit.accel / 2.0f * fr * fr - tcEmit.accel / 2.0f * fr * fr * fr;
+	emitPart.pos -= emitPart.velocity * syst.deltTime * fr;
+
+	//Write adjusted particle to memory
+	particles[GetEmitId(DTid.x, tcEmit.emitOffset, syst.maxParticles)] = emitPart;
+	
+}
+
+//This threads get's called for each particle (X direction) once per frame
+[numthreads(groupSize, 1, 1)]
+void UpdateAll(uint3 DTid : SV_DispatchThreadID)
+{	
+	//Read particle from global memory
+	SystemParameters syst = systemParameters[0];
+	uint id = GetId(DTid.x, syst);
+
+	float life = particles[id].life;
+	float3 velocity = particles[id].velocity;
+	float delt = syst.deltTime;
+	float4 lifetime = lifetimeTexture.SampleLevel(samplerlifetimeTexture, float2(life, 0.0f), 0);
+
+	//Update particle properties
+	particles[id].life = life + particles[id].deltLife * delt;
+
+	float velLen = length(velocity);
+	particles[id].velocity = (velocity * syst.damping + syst.constantForce) / max(velLen, 0.0001f) * min(velLen, syst.maxSpeed);
+	particles[id].pos += (velocity+ lifetime.xyz) * delt;
+	particles[id].rotation += syst.angularVelocity;
+
+}
+
+
+//This threads get's called for each particle (X direction) when user want's to destroy all particles
+[numthreads(groupSize, 1, 1)]
+void Clear(uint3 DTid : SV_DispatchThreadID)
+{
+	SystemParameters syst = systemParameters[0];
+	particles[GetId(DTid.x, syst)].life = 1.0f;
+}
+
+float3 DistanceToShape(float3 dif, float3 shapeSize, float3 shapeAxisX, float3 shapeAxisY, float3 shapeAxisZ, uint vtype)
+{
+	switch(vtype)
+	{
+		case S_SPHERE:
+			return dif;
+
+		case S_CAPSULE:
+			return dif -	clamp(dot(dif, shapeAxisY), -shapeSize.y, shapeSize.y) * shapeAxisY;
+
+		case S_BOX:
+			return dif -	clamp(dot(dif, shapeAxisX), -shapeSize.x, shapeSize.x) * shapeAxisX - 
+							clamp(dot(dif, shapeAxisY), -shapeSize.y, shapeSize.y) * shapeAxisY - 
+							clamp(dot(dif, shapeAxisZ), -shapeSize.z, shapeSize.z) * shapeAxisZ;
+
+		case S_HEMISPHERE:
+			float3 r =	clamp(dot(dif, shapeAxisX), -shapeSize.x, shapeSize.x) * shapeAxisX +
+						clamp(dot(dif, shapeAxisY), -shapeSize.y, 0) * shapeAxisY +
+						clamp(dot(dif, shapeAxisZ), -shapeSize.z, shapeSize.z) * shapeAxisZ;
+
+			float d = length(r);
+			dif -= r / d * clamp(d, 0, shapeSize.x);
+	
+			return dif;
+
+		case S_DISC:
+		case S_DISC_HALF:
+		case S_DISC_QUARTER:
+			dif -= clamp(dot(dif, shapeAxisY), -shapeSize.y, shapeSize.y) * shapeAxisY;
+
+			float xx = dot(dif, shapeAxisX);
+			float yy = dot(dif, shapeAxisZ);
+
+			if (vtype == S_DISC_HALF || vtype == S_DISC_QUARTER)	yy = -abs(yy);
+			if (vtype == S_DISC_QUARTER)							xx = -abs(xx);
+	
+			float3 xzdif = xx * shapeAxisX + yy * shapeAxisZ;
+			float l = length(xzdif);
+			xzdif /= l;
+			dif -= xzdif * clamp(l, shapeSize.x, shapeSize.z);
+
+			return dif;
+
+		case S_SPECIAL:
+			return 0.0f;
+
+		default:
+			return 0.0f;
+	}
+}
+
+
+
+[numthreads(groupSize, 1, 1)]
+void UpdateColliders(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID)
+{
+	SystemParameters syst = systemParameters[0];
+	Collider gc = colliders[Gid.y];
+	
+	uint id = GetId(DTid.x, syst);
+
+	float3 velocity = particles[id].velocity;
+	float sp = length(velocity * syst.deltTime) + particles[id].baseSize * syst.particleThickness;
+	float3 dif =  gc.pos - particles[id].pos; 
+	
+	//particles
+	if (gc.vtype < S_SPECIAL)
+	{
+		float3 dif2 = DistanceToShape(dif, gc.size, gc.axisX, gc.axisY, gc.axisZ, gc.vtype);
+		float o;
+
+		float dd = dot(dif2, dif2);
+		dif2 += dif * 0.0001f;
+
+		if (gc.isInverse == 1)
+		{
+			dif2 = -dif2;
+		
+			float r = gc.radius;
+			o = - (r * r + sp - dd);
+		}
+		else
+		{
+			float r = gc.radius + sp;
+			o = (r * r  - dd);
+		}
+
+		if (o > 0)
+		{
+			particles[id].life += gc.lifeLoss;
+
+			float3 norm = normalize(dif2);
+			float a1 = dot(velocity, norm) - dot(gc.velocity, norm);
+
+			particles[id].velocity = (velocity - norm * max(a1, 0.5f) * gc.bounciness) * gc.stickiness;
+		}
+	}
+	else //handle terrains as special case for colliders. Could make a seperate kernel out of this to support multiple terrain collisions, fine for now
+	{
+
+		dif.y -= gc.size.y;
+
+		float3 uv3 = -dif / gc.size;
+
+		
+		
+		if (uv3.x > 1 || uv3.x < 0 || uv3.z > 1 || uv3.z < 0 || uv3.y > 1)
+			return;
+			
+			
+		float2 uv = float2(uv3.x, uv3.z);
+
+		float3 h = terrainTexture.SampleLevel(samplerterrainTexture, uv, 0).rgb  * gc.size.y;
+		
+		
+		if (dif.y < h.r)
+		{
+			float3 norm = normalize(float3(h.g - h.r, -1.0f, h.b - h.r));
+			float a1 = gc.bounciness *  max(dot(velocity, norm), 0.15f);
+
+		
+			particles[id].velocity = (velocity - norm * max(a1, 0.5f) * gc.bounciness) * gc.stickiness;
+			particles[id].pos.y = max(gc.pos.y + h.r + sp, particles[id].pos.y);
+
+			
+		}
+	}
+}
+
+
+//==========================================
+//Forces functions
+float GetForceStrength(float d, float radius, uint atten, float attenuation)
+{
+	if (atten == FORCE_ATTEN_LINEAR)
+		return (1.0f - d / radius * attenuation);
+	else if (atten == FORCE_ATTEN_DIVIDE)
+		return min(-1.15 * attenuation + 0.15 * radius / d + 1, 1);
+	else if (atten = FORCE_ATTEN_EASEINOUT)
+	{
+		float t = 1.0f - d / radius * attenuation;
+		return t * t * (3.0f - 2.0f * t);	
+	}
+	
+	return 0.0f;
+}
+
+float3 GetForceDirection(float3 dif, float d, float3 velocity, uint type, float3 axis)
+{
+	if (type == FORCE_RADIAL)
+		return -dif / d;
+	else if (type == FORCE_VECTOR)
+		return axis;
+	else if (type == FORCE_DRAG)
+		return -normalize(velocity);
+	else if (type == FORCE_VORTEX)
+		return cross(axis, dif / d);
+
+	return float3(0.0f, 0.0f, 0.0f);
+}
+
+[numthreads(groupSize, 1, 1)]
+void UpdateForces(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID)
+{
+	SystemParameters syst = systemParameters[0];
+	Force gf = forces[Gid.y];
+
+	float3 forceApply = 0.0f;
+	
+	uint id = GetId(DTid.x, syst);
+
+	float3 pos = particles[id].pos;
+	float3 rawDif = gf.pos - pos;
+	bool inForce = false;
+
+	if (gf.vtype < S_SPECIAL) {
+		float3 dif = DistanceToShape(gf.pos - pos, gf.size, gf.axisX, gf.axisY, gf.axisZ, gf.vtype);
+
+		float dd = dot(dif, dif);
+		//Overlap = sqrradius - sqr difference. 
+		float radius = gf.radius + particles[id].baseSize * syst.particleThickness;
+		radius *= radius;
+		float o = radius - dd;
+
+		//If within the force
+		if (o > 0 && dd > gf.minRadius)
+		{
+			float d = length(rawDif);
+			float3 direction = GetForceDirection(rawDif, d, particles[id].velocity, gf.type, gf.axis);		
+			forceApply = GetForceStrength(d, gf.enclosingRadius, gf.attenType, gf.attenuation) * gf.force * direction;
+			
+			inForce = true;
+		}
+	}
+	else//handle constant forces as special case
+	{
+		float3 dif = gf.pos - particles[id].pos;
+		forceApply = gf.force * GetForceDirection(dif, length(dif), particles[id].velocity, gf.type, gf.axis);
+
+
+		inForce = true;
+	}
+
+	if (gf.type == FORCE_VORTEX && inForce){
+		forceApply += gf.inwardForce * length(particles[id].velocity) * float3(rawDif.x, 0.0f, rawDif.z);
+	}
+
+	particles[id].velocity += (forceApply + gf.velocity) * particles[id].mass;
+}
+
+
+
+[numthreads(groupSize, 1, 1)]
+void UpdateTurbulenceForces(uint3 DTid : SV_DispatchThreadID)
+{
+	SystemParameters syst = systemParameters[0];
+	Force gf = turbulenceForces[kernelOffset];
+
+	uint id = GetId(DTid.x, syst);
+	float3 rawDif = particles[id].pos - gf.pos;
+	float3 applyForce;
+
+	if (gf.vtype < S_SPECIAL)
+	{
+		float3 dif = DistanceToShape(rawDif, gf.size, gf.axisX, gf.axisY, gf.axisZ, gf.vtype);
+
+		float dd = dot(dif, dif);
+		float r = gf.radius + particles[id].baseSize * syst.particleThickness; 
+		r *= r; 
+		float o = r - dd;
+
+		float3 uv = 0.5f +  mul(rawDif, invTurbulenceRotation) / gf.axis;
+		float3 untransForce = turbulenceTexture.SampleLevel(TurbulenceLinearRepeatSampler, uv, 0.0f).rgb * 2.0f - 1.0f;
+
+		float3 force = mul(untransForce, turbulenceRotation) * gf.force ;
+		
+		float d = length(rawDif);
+					
+		applyForce = GetForceStrength(d, gf.enclosingRadius, gf.attenType, gf.attenuation) * gf.force * force * (o > 0.0f && dd > gf.minRadius ? 1.0f : 0.0f);
+	}
+	else//handle constant forces as special case
+	{
+		float3 uv = 0.5f +  mul(rawDif, invTurbulenceRotation) / gf.axis;
+		float3 untransForce = turbulenceTexture.SampleLevel(TurbulenceLinearRepeatSampler, uv, 0.0f).rgb * 2.0f - 1.0f;
+
+		float3 force = mul(untransForce, turbulenceRotation) * gf.force;
+		applyForce = force + gf.velocity;
+	}
+
+	particles[id].pos += applyForce * gf.turbulencePosFac * particles[id].mass;
+	particles[id].velocity += (applyForce * (1.0f - gf.turbulencePosFac) + gf.velocity)* particles[id].mass;
+}
+
+//Boids flocking code
+#define BoidsGroupSize 16
+
+//Biggest task is the parralel summing 
+groupshared float3 sdata[BoidsGroupSize];
+
+uint n;
+float nDiv;
+uint rest;
+
+RWStructuredBuffer<float3> averagePos;
+RWStructuredBuffer<float3> averageVelocity;
+
+groupshared float3 sumAveragePos;
+groupshared float3 sumAverageVelocity;
+
+float boidsPosStr;
+float boidsVelStr;
+
+float4 boidsCenter;
+float boidsCenterStr;
+
+//Setup position buffers with values
+[numthreads(groupSize, 1, 1)]
+void BoidsFlockInit(uint3 DTid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
+{
+	SystemParameters syst = systemParameters[0];
+
+	uint id = GetId(DTid.x, syst);
+
+
+	
+	if (DTid.x < n) {
+		averagePos[DTid.x] = particles[id].pos * nDiv;
+		averageVelocity[DTid.x] = particles[id].velocity * nDiv;
+	}
+	else
+	{
+		averagePos[DTid.x] = 0.0f;
+		averageVelocity[DTid.x] = 0.0f;
+	}
+}
+
+
+//Calculate sum, update particle based on these values
+[numthreads(groupSize, 1, 1)]
+void BoidsFlockUpdate(uint3 DTid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
+{	
+	SystemParameters syst = systemParameters[0];
+
+	uint id = GetId(DTid.x, syst);
+
+	if (tid == 0)
+	{
+		sumAveragePos = 0.0f;
+		for(uint i = 0; i < rest; ++i)
+		{
+			sumAveragePos += averagePos[i];
+			sumAverageVelocity += averageVelocity[i];
+		}
+
+		sumAveragePos = (sumAveragePos + (float3)boidsCenter * boidsCenterStr) / (boidsCenterStr + 1.0f);
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+	
+	float3 avgPos = sumAveragePos - particles[id].pos / n;
+	float3 avgVelocity = sumAverageVelocity - particles[id].velocity / n;
+
+	//Boids condition nr. 1: Move to center of group
+	particles[id].pos = particles[id].pos * (1.0f - syst.deltTime * boidsPosStr) + syst.deltTime * boidsPosStr * avgPos;
+
+	//Boids condition nr. 2: Move velocity to velocity of group
+	particles[id].velocity = particles[id].velocity * (1.0f - syst.deltTime * boidsVelStr) + syst.deltTime * boidsVelStr * avgVelocity;
+}
+
+//Parralel summing kernel
+//Progressively collapses the values summing them together
+RWStructuredBuffer<float3> sumInput;
+RWStructuredBuffer<float3> sumOutput;
+[numthreads(BoidsGroupSize, 1, 1)]
+void BoidsFlockSum(uint tid : SV_GroupIndex, uint3 groupIdx : SV_GroupID, uint3 DTid : SV_DispatchThreadID)
+{
+	uint i =  groupIdx.x * (BoidsGroupSize * 2) + tid;
+	
+	sdata[tid] = sumInput[i] + sumInput[i + BoidsGroupSize];
+		
+	GroupMemoryBarrierWithGroupSync();
+	
+	if (tid < 8)
+		sdata[tid] += sdata[tid + 8];
+		
+	if (tid < 4)
+		sdata[tid] += sdata[tid + 4];
+		
+	if (tid < 2)
+		sdata[tid] += sdata[tid + 2];
+	
+	if (tid == 0) 
+	{
+		sdata[tid] += sdata[tid + 1];
+		sumOutput[groupIdx.x] = sdata[0];
+	}
+}
