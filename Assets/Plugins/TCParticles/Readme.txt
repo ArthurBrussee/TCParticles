@@ -15,7 +15,8 @@ IMPORTANT: If you upgraded from a version before 1.4 and had a DLL version you W
 
 OR
 
-Open the scenes / prefabs with lost references, and drag the appropriate script on there
+Open the scenes / prefabs with lost references, and drag the appropriate component on there
+
 
 Credits:
 A massive thank you to Anton Hand of rust ltd for helping to make this system the best it could be!
@@ -23,6 +24,30 @@ The FX1 Microstar is kindly loaned from HEDRON central requisitions
 
 
 Release notes:
+
+1.5
+
+-Moved the Editor folder now that it can be under the TC Particles root to make package managment easier
+
+
+-Improved force priority sorting to sort by actual force not just distance
+-Improved performance of priority sorting when a system is linked to more forces/colliders than max forces/colliders
+-Reduced garbage generated in a bunch of scenarios
+-Increased performance for multi pass materials
+
+
+-Fixed tail UV globally being set to the tail UV of the very first TC Particle system created
+    NOTE: The value has been globally reset to the default 0.5 since it wasn't doing anything
+-Fixed all compile warnings
+-Fixed missing gizmos and wireframes
+-Fixed some inconsitencies between constant / non constant forces
+-Fixed velocity over lifetime not affecting velocity effects like stretch or color over velocity
+-Fixed some issues with in editor visualisation
+-Fixed some nullrefs on starting / stopping
+-Fixed Vortex inward force framerate dependance issue
+-Fixed playback speed + "sticky" particle issues 
+-Fixed issue where sometimes colliders/forces were picked up only after ~a second 
+
 
 1.4.1
 

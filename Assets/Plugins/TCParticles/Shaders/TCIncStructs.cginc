@@ -25,7 +25,6 @@ you can write a code like this:
 3. define your cusom user_vert_data
 */
 
-
 struct Particle
 {
 	float3 pos;
@@ -36,12 +35,6 @@ struct Particle
 	float rotation;
 	float mass;
 };
-
-
-
-
-
-
 
 
 
@@ -58,13 +51,13 @@ struct particle_fragment
 	fixed4 col : COLOR;
 	half2 uv : TEXCOORD0;
 
-	#ifdef TC_OFFSCREEN
-		float4 projPos : TEXCOORD1;
-	#endif
+#ifdef TC_OFFSCREEN
+	float4 projPos : TEXCOORD1;
+#endif
 
 
-	#ifdef TC_USER_V2F_STRUCT
-		tc_user_v2f_data custom;
-	#endif
+#ifdef TC_USER_V2F_STRUCT
+	tc_user_v2f_data custom;
+#endif
 };
 #endif

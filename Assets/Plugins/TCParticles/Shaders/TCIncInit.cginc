@@ -13,19 +13,19 @@ float4 _PixelMult;
 fixed4 _Glow;
 
 #ifdef TC_MESH
-	StructuredBuffer<float2> uvs;
-	StructuredBuffer<float3> bufNormals;
+StructuredBuffer<float2> uvs;
+StructuredBuffer<float3> bufNormals;
 #endif
 
 StructuredBuffer<float3> bufPoints;
 
 
 #ifdef TC_BILLBOARD_STRETCHED
-	float speedScale;
-	float lengthScale;
+float speedScale;
+float lengthScale;
 
-	StructuredBuffer<float> stretchBuffer;
-	float _BillboardFlip = 1.0f;
+StructuredBuffer<float> stretchBuffer;
+float _BillboardFlip = 1.0f;
 #endif
 
 
@@ -38,19 +38,16 @@ float maxParticles;
 
 
 #ifdef TC_UV_SPRITE_ANIM
-	float4 _SpriteAnimSize;
+float4 _SpriteAnimSize;
 
-	float4 _SpriteAnimUv;
+float4 _SpriteAnimUv;
 
-	float _Cycles;
+float _Cycles;
 #endif
-
-
 
 
 float4x4 TC_MATRIX_P;
 float4x4 TC_MATRIX_M;
 float4x4 TC_MATRIX_V;
-
 
 float4x4 TC_MATRIX_MVP;
