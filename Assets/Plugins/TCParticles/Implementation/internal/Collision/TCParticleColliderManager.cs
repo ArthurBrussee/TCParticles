@@ -31,97 +31,72 @@ namespace TC.Internal {
 
 
 		/// <summary>
-		/// Maxinum number of colliders particles react to
+		/// Maxinum number of colliders systems reacts to
 		/// </summary>
-		[SerializeField] private int _maxColliders = 1;
+		[SerializeField] int _maxColliders = 1;
 
 		/// <summary>
 		/// The maximum number of colliders system responds to. Sorted based on distance
 		/// </summary>
-		public int MaxColliders {
-			get { return _maxColliders; }
-			set { _maxColliders = value; }
-		}
+		public int MaxColliders { get { return _maxColliders; } set { _maxColliders = value; } }
 
 		/// <summary>
 		/// Current number of colliders particles collide with
 		/// </summary>
-		public int NumColliders {
-			get { return Mathf.Min(m_collidersList.Count, _maxColliders); }
-		}
+		public int NumColliders { get { return Mathf.Min(m_collidersList.Count, _maxColliders); } }
 
 
-		[SerializeField] [Range(0.0f, 1.0f)] private float _particleThickness = 0.25f;
+		[SerializeField] [Range(0.0f, 1.0f)] float _particleThickness = 0.25f;
 
 
 		/// <summary>
 		/// The 'thickness' of a particle used in collision calculations
 		/// </summary>
-		public float ParticleThickness {
-			get { return _particleThickness; }
-			set { _particleThickness = value; }
-		}
+		public float ParticleThickness { get { return _particleThickness; } set { _particleThickness = value; } }
 
 		/// <summary>
 		/// Elasticity of the collision
 		/// </summary>
-		[SerializeField] [Range(0.0f, 1.0f)] private float _bounciness = 0.3f;
+		[SerializeField] [Range(0.0f, 1.0f)] float _bounciness = 0.3f;
 
 		/// <summary>
 		/// Bounciness (elasticity) of a collision if override bounciness is true
 		/// </summary>
-		public float Bounciness {
-			get { return _bounciness; }
-			set { _bounciness = Mathf.Clamp(value, 0.0f, 1.0f); }
-		}
+		public float Bounciness { get { return _bounciness; } set { _bounciness = Mathf.Clamp(value, 0.0f, 1.0f); } }
 
 
-		[SerializeField] private bool overrideBounciness;
+		[SerializeField] bool overrideBounciness;
 
-		public bool OverrideBounciness {
-			get { return overrideBounciness; }
-			set { overrideBounciness = value; }
-		}
+		public bool OverrideBounciness { get { return overrideBounciness; } set { overrideBounciness = value; } }
 
 
-		[SerializeField] [Range(0.0f, 1.0f)] private float _stickiness = 0.3f;
+		[SerializeField] [Range(0.0f, 1.0f)] float _stickiness = 0.3f;
 
 
-		public float Stickiness {
-			get { return _stickiness; }
-			set { _stickiness = Mathf.Clamp(value, 0.0f, 1.0f); }
-		}
+		public float Stickiness { get { return _stickiness; } set { _stickiness = Mathf.Clamp(value, 0.0f, 1.0f); } }
 
 
-		[SerializeField] private bool overrideStickiness;
+		[SerializeField] bool overrideStickiness;
 
-		public bool OverrideStickiness {
-			get { return overrideStickiness; }
-			set { overrideStickiness = value; }
-		}
+		public bool OverrideStickiness { get { return overrideStickiness; } set { overrideStickiness = value; } }
 
-		private Collider[] m_colliderStruct;
-		private TCCollider[] m_colliderReference;
-		private TCCollider m_terrainReference;
+		Collider[] m_colliderStruct;
+		TCCollider[] m_colliderReference;
+		TCCollider m_terrainReference;
 
-		private int m_colliderCount;
-		private ComputeBuffer m_colliderBuffer;
+		int m_colliderCount;
+		ComputeBuffer m_colliderBuffer;
 
-		private List<TCCollider> m_collidersList;
+		List<TCCollider> m_collidersList;
 
-		[SerializeField] private LayerMask _colliderLayers = -1;
+		[SerializeField] LayerMask _colliderLayers = -1;
 
-		public LayerMask ColliderLayers {
-			get { return _colliderLayers; }
-			set { _colliderLayers = value; }
-		}
+		public LayerMask ColliderLayers { get { return _colliderLayers; } set { _colliderLayers = value; } }
 
-		[SerializeField] private List<TCCollider> _baseColliders = new List<TCCollider>();
+		[SerializeField] List<TCCollider> _baseColliders = new List<TCCollider>();
 
 
-		public List<TCCollider> BaseColliders {
-			get { return _baseColliders; }
-		}
+		public List<TCCollider> BaseColliders { get { return _baseColliders; } }
 
 		public override void Initialize() {
 			if (m_collidersList == null) {
@@ -132,7 +107,7 @@ namespace TC.Internal {
 
 		}
 
-		private void CreateBuffers() {
+		void CreateBuffers() {
 			m_colliderStruct = new Collider[MaxColliders];
 			m_colliderReference = new TCCollider[MaxColliders];
 
@@ -203,7 +178,7 @@ namespace TC.Internal {
 		}
 
 
-		protected override void Set() {
+		protected override void Bind() {
 			DistributeColliders();
 
 			if (MaxColliders == 0 || m_collidersList.Count == 0) {
@@ -403,10 +378,10 @@ namespace TC.Internal {
 			return points;
 		}
 
-		private Comparison<TCCollider> m_colliderSort;
+		Comparison<TCCollider> m_colliderSort;
 
 		//Choose nearest colliders and forces
-		private void SortColliders() {
+		void SortColliders() {
 			if (MaxColliders == 0) {
 				return;
 			}
@@ -419,7 +394,6 @@ namespace TC.Internal {
 				m_collidersList.Sort(m_colliderSort);
 			}
 		}
-
 
 		public override void OnDestroy() {
 			Release(ref m_colliderBuffer);

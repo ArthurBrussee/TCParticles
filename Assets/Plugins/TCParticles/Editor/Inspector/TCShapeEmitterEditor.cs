@@ -3,15 +3,12 @@ using UnityEngine;
 
 [CustomEditor(typeof(TCShapeEmitter), true)]
 public class TCShapeEmitterEditor : TCEdtiorBase<TCShapeEmitter> {
-	private TCWireframeDrawer m_drawer;
-
-	private Mesh m_prevMesh;
-
-	private TCShapeEmitter m_target;
+	TCWireframeDrawer m_drawer;
+	Mesh m_prevMesh;
+	TCShapeEmitter m_target;
 
 	protected override void OnTCEnable() {
 		m_target = target as TCShapeEmitter;
-
 		m_drawer = new TCWireframeDrawer(m_target.ShapeData.emitMesh);
 	}
 
@@ -19,8 +16,7 @@ public class TCShapeEmitterEditor : TCEdtiorBase<TCShapeEmitter> {
 		m_drawer.Release();
 	}
 
-
-	public override void OnTCInspectorGUI() {
+	protected override void OnTCInspectorGUI() {
 		PropField("ShapeData", new GUIContent("Shape", "The shape of the emitter"));
 
 		GUILayout.Space(20.0f);
@@ -54,9 +50,6 @@ public class TCShapeEmitterEditor : TCEdtiorBase<TCShapeEmitter> {
 
 	void OnSceneGUI() {
 		Undo.RecordObject(target, "Resize TC Particle emitter");
-
-
-
 		var emitter = target as TCShapeEmitter;
 		TCDrawFunctions.DrawEmitterShape(emitter.ShapeData, emitter.transform, m_drawer);
 	}

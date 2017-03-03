@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace TC.Internal
 {
 	[Serializable]
-	public class ParticleForceManager : ParticleComponent, TCParticleForceManager
-	{
-		private struct Force
-		{
+	public class ParticleForceManager : ParticleComponent, TCParticleForceManager {
+		struct Force {
 			public uint type;
 			public uint attenType;
 			public float force;
@@ -160,7 +158,7 @@ namespace TC.Internal
 			SortForces();
 		}
 
-		protected override void Set() {
+		protected override void Bind() {
 			DistributeForces();
 
 
@@ -324,14 +322,12 @@ namespace TC.Internal
 							break;
 					}
 
-
 					m_forcesStruct[t][f] = curForce;
 				}
 			}
 		}
 
-
-		private void DistributeForces() {
+		void DistributeForces() {
 			//easy fix for when forces get registered before system has initialized resources
 			if (m_forcesBuffer == null) {
 				return;
@@ -382,12 +378,11 @@ namespace TC.Internal
 
 				for (int k = 0; k < m_forcesCount[1]; ++k) {
 					TCForce t = m_forcesReference[1][k];
-
-					if (t.forceTexture == null) {
+					if (t.CurrentForceVolume == null) {
 						continue;
 					}
 
-					ComputeShader.SetTexture(UpdateTurbulenceForcesKernel, "turbulenceTexture", t.forceTexture);
+					ComputeShader.SetTexture(UpdateTurbulenceForcesKernel, "turbulenceTexture", t.CurrentForceVolume);
 
 					Matrix4x4 rotation = Matrix4x4.TRS(Vector3.zero, t.transform.rotation, Vector3.one);
 
@@ -401,7 +396,7 @@ namespace TC.Internal
 			}
 		}
 
-		private float GetForcePoints(TCForce force) {
+		float GetForcePoints(TCForce force) {
 			if (BaseForces != null && BaseForces.Contains(force)) {
 				return float.MaxValue;
 			}
@@ -437,7 +432,7 @@ namespace TC.Internal
 		Comparison<TCForce> m_forceSort;
 
 		//Choose nearest colliders and forces
-		private void SortForces() {
+		void SortForces() {
 			if (MaxForces == 0) {
 				return;
 			}

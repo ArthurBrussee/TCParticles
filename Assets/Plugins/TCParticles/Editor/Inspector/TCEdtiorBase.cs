@@ -6,25 +6,31 @@ using UnityEngine;
 
 public class TCEdtiorBase<T> : Editor where T : Component
 {
-	private Dictionary<string, SerializedProperty> properties;
-
+	Dictionary<string, SerializedProperty> m_properties;
 	protected T[] Targets;
 
 	//base API functions
-	public SerializedProperty GetProperty(string propName) {
+	protected SerializedProperty GetProperty(string propName) {
 		return CheckProp(propName);
 	}
 
-	private void OnEnable() {
+	void OnEnable() {
 		hideFlags = HideFlags.HideAndDontSave;
 		Targets = targets.Cast<T>().ToArray();
 
-		properties = new Dictionary<string, SerializedProperty>();
+		m_properties = new Dictionary<string, SerializedProperty>();
 		OnTCEnable();
+	}
+
+	void OnDisable() {
+		OnTCDisable();
 	}
 
 	protected virtual void OnTCEnable() {
 	}
+	protected virtual void OnTCDisable() {
+	}
+
 
 	public override void OnInspectorGUI() {
 		serializedObject.Update();
@@ -33,11 +39,11 @@ public class TCEdtiorBase<T> : Editor where T : Component
 		serializedObject.ApplyModifiedProperties();
 	}
 
-	private SerializedProperty CheckProp(string varName) {
-		if (!properties.ContainsKey(varName)) {
+	SerializedProperty CheckProp(string varName) {
+		if (!m_properties.ContainsKey(varName)) {
 			SerializedProperty p = serializedObject.FindProperty(varName);
 			if (p != null) {
-				properties.Add(varName, p);
+				m_properties.Add(varName, p);
 			}
 			else {
 				Debug.Log("Property not found! " + varName);
@@ -45,73 +51,51 @@ public class TCEdtiorBase<T> : Editor where T : Component
 			}
 		}
 
-		return properties[varName];
+		return m_properties[varName];
 	}
-
-	private SerializedProperty CheckPropRelative(string baseName, string varName) {
-		string propName = baseName + "." + varName;
-
-		if (!properties.ContainsKey(propName)) {
-			SerializedProperty b = CheckProp(baseName);
-
-			if (b == null) {
-				return null;
-			}
-
-			SerializedProperty p = b.FindPropertyRelative(varName);
-
-			if (p != null) {
-				properties.Add(propName, p);
-			}
-			else {
-				Debug.Log("Relative property not found!" + varName);
-			}
-		}
-
-		return properties[propName];
-	}
-
-
 
 	protected void EnumPopup(SerializedProperty prop, Enum selected, float width = 12.0f) {
 		prop.enumValueIndex = Convert.ToInt32(EditorGUILayout.EnumPopup(selected, EditorStyles.toolbarPopup, GUILayout.Width(width)));
 	}
 
+	protected void PropField(string varName, GUIContent dispName) {
+		EditorGUILayout.PropertyField(CheckProp(varName), dispName, null);
+	}
 
-	public void PropField(string varName, GUIContent dispName, params GUILayoutOption[] options) {
+	protected void PropField(string varName, GUIContent dispName, params GUILayoutOption[] options) {
 		EditorGUILayout.PropertyField(CheckProp(varName), dispName, options);
 	}
 
-	public SerializedProperty CheckBurstProp(string propName, int i) {
+	protected SerializedProperty CheckBurstProp(string propName, int i) {
 		string varName = "_emitter.bursts." + propName + i;
 
-		if (!properties.ContainsKey(varName)) {
+		if (!m_properties.ContainsKey(varName)) {
 			SerializedProperty p = CheckProp("_emitter.bursts").GetArrayElementAtIndex(i).FindPropertyRelative(propName);
 
 			if (p != null) {
-				properties.Add(varName, p);
+				m_properties.Add(varName, p);
 			}
 			else {
 				Debug.Log("Property not found! " + varName);
 			}
 		}
 
-		return properties[varName];
+		return m_properties[varName];
 	}
 
-	public OpenClose GetOpenClose() {
-		var o = AssetDatabase.LoadMainAssetAtPath("Assets/Plugins/TCParticles/Editor/OpenClose.asset") as OpenClose;
+	protected OpenClose GetOpenClose() {
+		var all = Resources.FindObjectsOfTypeAll<OpenClose>();
+		var o = all.Length > 0 ? all[0] : null;
 
 		if (o == null) {
 			o = CreateInstance<OpenClose>();
-			AssetDatabase.CreateAsset(o, "Assets/Plugins/TCParticles/Editor/OpenClose.asset");
+			o.hideFlags = HideFlags.HideAndDontSave;
 		}
-
 		return o;
 	}
 
 
-	public void ToolbarToggle(string varName, GUIContent dispName, params GUILayoutOption[] options) {
+	protected void ToolbarToggle(string varName, GUIContent dispName, params GUILayoutOption[] options) {
 		SerializedProperty prop = CheckProp(varName);
 
 		var content = new GUIContent(dispName);
@@ -134,6 +118,6 @@ public class TCEdtiorBase<T> : Editor where T : Component
 		EditorGUI.EndProperty();
 	}
 
-	public virtual void OnTCInspectorGUI() {
+	protected virtual void OnTCInspectorGUI() {
 	}
 }

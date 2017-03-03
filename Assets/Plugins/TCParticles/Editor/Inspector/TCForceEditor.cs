@@ -5,15 +5,13 @@ using UnityEngine;
 
 [CustomEditor(typeof (TCForce))]
 [CanEditMultipleObjects]
-public class TCForceEditor : TCEdtiorBase<TCForce>
-{
-	private TCForce m_forceTarget;
-	private List<TCForce> m_forces;
-	private TCForce m_primeForce;
+public class TCForceEditor : TCEdtiorBase<TCForce> {
+	TCForce m_forceTarget;
+	List<TCForce> m_forces;
+	TCForce m_primeForce;
 
-	private OpenClose m_openClose;
-
-	private TCNoiseForceGenerator m_forceGenerator;
+	OpenClose m_openClose;
+	TCNoiseForceGenerator m_forceGenerator;
 
 	protected override void OnTCEnable() {
 		m_forceTarget = target as TCForce;
@@ -28,19 +26,18 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 		m_forceGenerator = new TCNoiseForceGenerator(m_forceTarget);
 	}
 
+	protected override void OnTCDisable() {
+		m_forceGenerator.Release();
+	}
+
 	// Update is called once per frame
 
-	public override void OnTCInspectorGUI() {
+	protected override void OnTCInspectorGUI() {
 		int shape = GetProperty("shape").enumValueIndex;
 
 		if (m_forceTarget != m_primeForce) {
-			GetProperty("primary").boolValue = false;
 			GetProperty("globalShape").boolValue = false;
 		}
-		else {
-			GetProperty("primary").boolValue = true;
-		}
-
 
 		if (m_openClose.ToggleArea("TC Force", new Color(1.0f, 0.8f, 0.8f))) {
 			PropField("power", new GUIContent("Power"));
@@ -48,7 +45,6 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 			if (shape != (int) ForceShape.Box && shape != (int) ForceShape.Constant) {
 				PropField("attenuationType", new GUIContent("Attenuation Type", "Determines how this attenuation is calculated"));
 				PropField("_attenuation", new GUIContent("Attenuation", "Determines the rate of falloff of the power from the center"));
-
 			}
 
 			if (m_forceTarget == m_primeForce) {
@@ -92,9 +88,7 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 			m_openClose.ToggleAreaEnd("Force Shape");
 		}
 
-
 		int type = GetProperty("forceType").enumValueIndex;
-		bool generate = false;
 
 		if (m_openClose.ToggleArea("Force Type", new Color(0.8f, 1.0f, 0.8f))) {
 			GUI.changed = false;
@@ -116,24 +110,13 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 
 				case (int) ForceType.Turbulence:
 					PropField("resolution", new GUIContent("Resolution","Resolution to bake the noise"));
-					
 
 					PropField("noiseType", new GUIContent("Noise Type"));
 					PropField("frequency", new GUIContent("Frequency", "Frequency of the noise, the higher the smaller the noise details become"));
-					if (GetProperty("noiseType").enumValueIndex != (int) NoiseType.Voronoi) {
-						PropField("lacunarity", new GUIContent("Lacunarity"));
-						PropField("octaveCount", new GUIContent("Octave Count"));
-					}
-
-
-					PropField("turbulencePower", new GUIContent("Turbulence Power", "Power of turbulence that distorts the noise field"));
-					PropField("turbulenceFrequency", new GUIContent("Turbulence Distort Frequency", "Frequency of turbulence that distorts the noise field"));
-
+					PropField("lacunarity", new GUIContent("Lacunarity"));
+					PropField("persistence", new GUIContent("Persistence"));
+					PropField("octaveCount", new GUIContent("Octave Count"));
 					PropField("seed", new GUIContent("Seed", "The random seed that drives the random number generation"));
-					if (GUI.changed) {
-						m_forceGenerator.NeedsPreview = true;
-					}
-
 					break;
 			}
 
@@ -148,10 +131,11 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 
 				EditorGUI.BeginChangeCheck();
 
-				m_forceGenerator.PreviewSlice = EditorGUILayout.Slider("Preview slice", m_forceGenerator.PreviewSlice, 0.0f, 1.0f);
+				float slice = EditorGUILayout.Slider("Preview slice", m_forceGenerator.PreviewSlice, 0.0f, 1.0f);
 
 				if (EditorGUI.EndChangeCheck()) {
-					m_forceGenerator.NeedsPreview = true;
+					Undo.RecordObject(this, "Change preview slice");
+					m_forceGenerator.PreviewSlice = slice;
 				}
 
 
@@ -159,35 +143,15 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 					SceneView.RepaintAll();
 				}
 
+			}
 
+			if (type == (int) ForceType.TurbulenceTexture) {
 				PropField("forceTexture", new GUIContent("Force Texture", "The baked 3D force texture"));
 			}
-
-
-			if (type == (int) ForceType.Turbulence) {
-				GUILayout.BeginHorizontal();
-				GUILayout.FlexibleSpace();
-
-				string btn = "Update Noise";
-
-				if (m_forceTarget.forceTexture == null) {
-					btn = "Generate Noise";
-				}
-
-				if (GUILayout.Button(btn, GUILayout.Width(150.0f))) {
-					generate = true;
-				}
-				GUILayout.FlexibleSpace();
-				GUILayout.EndHorizontal();
-			}
 		}
+
 		m_openClose.ToggleAreaEnd("Force Type");
-
-		if (generate) {
-			m_forceGenerator.GenerateTexture();
-		}
 	}
-
 
 	public void OnSceneGUI() {
 		var f = target as TCForce;
@@ -195,7 +159,6 @@ public class TCForceEditor : TCEdtiorBase<TCForce>
 		if (m_primeForce.IsGlobalShape && f != m_primeForce || f == null || f.radius == null) {
 			return;
 		}
-
 
 		switch (f.shape) {
 			case ForceShape.Sphere:

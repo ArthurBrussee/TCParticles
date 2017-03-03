@@ -13,12 +13,11 @@ Shader "Hidden/TCConvertDepth" {
 		float4 pos : SV_POSITION;
 		float2 uv : TEXCOORD0;
 	};
-		
+
 	sampler2D _MainTex;
 	sampler2D _CameraDepthTexture;
-		
-	v2f vert( appdata_img v ) 
-	{
+
+	v2f vert( appdata_img v ) {
 		v2f o;
 		o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 		o.uv =  v.texcoord.xy;
@@ -35,20 +34,19 @@ Shader "Hidden/TCConvertDepth" {
 
 	ENDCG
 	
-Subshader {
+	Subshader {
 	
- Pass {
-	  ZTest Always Cull Off ZWrite Off
-	  Fog { Mode off }      
+	 Pass {
+		  ZTest Always Cull Off ZWrite Off
+		  Fog { Mode off }      
 
-      CGPROGRAM
-      #pragma fragmentoption ARB_precision_hint_fastest
-      #pragma vertex vert
-      #pragma fragment frag
-      ENDCG
-  }
-}
+		  CGPROGRAM
+		  #pragma fragmentoption ARB_precision_hint_fastest
+		  #pragma vertex vert
+		  #pragma fragment frag
+		  ENDCG
+	  }
+	}
 
 	Fallback "Diffuse"
-	
 } // shader

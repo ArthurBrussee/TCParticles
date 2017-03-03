@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class OpenClose : ScriptableObject
-{
-	[SerializeField] private List<bool> open;
-	[SerializeField] private List<string> names;
+public class OpenClose : ScriptableObject {
+	[SerializeField] List<bool> open;
+	[SerializeField] List<string> names;
 
-	private int CheckIfOpen(string nameDecl)
-	{
-		if (!names.Contains(nameDecl)) {
-			open.Add(false);
-			names.Add(nameDecl);
+	int CheckIfOpen(string nameDecl) {
+		if (names.Contains(nameDecl)) {
+			return names.IndexOf(nameDecl);
 		}
 
+		open.Add(false);
+		names.Add(nameDecl);
 		return names.IndexOf(nameDecl);
 	}
 
@@ -60,9 +59,11 @@ public class OpenClose : ScriptableObject
 	}
 
 
-	private void OnEnable()
+	void OnEnable()
 	{
-		if (open != null && names != null) return;
+		if (open != null && names != null) {
+			return;
+		}
 
 		open = new List<bool>();
 		names = new List<string>();

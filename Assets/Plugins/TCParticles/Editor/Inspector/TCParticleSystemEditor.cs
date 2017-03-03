@@ -8,13 +8,10 @@ using ParticleEmitter = TC.Internal.ParticleEmitter;
 [CustomEditor(typeof(TCParticleSystem))]
 [CanEditMultipleObjects]
 public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
-	[SerializeField] private OpenClose m_tabGroup;
+	[SerializeField] OpenClose m_tabGroup;
 
-	private Dictionary<TCParticleSystem, TCWireframeDrawer> m_drawers =
+	Dictionary<TCParticleSystem, TCWireframeDrawer> m_drawers =
 		new Dictionary<TCParticleSystem, TCWireframeDrawer>();
-
-
-
 
 	protected override void OnTCEnable() {
 		m_tabGroup = GetOpenClose();
@@ -31,28 +28,25 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 			}
 		}
 	}
-
-
-	private void OnDisable() {
+	
+	void OnDisable() {
 		foreach (var drawer in m_drawers) {
 			drawer.Value.Release();
 		}
 	}
 
-	private enum DampingPopup {
+	enum DampingPopup {
 		Constant,
 		Curve
 	}
 
-	private void Space() {
+	void Space() {
 		GUILayout.Space(10.0f);
 	}
 
-
 	// Update is called once per frame
-	public override void OnTCInspectorGUI() {
+	protected override void OnTCInspectorGUI() {
 		var doSim = GetProperty("_manager.m_noSimulation");
-
 		bool sim = doSim.hasMultipleDifferentValues || !doSim.boolValue;
 
 		if (m_tabGroup.ToggleArea("Particle Manager", new Color(1.0f, 0.8f, 0.8f))) {
@@ -71,9 +65,7 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 				new GUIContent("No Simulation",
 					"Simulation on/off. Useful when driving particles from custom shader to save performance"));
 
-
 			GUILayout.Space(10.0f);
-
 
 			GUI.enabled = sim;
 
@@ -102,7 +94,6 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 			foreach (TCParticleSystem t in targets) {
 				t.MaxParticles = Mathf.Clamp(t.MaxParticles, 0, 5000000);
 			}
-
 
 			Space();
 
@@ -192,9 +183,7 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 			}
 
 			PropField("_emitter.pes", new GUIContent("", "Emitter Shape"));
-
 			GUILayout.Label("Shape emission", EditorStyles.boldLabel);
-
 			PropField("_emitter.m_emitTag", new GUIContent("Emit Tag", "The tag to link with shape emitters"));
 		}
 		m_tabGroup.ToggleAreaEnd("Emission");

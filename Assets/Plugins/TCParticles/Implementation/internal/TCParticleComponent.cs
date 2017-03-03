@@ -1,12 +1,9 @@
 using System;
 using UnityEngine;
 
-
 namespace TC.Internal {
 	[Serializable]
 	public class ParticleComponent {
-		protected static ParticleManager Target;
-
 		#region ComponentReferences
 
 		[NonSerialized] protected ParticleColliderManager ColliderManager;
@@ -35,8 +32,6 @@ namespace TC.Internal {
 
 		protected const int ForceTypeKernelCount = (int) ForceTypeKernel.Count;
 
-		protected const int NumKernelsTotal = 9;
-
 		protected int ClearKernel;
 		protected int EmitKernel;
 
@@ -46,12 +41,11 @@ namespace TC.Internal {
 		protected int UpdateForcesKernel;
 		protected int UpdateTurbulenceForcesKernel;
 
-
 		protected const int ColliderStride = 96;
 		protected const int ForcesStride = 124;
-		protected const int SystemParamsStride = 44;
-		protected const int EmitterStride = 164;
-		protected const int ParticleStructStride = 44;
+	
+		protected const int EmitterStride = 156;
+
 
 
 		protected ComputeShader ComputeShader;
@@ -74,12 +68,12 @@ namespace TC.Internal {
 			}
 		}
 
-		private float CurTime {
+		float CurTime {
 			get { return Application.isPlaying ? Time.time : Time.realtimeSinceStartup; }
 		}
 
-		protected bool DoUpdate() {
-			if (Renderer.isVisible || Renderer.culledSimulationMode == CulledSimulationMode.DoNothing) {
+		protected bool ShouldUpdate() {
+			if (Renderer.isVisible || Renderer.culledSimulationMode == CulledSimulationMode.UpdateNormally) {
 				SimulationDeltTIme = CurTime - LastUpdate;
 				LastUpdate = CurTime;
 				return true;
@@ -96,6 +90,7 @@ namespace TC.Internal {
 						LastUpdate = CurTime;
 						return true;
 					}
+
 					break;
 			}
 
@@ -147,25 +142,16 @@ namespace TC.Internal {
 
 		public virtual void OnDestroy() {}
 
-		//each component can override this set function, to set the memory to the buffer of that system, before dispatching a kernel.
-		protected virtual void Set() {}
+		//each component can override this function, to set the memory to the buffer of that system, before dispatching a kernel.
+		protected virtual void Bind() {}
 
 		//SetParticles does a global set, so you can be sure all kernels neccesary for updating use the right memory.
 		protected void SetParticles() {
-			if (Target == Manager)
-				return;
-
-			Target = Manager;
-
-			Profiler.BeginSample("Set particles");
-			Manager.Set();
-
-			PartEmitter.Set();
-			ForceManager.Set();
-			ColliderManager.Set();
-			Profiler.EndSample();
+			Manager.Bind();
+			PartEmitter.Bind();
+			ForceManager.Bind();
+			ColliderManager.Bind();
 		}
-
 
 		protected void Release(ref ComputeBuffer buf) {
 			if (buf != null) {

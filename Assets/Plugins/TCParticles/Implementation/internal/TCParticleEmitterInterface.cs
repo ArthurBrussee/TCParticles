@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TC;
 using TC.Internal;
 using UnityEngine;
@@ -68,7 +69,6 @@ public interface TCParticleEmitter
 	/// Size over lifetime curve. Call UpdateSizeOverLifetime when changed. Clamped between [0-1]
 	/// </summary>
 	AnimationCurve SizeOverLifetime { get; set; }
-
 
 	/// <summary>
 	/// The first value of size over lifetime
@@ -157,4 +157,18 @@ public interface TCParticleEmitter
 	/// </summary>
 	void Emit(int count);
 
+	///<summary> 
+	/// Emit a given amount of particles with some initial starting positions
+	/// </summary>
+	void Emit(List<Vector3> positions);
+
+	///<summary> 
+	/// Emit a given amount of particles with some initial starting positions
+	/// </summary>
+	void Emit(Vector3[] positions);
+
+	///<summary> 
+	/// Emit a given amount of particles with some initial settings
+	/// </summary>
+	void Emit(ParticleProto[] positions, bool useColor = true, bool useSize = true, bool useVelocity = true);
 }

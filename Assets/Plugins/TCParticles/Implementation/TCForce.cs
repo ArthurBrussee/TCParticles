@@ -1,16 +1,14 @@
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using TC;
 using TC.Internal;
 using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.Rendering;
 
 [AddComponentMenu("TC Particles/Force")]
 [ExecuteInEditMode]
 public class TCForce : MonoBehaviour {
-
-
 	public static List<TCForce> All = new List<TCForce>();
-
 
 	///<summary>
 	/// The shape of the force
@@ -20,7 +18,7 @@ public class TCForce : MonoBehaviour {
 	/// <summary>
 	/// The max radius of the force. 
 	/// </summary>
-	public MinMax radius;
+	public MinMax radius = MinMax.Constant(1);
 
 	/// <summary>
 	/// The height of the capsule for ForceShape.Capsule
@@ -50,7 +48,7 @@ public class TCForce : MonoBehaviour {
 	/// <summary>
 	/// amount this force fades from the center point to the radius ([0...1])
 	/// </summary>
-	[Range(0, 1)] [SerializeField] private float _attenuation = 1.0f;
+	[Range(0, 1)] [SerializeField] float _attenuation = 1.0f;
 
 	public float Attenuation {
 		get { return _attenuation; }
@@ -78,7 +76,6 @@ public class TCForce : MonoBehaviour {
 	/// </summary>
 	public Vector3 vortexAxis = Vector3.up;
 
-
 	/// <summary>
 	/// Strenght of an extra inward force for the vortex force
 	/// </summary>
@@ -88,8 +85,6 @@ public class TCForce : MonoBehaviour {
 	/// The height of the disc volume
 	/// </summary>
 	public float discHeight;
-
-
 
 	/// <summary>
 	/// The rounding of the disc volume
@@ -101,7 +96,7 @@ public class TCForce : MonoBehaviour {
 	/// </summary>
 	public DiscType discType;
 
-	[SerializeField] private bool globalShape = false;
+	[SerializeField] bool globalShape = false;
 
 	/// <summary>
 	/// Is this force shape global for all attached forces?
@@ -110,17 +105,15 @@ public class TCForce : MonoBehaviour {
 		get { return globalShape; }
 	}
 
-	[SerializeField] private bool primary = false;
-
 	/// <summary>
 	/// Is this force the primary force attached? (first one in the component order)
 	/// </summary>
 	public bool IsPrimaryForce {
-		get { return primary; }
+		get { return GetComponent<TCForce>() == this; }
 	}
 
 
-	[Range(0, 1)] [SerializeField] private float _inheritVelocity;
+	[Range(0, 1)] [SerializeField] float _inheritVelocity;
 
 	/// <summary>
 	/// How much of the force's velocity should be inherited
@@ -139,49 +132,31 @@ public class TCForce : MonoBehaviour {
 				return m_rigidbody.velocity;
 			}
 
-			return (transform.position - lastPos);
+			return (transform.position - m_lastPos);
 		}
 	}
 
+	//TODO: Real time force! Lift limitations! Hwuaah
+
+
+	RenderTexture m_forceBaked;
+
 	/// <summary>
-	/// The baked force texture
+	/// The force texture used in force type TurbulenceTexture
 	/// </summary>
 	public Texture3D forceTexture;
-
-	public enum PowerOfTwo
-	{
-		Eight = 8,
-		Sixteen = 16,
-		ThirtyTwo = 32,
-		SixtyFour = 64,
-		OneHundredTwentyEight = 128
-	}
+	public Texture CurrentForceVolume { get { return forceType == ForceType.Turbulence ? (Texture)m_forceBaked : forceTexture; } }
 
 	/// <summary>
 	/// The resolution of the force 
 	/// </summary>
-	public PowerOfTwo resolution = PowerOfTwo.ThirtyTwo;
-
-	/// <summary>
-	/// The frequency of an overlay of chaotic turublence for the baked noise
-	/// </summary>
-	public float turbulenceFrequency = 3.0f;
-
-	/// <summary>
-	/// The power of an overlay of chaotic turbulence for the baked noises
-	/// </summary>
-	public float turbulencePower = 0.01f;
-
-
-	/// <summary>
-	/// An extra vector that is added to the turbulence force
-	/// </summary>
-	public Vector3 VectorBias;
+	[Range(0, 256)]
+	public int resolution = 32;
 
 	/// <summary>
 	/// The smoothness value 
 	/// </summary>
-	[Range(0.0f, 1.0f)] public float smoothness = 0.5f;
+	[Range(0.0f, 1.0f)] public float smoothness = 1.0f;
 
 	/// <summary>
 	/// The frequency of the selected noise type
@@ -199,6 +174,11 @@ public class TCForce : MonoBehaviour {
 	[Range(0.05f, 6.0f)] public float lacunarity = 2.17f;
 
 	/// <summary>
+	/// The persistence (strength of high frequency) for selected noise type
+	/// </summary>
+	[Range(0.0f, 1.0f)] public float persistence = 0.5f;
+
+	/// <summary>
 	/// The type of the noise
 	/// </summary>
 	public NoiseType noiseType;
@@ -208,18 +188,18 @@ public class TCForce : MonoBehaviour {
 	/// </summary>
 	public int seed;
 
-
 	/// <summary>
 	/// The period in which the noise should be repeated
 	/// </summary>
 	public Vector3 noiseExtents = Vector3.one;
 
-	private Vector3 lastPos;
-	private Rigidbody m_rigidbody;
+	Vector3 m_lastPos;
+	Rigidbody m_rigidbody;
 
+	static ComputeShader s_forceBaker;
 
-	private void LateUpdate() {
-		lastPos = transform.position;
+	void LateUpdate() {
+		m_lastPos = transform.position;
 	}
 
 	void Awake() {
@@ -237,42 +217,77 @@ public class TCForce : MonoBehaviour {
 			}
 		}
 
-
-
 		m_rigidbody = GetComponent<Rigidbody>();
 
 		if (forceType == ForceType.Turbulence && forceTexture == null) {
 			Debug.Log("Turbulence has not been generated! Make sure you do so in the editor!");
 		}
+
+		UpdateForceBake();
 	}
 
+	public void UpdateForceBake() {
+		Profiler.BeginSample("Bake force");
+		if (m_forceBaked == null || m_forceBaked.width != resolution) {
+			if (m_forceBaked != null) {
+				DestroyImmediate(m_forceBaked);
+			}
 
-	private void OnEnable() {
+			m_forceBaked = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGB32);
+			m_forceBaked.dimension = TextureDimension.Tex3D;
+			m_forceBaked.volumeDepth = resolution;
+			m_forceBaked.enableRandomWrite = true;
+			m_forceBaked.Create();
+		}
+
+		if (s_forceBaker == null) {
+			s_forceBaker = Resources.Load<ComputeShader>("BakeForce");
+		}
+
+		int kernel = s_forceBaker.FindKernel("BakeForce");
+		s_forceBaker.SetFloat("_Frequency", frequency);
+		s_forceBaker.SetInt("_Seed", seed);
+		s_forceBaker.SetFloat("_Resolution", resolution);
+		s_forceBaker.SetFloat("_Lacunarity", lacunarity);
+		s_forceBaker.SetFloat("_Persistence", persistence);
+		s_forceBaker.SetInt("_OctaveCount", octaveCount);
+		s_forceBaker.SetInt("_NoiseType", (int)noiseType);
+		s_forceBaker.SetTexture(kernel, "_ForceTexture", m_forceBaked);
+
+		int count = Mathf.CeilToInt(resolution / 4.0f);
+		s_forceBaker.Dispatch(kernel, count, count, count);
+		Profiler.EndSample();
+	}
+
+	void OnEnable() {
 		All.Add(this);
-		var systs = TCParticleSystem.All;
 
+		var systs = TCParticleSystem.All;
 		for (int i = 0; i < systs.Count; ++i) {
 			systs[i].RegisterForce(this);
 		}
+		resolution = Mathf.Clamp(resolution, 32, 512);
 	}
 
-	private void OnDisable() {
+	void OnDisable() {
 		var systs = TCParticleSystem.All;
 		for (int i = 0; i < systs.Count; ++i) {
 			systs[i].RemoveForce(this);
 		}
 
 		All.RemoveUnordered(this);
+
+		DestroyImmediate(m_forceBaked);
+		m_forceBaked = null;
 	}
 
-	private void OnDrawGizmosSelected() {
+	void OnDrawGizmosSelected() {
 		if (shape != ForceShape.Box && forceType != ForceType.Turbulence && forceType != ForceType.TurbulenceTexture) {
 			return;
 		}
 
 		Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.localScale);
 		Gizmos.matrix = rotationMatrix;
-
 
 		if (shape == ForceShape.Box) {
 			Gizmos.DrawWireCube(Vector3.zero, boxSize);
@@ -286,19 +301,18 @@ public class TCForce : MonoBehaviour {
 	}
 
 	//Noise force API
-	private Color EncodeVector(Vector3 vec) {
-		return new Color((vec.x * 0.5f + 0.5f),
-		                 (vec.y * 0.5f + 0.5f),
-		                 (vec.z * 0.5f + 0.5f));
+	Color EncodeVector(Vector3 vec) {
+		return new Color(vec.x * 0.5f + 0.5f,
+		                 vec.y * 0.5f + 0.5f,
+		                 vec.z * 0.5f + 0.5f);
 	}
 
-	private Color[] colours;
-
-
-	private bool IsPowerOfTwo(int x) {
+	bool IsPowerOfTwo(int x) {
 		return (x != 0) && ((x & (x - 1)) == 0);
 	}
 
+	//TODO: Do this in a rendertexture too somehow?
+	//Fill in UAV?
 	public void GenerateTexture(Vector3[,,] values, bool newTexture = true) {
 		int xres = values.GetLength(0);
 		int yres = values.GetLength(1);
@@ -309,14 +323,13 @@ public class TCForce : MonoBehaviour {
 			return;
 		}
 
-		colours = new Color[xres * yres * zres];
+		Color[]  colours = new Color[xres * yres * zres];
 
 		int id = 0;
 		for (int z = 0; z < zres; ++z) {
 			for (int y = 0; y < yres; ++y) {
 				for (int x = 0; x < xres; ++x) {
 					colours[id] = EncodeVector(values[x, y, z]);
-
 					++id;
 				}
 			}

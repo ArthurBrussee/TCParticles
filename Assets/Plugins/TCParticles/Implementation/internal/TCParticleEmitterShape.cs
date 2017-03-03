@@ -5,6 +5,7 @@ using System.Linq;
 using Object = UnityEngine.Object;
 
 namespace TC.Internal {
+
 	[Serializable]
 	public class ParticleEmitterShape {
 		public EmitShapes shape = EmitShapes.Sphere;
@@ -24,12 +25,19 @@ namespace TC.Internal {
 		public float lineRadius;
 
 		public bool spawnOnMeshSurface = true;
+		public static int maxUniformMeshCount = 756;
 
-		private float m_totalArea;
+		public StartDirectionType startDirectionType = StartDirectionType.Normal;
+		public Vector3 startDirectionVector;
+		public float startDirectionRandomAngle;
+		public static Mesh setMesh;
 
-		private static Dictionary<Mesh, ComputeBuffer> s_emitMeshData;
+		float m_totalArea;
 
-		private struct Face {
+		static Dictionary<Mesh, ComputeBuffer> s_emitMeshData;
+		static ComputeBuffer s_emitProtoBuffer;
+
+		struct Face {
 			public Vector3 a;
 			public Vector3 b;
 			public Vector3 c;
@@ -39,14 +47,7 @@ namespace TC.Internal {
 			public Vector3 nc;
 
 			public float cweight;
-		};
-
-		public static int maxUniformMeshCount = 756;
-
-		public StartDirectionType startDirectionType = StartDirectionType.Normal;
-		public Vector3 startDirectionVector;
-		public float startDirectionRandomAngle;
-		public static Mesh setMesh;
+		}
 
 		public int OnSurface {
 			get {
@@ -131,7 +132,29 @@ namespace TC.Internal {
 			setMesh = emitMesh;
 		}
 
-		public void ReleaseMeshData() {
+		public void SetListData(ComputeShader cs, int kern, ParticleProto[] particlePrototypes) {
+			if (s_emitProtoBuffer == null || s_emitProtoBuffer.count < particlePrototypes.Length) {
+				if (s_emitProtoBuffer != null) {
+					s_emitProtoBuffer.Release();
+				}
+
+				s_emitProtoBuffer = new ComputeBuffer(particlePrototypes.Length, ParticleProto.Stride);
+			}
+
+			s_emitProtoBuffer.SetData(particlePrototypes);
+			cs.SetBuffer(kern, "emitList", s_emitProtoBuffer);
+		}
+
+		public void ReleaseData() {
+			//TODO: this releases the buffer too often if others still use it.
+			//Not a big deal for point clouds though
+			//Bug: Leaks if someone nulls positions buffer
+			if (s_emitProtoBuffer != null) {
+				s_emitProtoBuffer.Release();
+			}
+
+
+			//bug this leaks if we switch meshes at runtime
 			if (emitMesh == null) return;
 			if (!s_emitMeshData.ContainsKey(emitMesh)) return;
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -10,7 +12,7 @@ namespace TC.Internal {
 	public class ParticleEmitter : ParticleComponent, TCParticleEmitter {
 		#region ParticleEmitterInterface
 
-		[SerializeField] private ParticleEmitterShape pes = new ParticleEmitterShape();
+		[SerializeField] ParticleEmitterShape pes = new ParticleEmitterShape();
 
 		public EmitShapes Shape {
 			get { return pes.shape; }
@@ -203,15 +205,14 @@ namespace TC.Internal {
 
 		}
 
-		[SerializeField] private TCShapeEmitTag m_emitTag;
+		[SerializeField] TCShapeEmitTag m_emitTag;
 
-		[SerializeField] private List<Burst> bursts = new List<Burst>();
+		[SerializeField] List<Burst> bursts = new List<Burst>();
 
 		//last emit time. We can clear all particles if we haven't emitted in a while.
-		private float m_prevTime = -1.0f;
+		float m_prevTime = -1.0f;
 		//We can't clear particles with infinite life. 
 
-		[NonSerialized] public int Offset;
 
 		//Bursts sequences
 		[Serializable]
@@ -221,24 +222,24 @@ namespace TC.Internal {
 			public float life;
 		}
 
-		private readonly Queue<Burst> m_burstsDone = new Queue<Burst>(100);
-		private List<TCShapeEmitter> m_shapeEmitters;
+		readonly Queue<Burst> m_burstsDone = new Queue<Burst>(100);
+		List<TCShapeEmitter> m_shapeEmitters;
 
-		private Emitter[] m_emitSet;
+		Emitter[] m_emitSet;
 
-		private Vector3 m_emitPrevPos;
-		private Vector3 m_emitPrevSpeed;
+		Vector3 m_emitPrevPos;
+		Vector3 m_emitPrevSpeed;
 
 		//Velocity 
-		private Vector3 m_prevPosition;
-		private Vector3 m_velocity = Vector3.zero;
-		private Quaternion m_lastRot;
-		private Vector3 m_lastScale;
-		private Matrix4x4 m_emitMatrix;
-		private Matrix4x4 m_emitRotationMatrix;
+		Vector3 m_prevPosition;
+		Vector3 m_velocity = Vector3.zero;
+		Quaternion m_lastRot;
+		Vector3 m_lastScale;
+		Matrix4x4 m_emitMatrix;
+		Matrix4x4 m_emitRotationMatrix;
 
-		private ComputeBuffer m_emitBuffer;
-		private float m_femit;
+		ComputeBuffer m_emitBuffer;
+		float m_femit;
 
 		const int c_texDim = 64;
 
@@ -246,13 +247,11 @@ namespace TC.Internal {
 
 
 		// ReSharper disable NotAccessedField.Local
-		private struct Emitter {
+		struct Emitter {
 			public Vector3 Pos;
 			public Vector3 Vel;
 			public Vector3 Accel;
-			//emitter properties
-			public float LifeMin;
-			public float LifeMax;
+
 			public float SizeMin;
 			public float SizeMax;
 			public float SpeedMin;
@@ -330,7 +329,7 @@ namespace TC.Internal {
 			}
 		}
 
-		private void InitializeProperties() {
+		void InitializeProperties() {
 			pes.radius.Init();
 			Speed.Init();
 			Energy.Init();
@@ -339,7 +338,7 @@ namespace TC.Internal {
 		}
 
 
-		private void UpdateLifetimeTexture() {
+		void UpdateLifetimeTexture() {
 			m_doSizeOverLifetime = false;
 
 			for (int i = 0; i < c_texDim; ++i) {
@@ -367,85 +366,99 @@ namespace TC.Internal {
 			UpdateLifetimeTexture();
 		}
 
-		private void UpdateVelocityOverLifetime() {
+		void UpdateVelocityOverLifetime() {
 			UpdateLifetimeTexture();
 		}
 
-		public void SetShapeData(ParticleEmitterShape emitShape, Transform trans, ref Vector3 prevPos, ref Vector3 prevSpeed) {
+		void SetShapeData(ParticleEmitterShape emitShape, Transform trans, ref Vector3 prevPos, ref Vector3 prevSpeed) {
 			var emitter = m_emitSet[0];
-			emitter.EmitOffset = (uint) ((Offset + Manager.NumParticles) % Manager.MaxParticles);
-			emitter.Shape = (uint) emitShape.shape;
 
-			switch (emitShape.shape) {
-				case EmitShapes.Box:
-					emitter.CubeSize = emitShape.cubeSize * 0.5f;
-					break;
+			emitter.EmitOffset = (uint) ((Manager.Offset + Manager.NumParticles) % Manager.MaxParticles);
 
-				case EmitShapes.Cone:
-					emitter.RadiusMin = emitShape.coneRadius;
-					float tan = Mathf.Tan(emitShape.coneAngle * Mathf.Deg2Rad);
-					emitter.RadiusMax = emitShape.coneRadius + tan * emitShape.coneHeight;
-					emitter.ConePointUnder = new Vector3(0.0f, 0.0f,
-						-Mathf.Tan((90.0f - emitShape.coneAngle) * Mathf.Deg2Rad) * emitShape.coneRadius);
-					emitter.ConeHeight = emitShape.coneHeight;
-					break;
+			if (m_toEmitList == null) {
+				emitter.Shape = (uint)emitShape.shape;
 
-				case EmitShapes.HemiSphere:
-					emitter.RadiusMin = emitShape.radius.IsConstant
-						? 0.0f
-						: Mathf.Max(Mathf.Min(emitShape.radius.Min, emitShape.radius.Max), 0);
-					emitter.RadiusMax = emitShape.radius.Max;
-					break;
+				switch (emitShape.shape) {
+					case EmitShapes.Box:
+						emitter.CubeSize = emitShape.cubeSize * 0.5f;
+						break;
 
-				case EmitShapes.Line:
-					emitter.LineLength = emitShape.lineLength;
-					emitter.RadiusMin = 0.0f;
-					emitter.RadiusMax = emitShape.lineRadius;
-					break;
+					case EmitShapes.Cone:
+						emitter.RadiusMin = emitShape.coneRadius;
+						float tan = Mathf.Tan(emitShape.coneAngle * Mathf.Deg2Rad);
+						emitter.RadiusMax = emitShape.coneRadius + tan * emitShape.coneHeight;
+						emitter.ConePointUnder = new Vector3(0.0f, 0.0f,
+							-Mathf.Tan((90.0f - emitShape.coneAngle) * Mathf.Deg2Rad) * emitShape.coneRadius);
+						emitter.ConeHeight = emitShape.coneHeight;
+						break;
 
-				case EmitShapes.Mesh:
-					pes.SetMeshData(ComputeShader, EmitKernel, "emitFaces");
-					emitter.MeshVertLen = (uint) emitShape.meshCount;
-					break;
+					case EmitShapes.HemiSphere:
+						emitter.RadiusMin = emitShape.radius.IsConstant
+							? 0.0f
+							: Mathf.Max(Mathf.Min(emitShape.radius.Min, emitShape.radius.Max), 0);
+						emitter.RadiusMax = emitShape.radius.Max;
+						break;
 
-				case EmitShapes.Ring:
-					emitter.RadiusMin = emitShape.ringRadius;
-					emitter.RadiusMax = emitShape.ringOuterRadius;
-					break;
+					case EmitShapes.Line:
+						emitter.LineLength = emitShape.lineLength;
+						emitter.RadiusMin = 0.0f;
+						emitter.RadiusMax = emitShape.lineRadius;
+						break;
 
-				case EmitShapes.Sphere:
-					emitter.RadiusMin = emitShape.radius.IsConstant
-						? 0.0f
-						: Mathf.Max(Mathf.Min(emitShape.radius.Min, emitShape.radius.Max), 0.0f);
-					emitter.RadiusMax = emitShape.radius.Max;
-					break;
+					case EmitShapes.Mesh:
+						pes.SetMeshData(ComputeShader, EmitKernel, "emitFaces");
+						emitter.MeshVertLen = (uint) emitShape.meshCount;
+						emitter.OnSurface = (uint)emitShape.OnSurface;
+						break;
+
+					case EmitShapes.Ring:
+						emitter.RadiusMin = emitShape.ringRadius;
+						emitter.RadiusMax = emitShape.ringOuterRadius;
+						break;
+
+					case EmitShapes.Sphere:
+						emitter.RadiusMin = emitShape.radius.IsConstant
+							? 0.0f
+							: Mathf.Max(Mathf.Min(emitShape.radius.Min, emitShape.radius.Max), 0.0f);
+						emitter.RadiusMax = emitShape.radius.Max;
+						break;
+				}
+			} else {
+				//Only exist GPU side, don't clutter UI
+				emitter.Shape = (uint)EmitShapes.Mesh + 1;
+				pes.SetListData(ComputeShader, EmitKernel, m_toEmitList);
+				ComputeShader.SetVector("_UseVelSizeColor", m_emitUseVelSizeColor);
+
+				m_toEmitList = null;
 			}
 
 			emitter.VelType = (uint) StartDirectionType;
 			emitter.RandomAngle = Mathf.Cos(StartDirectionRandomAngle * Mathf.Deg2Rad);
-			var localScale = trans.localScale;
 
+			var localScale = trans.localScale;
 			emitter.Scale = localScale;
 
 			UpdateMatrix(emitShape, trans);
 
-			emitter.OnSurface = (uint) emitShape.OnSurface;
 			emitter.Pos = prevPos;
+
 			var pos = GetEmitPos(trans);
-			Vector3 speed = (pos - prevPos);
+			Vector3 speed = pos - prevPos;
 			emitter.Vel = speed;
 			prevPos = pos;
 			emitter.Accel = (speed - prevSpeed);
+			prevSpeed = speed;
 
 			m_emitSet[0] = emitter;
-
-			prevSpeed = speed;
+			m_emitBuffer.SetData(m_emitSet);
 		}
 
-		private void UpdateMatrix(ParticleEmitterShape emitShape, Transform trans) {
+		void UpdateMatrix(ParticleEmitterShape emitShape, Transform trans) {
 			var localScale = trans.localScale;
 
 			Profiler.BeginSample("Set matrices");
+			Matrix4x4 id = Matrix4x4.identity;
+
 			switch (Manager.SimulationSpace) {
 				case Space.World:
 					var rot = trans.rotation;
@@ -463,12 +476,12 @@ namespace TC.Internal {
 
 				case Space.Local:
 					TCHelper.SetMatrix4(ComputeShader, "emitterMatrix", Matrix4x4.TRS(Vector3.zero, Quaternion.identity, localScale));
-					TCHelper.SetMatrix3(ComputeShader, "emitterRotationMatrix", Matrix4x4.identity);
+					TCHelper.SetMatrix3(ComputeShader, "emitterRotationMatrix", id);
 					break;
 
 				case Space.LocalWithScale:
-					TCHelper.SetMatrix4(ComputeShader, "emitterMatrix", Matrix4x4.identity);
-					TCHelper.SetMatrix3(ComputeShader, "emitterRotationMatrix", Matrix4x4.identity);
+					TCHelper.SetMatrix4(ComputeShader, "emitterMatrix", id);
+					TCHelper.SetMatrix3(ComputeShader, "emitterRotationMatrix", id);
 					break;
 
 				case Space.Parent:
@@ -484,6 +497,7 @@ namespace TC.Internal {
 				TCHelper.SetMatrix3(ComputeShader, "emitterStartRotationMatrix",
 					Matrix4x4.TRS(Vector3.zero, Quaternion.FromToRotation(Vector3.forward, StartDirectionVector), Vector3.one));
 			}
+
 			Profiler.EndSample();
 		}
 
@@ -504,11 +518,16 @@ namespace TC.Internal {
 					break;
 			}
 
-
 			return pos;
 		}
 
-		private void SetForEmit() {
+
+		protected override void Bind() {
+			ComputeShader.SetTexture(UpdateAllKernel, "lifetimeTexture", m_lifetimeTexture);
+			ComputeShader.SetBuffer(EmitKernel, "emitter", m_emitBuffer);
+
+			ComputeShader.SetVector("_LifeMinMax", new Vector4(Energy.Min, Energy.Max));
+
 			float t = Manager.SystemTime / Manager.Duration;
 			Energy.t = t;
 			Size.t = t;
@@ -516,8 +535,7 @@ namespace TC.Internal {
 			Rotation.t = t;
 
 			var emitter = m_emitSet[0];
-			emitter.LifeMax = Energy.Max > 0.0f ? Energy.Max : -1.0f;
-			emitter.LifeMin = Energy.Min > 0.0f ? Energy.Min : -1.0f;
+
 			emitter.SizeMax = Size.Max;
 			emitter.SizeMin = Size.Min;
 			emitter.SpeedMax = Speed.Max;
@@ -526,16 +544,10 @@ namespace TC.Internal {
 			emitter.RotationMin = Rotation.Min * Mathf.Deg2Rad;
 			emitter.StartSpeed = m_velocity * InheritVelocity;
 			emitter.MassVariance = ForceManager.MassVariance;
-			emitter.Time = (uint) Random.Range(0, Manager.MaxParticlesBuffer);
-
+			emitter.Time = (uint)Random.Range(0, Manager.MaxParticlesBuffer);
 			m_emitSet[0] = emitter;
+
 			SetShapeData(pes, Transform, ref m_emitPrevPos, ref m_emitPrevSpeed);
-
-			CommitBuffer();
-		}
-
-		protected override void Set() {
-			ComputeShader.SetTexture(UpdateAllKernel, "lifetimeTexture", m_lifetimeTexture);
 		}
 
 		public void Update() {
@@ -563,9 +575,8 @@ namespace TC.Internal {
 				var nextTime = m_burstsDone.Peek();
 
 				if (realTime - nextTime.time > nextTime.life) {
-					Offset += nextTime.amount;
+					Manager.Offset += nextTime.amount;
 					Manager.NumParticles -= nextTime.amount;
-
 					m_burstsDone.Dequeue();
 				}
 				else {
@@ -573,12 +584,13 @@ namespace TC.Internal {
 				}
 			}
 
-			Offset %= Manager.MaxParticles;
+			Manager.Offset %= Manager.MaxParticles;
 		}
-
 
 		public void UpdatePlayEvent() {
 			Profiler.BeginSample("Update play event");
+
+
 
 			if (emit) {
 				if (m_emissionType == EmissionTypeEnum.PerSecond) {
@@ -601,20 +613,28 @@ namespace TC.Internal {
 				int num = Mathf.FloorToInt(m_femit);
 				m_femit -= num;
 
-
-				EmitterEmit(num);
+				Emit(num);
 				m_prevTime = Manager.SystemTime;
 			}
 
-			if (!emit) {
-				SetForEmit();
-			}
-
-
-			if (m_shapeEmitters != null) {
+			if (m_shapeEmitters != null && DoEmit) {
 				for (int i = 0; i < m_shapeEmitters.Count; i++) {
 					var tcShapeEmitter = m_shapeEmitters[i];
-					tcShapeEmitter.InternalUpdateForEmitter(this, Manager.ParticleTimeDelta);
+
+					if (!tcShapeEmitter.Emit || !tcShapeEmitter.enabled) {
+						continue;
+					}
+
+					int num = tcShapeEmitter.TickEmission(this, Manager.ParticleTimeDelta);
+					if (num == 0) {
+						continue;
+					}
+
+					//pdate shape
+					SetShapeData(tcShapeEmitter.ShapeData, tcShapeEmitter.transform, ref tcShapeEmitter.PrevPos, ref tcShapeEmitter.PrevSpeed);
+
+					//Set local data
+					EmitAfterSet(num);
 				}
 			}
 
@@ -635,9 +655,12 @@ namespace TC.Internal {
 				return;
 			}
 
-			Offset = 0;
+			Manager.Offset = 0;
 			m_burstsDone.Clear();
 
+
+			//TODO: Only need to set offsets and such, optimise away more of these SetParticles
+			//If set particles is only called in one place we can remove some other silly Set == Manager tracking BS
 			SetParticles();
 
 			Manager.SetPariclesToKernel(ComputeShader, ClearKernel);
@@ -650,68 +673,62 @@ namespace TC.Internal {
 			Manager.Simulate(time, false);
 		}
 
-		public void Emit(int count) {
-			SetParticles();
-			Manager.Emit(count);
+		ParticleProto[] m_toEmitList;
+		Vector4 m_emitUseVelSizeColor;
+
+		public void Emit(List<Vector3> positions) {
+			Emit(positions.Select(pos => new ParticleProto { Position = pos }).ToArray(), false, false, false);
 		}
 
+		public void Emit(Vector3[] positions) {
+			Emit(positions.Select(pos => new ParticleProto { Position = pos}).ToArray(), false, false, false);
+		}
 
-		public void EmitterEmit(int count) {
+		public void Emit(ParticleProto[] prototypes, bool useColor = true, bool useSize = true, bool useVelocity = true) {
+			if (prototypes == null || prototypes.Length == 0) {
+				return;
+			}
+
+			m_toEmitList = prototypes;
+			m_emitUseVelSizeColor = new Vector4(useVelocity ? 1 : 0, useSize ? 1 : 0, useColor ? 1 : 0);
+
+			Emit(prototypes.Length);
+		}
+		
+
+		//Emits without doing any kind of buffer setting first
+		public void Emit(int count) {
 			if (count <= 0 && (m_shapeEmitters == null || m_shapeEmitters.Count == 0)) {
 				return;
 			}
 
-			Profiler.BeginSample("Emitter emit");
-
-			Profiler.BeginSample("Set for emit");
-			SetForEmit();
-			Profiler.EndSample();
-
-
-			EmitNow(count);
-
-			Profiler.EndSample();
+			SetParticles();
+			EmitAfterSet(count);
 		}
 
-		//Emits without doing any kind of buffer setting first
-		public void EmitNow(int count) {
-			if (count <= 0) {
-				return;
-			}
-
+		void EmitAfterSet(int count) {
 			Profiler.BeginSample("Emit now");
-			//If the particles actually die at some point, clear them
+			//If the particles actually die at some point, track them
 			if (Energy.Max > 0 && !Manager.NoSimulation) {
 				var b = new Burst {amount = count, time = Manager.RealTime, life = Energy.Max};
 				m_burstsDone.Enqueue(b);
 			}
 
-			Manager.NumParticles += count;
-			int amount = Mathf.CeilToInt(count / 32.0f);
+			const int emitGroupSize = 32;
 
+			Manager.NumParticles += count;
+			int amount = Mathf.CeilToInt((float)count / emitGroupSize);
 			ComputeShader.SetInt("numToGo", count);
 
 			Manager.SetPariclesToKernel(ComputeShader, EmitKernel);
-			ComputeShader.Dispatch(EmitKernel, Mathf.CeilToInt(amount), 1, 1);
+			ComputeShader.Dispatch(EmitKernel, amount, 1, 1);
 			Profiler.EndSample();
 		}
 
 		public override void OnDestroy() {
 			Release(ref m_emitBuffer);
-
-			pes.ReleaseMeshData();
-
-			if (Application.isPlaying) {
-				Object.Destroy(m_lifetimeTexture);
-			}
-			else {
-				Object.DestroyImmediate(m_lifetimeTexture);
-			}
-		}
-
-		public void CommitBuffer() {
-			ComputeShader.SetBuffer(EmitKernel, "emitter", m_emitBuffer);
-			m_emitBuffer.SetData(m_emitSet);
+			pes.ReleaseData();
+			Object.DestroyImmediate(m_lifetimeTexture);
 		}
 	}
 }

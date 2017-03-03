@@ -56,7 +56,7 @@ Release notes:
 -Added a MaxSpeed property to particles
 
 
--Fixed an issue where enabling / disabling a system would still interpolate the positions.
+-Fixed an issue where enabling / disabling a system would still interpolated the positions.
 -Fixed extension templates, removed explicit bind call, handled when dispatched now
 -Cleaned up some code
 

@@ -1,42 +1,4 @@
-//===============================================================
-//Obligatory defines 
-struct Particle
-{
-	float3 pos;
-	float3 velocity;
-	float baseSize;
-
-	float life;
-	float deltLife;
-
-	float rotation;
-	float mass;
-};
-RWStructuredBuffer<Particle> particles;
-
-//To use the built in DispatchExtension() method of the particle manager, this must be 128. Can change if you _really_ know what you're doing
-#define TCGroupSize 128
-
-struct SystemParameters
-{
-	float3 constantForce;
-	float angularVelocity;
-	float damping;
-	float maxSpeed;
-	float velocitySampleScale;
-
-	float particleThickness;
-	float deltTime;
-	uint offset;
-	uint maxParticles;
-};
-StructuredBuffer<SystemParameters> systemParameters;
-
-
-uint GetId(uint id, SystemParameters syst) { return (id + syst.offset) % syst.maxParticles; }
-
-
-
+#include "../Shaders/TCFramework.cginc"
 
 
 
@@ -46,16 +8,11 @@ uint GetId(uint id, SystemParameters syst) { return (id + syst.offset) % syst.ma
 //pragma tells unity what kernels there are - don't forget this!
 #pragma kernel MyExtensionKernel
 
+
 float AccelSpeed; //set by CPU, see ExtensionTemplate.cs
 
 [numthreads(TCGroupSize, 1, 1)]
-void MyExtensionKernel(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID )
-{
-	//This example simply accelerates the particles
-	SystemParameters syst = systemParameters[0]; //Always read the system first, handles bunch of stuff
-
-
-	uint id = GetId(DTid.x, syst); //Note: Never read directly from DTid.x, but use GetId(). 
-
+void MyExtensionKernel(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID) {
+	uint id = GetId(DTid.x); //Note: Never read directly from DTid.x, but use GetId(). 
 	particles[id].velocity += float3(AccelSpeed, 0.0f, 0.0f);
 }

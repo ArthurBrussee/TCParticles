@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace TC.Internal {
 	[Serializable]
@@ -14,24 +15,20 @@ namespace TC.Internal {
 		}
 
 		public ComputeBuffer particles;
+		
 		//numParticles is clamped by MaxParticles
-
 		public int NumParticles {
 			get { return ParticleCount; }
-
 			set { ParticleCount = value; }
 		}
 
 		[SerializeField] private Space _simulationSpace = Space.Local;
-
 		[SerializeField] private bool m_noSimulation;
-
-
 
 		private bool UseShuriken {
 			get { return !Supported && shurikenFallback != null; }
 		}
-
+		
 		//Time that particle system is playing, in range of [0, duration]
 
 		#endregion
@@ -41,10 +38,9 @@ namespace TC.Internal {
 		[SerializeField] private int _maxParticles = 10000;
 
 		public int MaxParticles {
-			get { return Mathf.RoundToInt(_maxParticles); }
+			get { return _maxParticles; }
 			set { _maxParticles = value; }
 		}
-
 
 		public bool NoSimulation {
 			get { return m_noSimulation; }
@@ -52,7 +48,6 @@ namespace TC.Internal {
 
 		public int ParticleCount { get; private set; }
 		public ParticleSystem shurikenFallback;
-
 
 		public Space SimulationSpace {
 			get { return _simulationSpace; }
@@ -73,7 +68,6 @@ namespace TC.Internal {
 		/// Time particle system has been playing since it is playing
 		/// </summary>
 		public float RealTime { get; private set; }
-
 		public float SystemTime { get; private set; }
 
 		[SerializeField] private float _duration = 3.0f;
@@ -100,7 +94,6 @@ namespace TC.Internal {
 
 		[SerializeField] private bool dampingIsCurve = false;
 
-		private ComputeBuffer m_systemBuffer;
 
 
 		public float ParticleTimeDelta { get; private set; }
@@ -147,22 +140,26 @@ namespace TC.Internal {
 
 		#endregion
 
-		private struct SystemParameters {
+		struct SystemParameters {
 			public Vector3 ConstantForce;
 			public float AngularVelocity;
 			public float Damping;
 			public float MaxSpeed;
-			public float VelocitySampleScale;
 
-			public float ParticleThickness;
-			public float DeltTime;
-			public uint Offset;
-			public uint MaxParticles;
+
+			public const int Stride = (3 + 1 + 1 + 1) * 4;
 		}
+		SystemParameters[] m_systArray = new SystemParameters[1];
+		ComputeBuffer m_systemBuffer;
 
-		private List<TCParticleSystem> m_children;
 
-		private List<TCParticleSystem> Children {
+		[NonSerialized]
+		public int Offset;
+
+
+		List<TCParticleSystem> m_children;
+
+		List<TCParticleSystem> Children {
 			get {
 				if (m_children == null) {
 					m_children = new List<TCParticleSystem>(SystemComp.GetComponentsInChildren<TCParticleSystem>(true));
@@ -184,18 +181,16 @@ namespace TC.Internal {
 			}
 
 			CreateParticleBuffer();
-			m_systemBuffer = new ComputeBuffer(1, SystemParamsStride);
+			m_systemBuffer = new ComputeBuffer(1, SystemParameters.Stride);
 		}
 
-		private void CreateParticleBuffer() {
+		void CreateParticleBuffer() {
 			if (particles != null) {
 				particles.Release();
 			}
 
-			particles = new ComputeBuffer(MaxParticlesBuffer, ParticleStructStride);
+			particles = new ComputeBuffer(MaxParticlesBuffer, TCParticleSystem.ParticleStride);
 		}
-
-
 
 		public override void OnEnable() {
 			//No support? Disable system, and let the shuriken system do it's work.
@@ -229,9 +224,6 @@ namespace TC.Internal {
 			}
 
 
-			Target = null;
-
-
 			if (IsPaused || IsStopped) {
 				return;
 			}
@@ -244,7 +236,7 @@ namespace TC.Internal {
 					return;
 				}
 
-				if (DoUpdate()) {
+				if (ShouldUpdate()) {
 					float deltTime = (!IsPaused) ? Mathf.Min(SimulationDeltTIme, 0.1f) * playbackSpeed : 0.0f;
 
 
@@ -259,8 +251,7 @@ namespace TC.Internal {
 			Profiler.EndSample();
 		}
 
-		private void UpdateParticles(float deltTime) {
-
+		void UpdateParticles(float deltTime) {
 			Profiler.BeginSample("Update particles");
 			ParticleTimeDelta = deltTime;
 
@@ -283,18 +274,11 @@ namespace TC.Internal {
 			Profiler.EndSample();
 		}
 
-		private void Dispatch(bool emit) {
-
+		void Dispatch(bool emit) {
 			Profiler.BeginSample("Dispatch loop");
-
-			Profiler.BeginSample("Update bursts");
 			PartEmitter.UpdateParticleBursts();
-			Profiler.EndSample();
-
-
 
 			SetParticles();
-
 
 			if (emit) {
 				PartEmitter.UpdatePlayEvent();
@@ -303,7 +287,11 @@ namespace TC.Internal {
 			if (!m_noSimulation) {
 				//Dispatch the update kernel.
 				SetPariclesToKernel(ComputeShader, UpdateAllKernel);
+
+				Profiler.BeginSample("Main update");
 				ComputeShader.Dispatch(UpdateAllKernel, DispatchCount, 1, 1);
+				Profiler.EndSample();
+
 				ColliderManager.Dispatch();
 				ForceManager.Dispatch();
 			}
@@ -311,16 +299,14 @@ namespace TC.Internal {
 			Profiler.EndSample();
 		}
 
-		public void SetPariclesToKernel(ComputeShader shader, int kernel) {
-			Profiler.BeginSample("Set particle buffer");
-			//for (int k = 0; k < NumKernelsTotal; ++k) {
-			shader.SetBuffer(kernel, "systemParameters", m_systemBuffer);
-			shader.SetBuffer(kernel, "particles", particles);
-			//}
+		public void SetPariclesToKernel(ComputeShader comp, int kernel) {
+			comp.SetBuffer(kernel, "systemParameters", m_systemBuffer);
+			comp.SetBuffer(kernel, "particles", particles);
 
-			Profiler.EndSample();
+			comp.SetFloat("_DeltTime", ParticleTimeDelta);
+			comp.SetInt("_MaxParticles", MaxParticles);
+			comp.SetInt("_BufferOffset", Offset);
 		}
-
 
 		public override void OnDisable() {
 			Clear();
@@ -332,46 +318,29 @@ namespace TC.Internal {
 		}
 
 
-
-		private SystemParameters m_syst;
-		private SystemParameters[] m_systArray = new SystemParameters[1];
-
-		protected override void Set() {
+		protected override void Bind() {
 			float d = dampingIsCurve ? dampingCurve.Evaluate(SystemTime / Duration) : damping;
 
-
-			m_syst.AngularVelocity = PartEmitter.AngularVelocity * Mathf.Deg2Rad * Manager.ParticleTimeDelta;
-			m_syst.Damping = Mathf.Pow(Mathf.Abs(1.0f - d), ParticleTimeDelta);
-			m_syst.MaxSpeed = MaxSpeed > 0 ? MaxSpeed : float.MaxValue;
-
-
-
-			m_syst.DeltTime = ParticleTimeDelta;
-			m_syst.MaxParticles = (uint) MaxParticles;
-			m_syst.Offset = (uint) PartEmitter.Offset;
-
-
+			var syst = m_systArray[0];
+			syst.AngularVelocity = PartEmitter.AngularVelocity * Mathf.Deg2Rad * Manager.ParticleTimeDelta;
+			syst.Damping = Mathf.Pow(Mathf.Abs(1.0f - d), ParticleTimeDelta);
+			syst.MaxSpeed = MaxSpeed > 0 ? MaxSpeed : float.MaxValue;
 
 			float actualThickness = ColliderManager.ParticleThickness * 0.5f;
-
 			if (Renderer.isPixelSize) {
 				actualThickness *= Mathf.Max(1.0f / Screen.width, 1.0f / Screen.height);
 			}
 
+			ComputeShader.SetFloat("_ParticleThickness", actualThickness);
+			
+			syst.ConstantForce = ConstantForce.Value(Manager.SystemTime / Manager.Duration) * ParticleTimeDelta +
+			                       Physics.gravity * Manager.gravityMultiplier * ParticleTimeDelta * syst.Damping;
 
-			m_syst.ParticleThickness = actualThickness;
-			m_syst.ConstantForce = ConstantForce.Value(Manager.SystemTime / Manager.Duration) * ParticleTimeDelta +
-			                       Physics.gravity * Manager.gravityMultiplier * ParticleTimeDelta * m_syst.Damping;
-
-			m_systArray[0] = m_syst;
-
-			Profiler.BeginSample("Set data");
+			m_systArray[0] = syst;
 			m_systemBuffer.SetData(m_systArray);
-			Profiler.EndSample();
 		}
 
-
-		private void PlayEvent() {
+		void ResetPlayTime() {
 			SystemTime = 0.0f;
 			RealTime = 0.0f;
 		}
@@ -382,7 +351,7 @@ namespace TC.Internal {
 			}
 
 			if (SystemTime >= Duration && !looping) {
-				PlayEvent();
+				ResetPlayTime();
 			}
 
 			PartEmitter.PlayEvent();
@@ -395,8 +364,10 @@ namespace TC.Internal {
 			m_isPlaying = true;
 		}
 
+		static WaitForEndOfFrame s_waitFrame = new WaitForEndOfFrame();
+
 		private IEnumerator SimulateRoutine(float simTime) {
-			yield return new WaitForEndOfFrame();
+			yield return s_waitFrame;
 
 			for (int i = 0; i < 75; ++i) {
 				UpdateParticles(simTime / 75.0f);
@@ -505,35 +476,10 @@ namespace TC.Internal {
 				return;
 			}
 
-			SetParticles();
-			PartEmitter.EmitterEmit(count);
+			PartEmitter.Emit(count);
 		}
 
-		//Extension handling --- for people who know what they are doing only
-		private void BindParticleBufferToExtension(ComputeShader extension, string kernelName) {
-			int kern = extension.FindKernel(kernelName);
-
-			if (kern == -1) {
-				Debug.Log("Can't find custom kernel! Make sure you have named it properly and added the #pragma");
-				return;
-			}
-
-			if (particles == null || m_systemBuffer == null) {
-				return;
-			}
-
-			SetPariclesToKernel(extension, kern);
-		}
-
-		public void DispatchExtensionKernel(ComputeShader extension, string kernelName) {
-			int kern = extension.FindKernel(kernelName);
-
-			if (kern == -1) {
-				Debug.Log("Can't find custom kernel! Make sure you have named it properly and added the #pragma");
-				return;
-			}
-
-
+		public void DispatchExtensionKernel(ComputeShader extension, int kern) {
 			SetPariclesToKernel(extension, kern);
 			extension.Dispatch(kern, DispatchCount, 1, 1);
 		}

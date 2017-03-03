@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using TC;
 using TC.Internal;
 using UnityEngine;
+using UnityEngine.Profiling;
 using ParticleEmitter = TC.Internal.ParticleEmitter;
 using ParticleRenderer = TC.Internal.ParticleRenderer;
 using Space = TC.Space;
@@ -29,6 +29,7 @@ public class TCParticleSystem : MonoBehaviour {
 		set {
 			if (value != m_doVisualize) {
 				m_doVisualize = value;
+
 				if (!m_doVisualize) {
 					Clear();
 				}
@@ -125,7 +126,6 @@ public class TCParticleSystem : MonoBehaviour {
 	public float SystemTime {
 		get { return _manager.SystemTime; }
 	}
-
 
 	/// <summary>
 	/// The duration of the system (or system life)
@@ -230,15 +230,19 @@ public class TCParticleSystem : MonoBehaviour {
 		set { _manager.gravityMultiplier = value; }
 	}
 
+	public const int ParticleStride = 4;
 	#endregion
 
 	[NonSerialized]
-	private bool m_inited = false;
+	private bool m_inited;
 
 	private void Init() {
 		if (m_inited) {
 			return;
 		}
+
+		Profiler.BeginSample("Init");
+
 		m_inited = true;
 
 		_manager.SystemComp = this;
@@ -247,35 +251,16 @@ public class TCParticleSystem : MonoBehaviour {
 		_forcesManager.SystemComp = this;
 		_particleRenderer.SystemComp = this;
 
-		Profiler.BeginSample("Awake");
 		_manager.Awake(_emitter, _colliderManager, _particleRenderer, _forcesManager, _manager);
 		_emitter.Awake(_emitter, _colliderManager, _particleRenderer, _forcesManager, _manager);
 		_colliderManager.Awake(_emitter, _colliderManager, _particleRenderer, _forcesManager, _manager);
 		_forcesManager.Awake(_emitter, _colliderManager, _particleRenderer, _forcesManager, _manager);
 		_particleRenderer.Awake(_emitter, _colliderManager, _particleRenderer, _forcesManager, _manager);
-		Profiler.EndSample();
-
-		Profiler.BeginSample("Initialize");
-
-		Profiler.BeginSample("manager");
 		_manager.Initialize();
-		Profiler.EndSample();
-
-		Profiler.BeginSample("emitter");
 		_emitter.Initialize();
-		Profiler.EndSample();
-
-		Profiler.BeginSample("Collider");
 		_colliderManager.Initialize();
-		Profiler.EndSample();
-
-		Profiler.BeginSample("Forces");
 		_forcesManager.Initialize();
-		Profiler.EndSample();
-
-		Profiler.BeginSample("renderer");
 		_particleRenderer.Initialize();
-		Profiler.EndSample();
 
 		Profiler.EndSample();
 	}
@@ -287,7 +272,6 @@ public class TCParticleSystem : MonoBehaviour {
 	}
 
 	public void OnEnable() {
-
 		All.Add(this);
 
 		if (!Application.isPlaying) {
@@ -299,7 +283,6 @@ public class TCParticleSystem : MonoBehaviour {
 		_colliderManager.OnEnable();
 		_forcesManager.OnEnable();
 		_particleRenderer.OnEnable();
-
 
 		for (int i = 0; i < TCForce.All.Count; ++i) {
 			RegisterForce(TCForce.All[i]);
@@ -322,7 +305,6 @@ public class TCParticleSystem : MonoBehaviour {
 		_forcesManager.OnDisable();
 		_particleRenderer.OnDisable();
 
-
 		for (int i = 0; i < TCForce.All.Count; ++i) {
 			RemoveForce(TCForce.All[i]);
 		}
@@ -339,39 +321,35 @@ public class TCParticleSystem : MonoBehaviour {
 			OnDestroy();
 		}
 
-
 		All.RemoveUnordered(this);
 	}
 
-
 	public void EditorUpdate() {
-		UpdateAll();
+		UpdateComponents();
 	}
 
-	private void Update() {
+	void Update() {
 		if (!Application.isPlaying) {
 			return;
 		}
 
-		UpdateAll();
+		UpdateComponents();
 	}
 
-	private void UpdateAll() {
+	void UpdateComponents() {
 		_manager.Update();
 		_emitter.Update();
 		_colliderManager.Update();
 		_forcesManager.Update();
-		_particleRenderer.Update();
 	}
 
-	private void OnDestroy() {
+	void OnDestroy() {
 		_manager.OnDestroy();
 		_emitter.OnDestroy();
 		_colliderManager.OnDestroy();
 		_forcesManager.OnDestroy();
 		_particleRenderer.OnDestroy();
 	}
-
 
 	//Public API
 

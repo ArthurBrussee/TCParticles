@@ -5,14 +5,11 @@ using UnityEngine;
 
 [CustomPropertyDrawer(typeof(ParticleEmitterShape))]
 public class TCParticleEmitterShapeDrawer : PropertyDrawer {
-	private SerializedProperty m_prop;
-
-
+	SerializedProperty m_prop;
 
 	SerializedProperty GetProperty(string property) {
 		return m_prop.FindPropertyRelative(property);
 	}
-
 
 	void PropField(string property) {
 		var prop = GetProperty(property);
@@ -60,11 +57,8 @@ public class TCParticleEmitterShapeDrawer : PropertyDrawer {
 				break;
 		}
 
-
 		PropField("startDirectionType");
-
 		int type = GetProperty("startDirectionType").enumValueIndex;
-
 
 		if (type == (int) StartDirectionType.Vector) {
 			PropField("startDirectionVector");

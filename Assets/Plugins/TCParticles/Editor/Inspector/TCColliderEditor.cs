@@ -7,8 +7,7 @@ using UnityEngine;
 public class TCColliderEditor : TCEdtiorBase<TCCollider>
 {
 	// Update is called once per frame
-	public override void OnTCInspectorGUI()
-	{
+	protected override void OnTCInspectorGUI() {
 		var shape = (ColliderShape) GetProperty("shape").enumValueIndex;
 
 		PropField("shape", new GUIContent("Shape", "Determines the shape of the collider, PhysX or custom (PhysX does not support Mesh Colliders)"));

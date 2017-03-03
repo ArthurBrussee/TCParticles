@@ -1,7 +1,24 @@
-namespace TC
-{
-	public enum Space
-	{
+using UnityEngine;
+
+namespace TC {
+	public struct ParticleProto {
+		public Vector3 Position;
+		public Vector3 Velocity;
+
+		public float Size;
+		public Color Color;
+
+		public ParticleProto(Vector3 pos) {
+			Position = Vector3.zero;
+			Velocity = Vector3.zero;
+			Size = 1;
+			Color = Color.white;
+		}
+
+		public const int Stride = 12 + 12 + 4 + 16;
+	}
+
+	public enum Space {
 		World,
 		Local,
 		Parent,
@@ -9,8 +26,7 @@ namespace TC
 	}
 
 	//Emit variables
-	public enum EmitShapes
-	{
+	public enum EmitShapes {
 		Sphere,
 		Box,
 		HemiSphere,
@@ -20,23 +36,20 @@ namespace TC
 		Mesh
 	}
 
-	public enum DiscType
-	{
+	public enum DiscType {
 		Full,
 		Half,
 		Quarter
 	}
 
 
-	public enum AttenuationType
-	{
+	public enum AttenuationType {
 		Linear,
 		Divide,
 		EaseInOut
 	}
 
-	public enum GeometryRenderMode
-	{
+	public enum GeometryRenderMode {
 		Billboard,
 		StretchedBillboard,
 		TailStretchBillboard,
@@ -44,8 +57,7 @@ namespace TC
 		Point
 	}
 
-	public enum ForceType
-	{
+	public enum ForceType {
 		Radial,
 		Vector,
 		Drag,
@@ -54,17 +66,13 @@ namespace TC
 		TurbulenceTexture
 	}
 
-	public enum NoiseType
-	{
+	public enum NoiseType {
 		Billow,
-		Pink,
-		Ridged,
-		Voronoi
+		Perlin,
+		Ridged
 	}
 
-
-	public enum ColliderShape
-	{
+	public enum ColliderShape {
 		PhysxShape,
 		Disc,
 		Hemisphere,
@@ -72,8 +80,7 @@ namespace TC
 		Terrain
 	}
 
-	public enum ForceShape
-	{
+	public enum ForceShape {
 		Sphere,
 		Capsule,
 		Box,
@@ -82,22 +89,19 @@ namespace TC
 		Constant
 	}
 
-	public enum StartDirectionType
-	{
+	public enum StartDirectionType {
 		Vector,
 		Normal,
 		Random
 	}
 
-	public enum CulledSimulationMode
-	{
-		DoNothing,
+	public enum CulledSimulationMode {
+		UpdateNormally,
 		SlowSimulation,
 		StopSimulation
 	};
 
-	public enum ParticleColourGradientMode
-	{
+	public enum ParticleColourGradientMode {
 		OverLifetime,
 		Speed
 	};

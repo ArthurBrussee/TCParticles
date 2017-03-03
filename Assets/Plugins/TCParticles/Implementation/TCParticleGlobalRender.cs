@@ -7,7 +7,7 @@ using UnityEditor;
 #endif
 
 public static class TCParticleGlobalRender {
-	private static Dictionary<Camera, CommandBuffer[]> s_camToBuffer = new Dictionary<Camera, CommandBuffer[]>();
+	static Dictionary<Camera, CommandBuffer[]> s_camToBuffer = new Dictionary<Camera, CommandBuffer[]>();
 
 	public static float[] StretchFacs = {
 		0.0f,
@@ -39,19 +39,8 @@ public static class TCParticleGlobalRender {
 	[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 	static void Init() {
 		Camera.onPreRender += Render;
-		Camera.onPostRender += Clear;
 	}
-
-	private static void Clear(Camera cam) {
-		foreach (var buffer in s_camToBuffer) {
-			var bufs = buffer.Value;
-
-			foreach (var buf in bufs) {
-				buf.Clear();
-			}
-		}
-	}
-
+	
 	private static void Render(Camera cam) {
 		CommandBuffer[] cmd;
 		if (!s_camToBuffer.TryGetValue(cam, out cmd)) {
@@ -65,7 +54,12 @@ public static class TCParticleGlobalRender {
 			s_camToBuffer[cam] = cmd;
 		}
 
-		for (int index = 0; index < TCParticleSystem.All.Count; index++) {
+		cmd[0].Clear();
+		cmd[1].Clear();
+
+		int count = TCParticleSystem.All.Count;
+
+		for (int index = 0; index < count; index++) {
 			var syst = TCParticleSystem.All[index];
 			var rend = syst.ParticleRenderer as ParticleRenderer;
 
