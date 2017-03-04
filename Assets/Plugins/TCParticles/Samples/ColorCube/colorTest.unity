@@ -553,12 +553,12 @@ MonoBehaviour:
     Transform: {fileID: 66619596}
     _simulationSpace: 0
     m_noSimulation: 0
-    _maxParticles: 1000000
+    _maxParticles: 512000
     shurikenFallback: {fileID: 0}
     _duration: 3
     delay: 0
     playOnAwake: 0
-    looping: 0
+    looping: 1
     prewarm: 0
     playbackSpeed: 1
     gravityMultiplier: 0

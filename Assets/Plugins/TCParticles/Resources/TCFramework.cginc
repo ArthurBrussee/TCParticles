@@ -46,11 +46,6 @@ float _DeltTime;
 //->Driver must be able to handle sharing memory between the number of threads in the group
 #define TCGroupSize 128
 
-
-
-
-
-
 //-----------------------------------------------------------------------------
 // R8G8B8A8_UNORM <-> FLOAT4
 //-----------------------------------------------------------------------------

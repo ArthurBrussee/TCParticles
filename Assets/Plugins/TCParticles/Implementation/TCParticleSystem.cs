@@ -230,11 +230,11 @@ public class TCParticleSystem : MonoBehaviour {
 		set { _manager.gravityMultiplier = value; }
 	}
 
-	public const int ParticleStride = 4;
+	public const int ParticleStride = 44;
 	#endregion
 
 	[NonSerialized]
-	private bool m_inited;
+	bool m_inited;
 
 	void Init() {
 		if (m_inited) {

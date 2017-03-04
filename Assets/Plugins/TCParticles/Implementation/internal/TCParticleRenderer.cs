@@ -351,7 +351,6 @@ namespace TC.Internal {
 
 		void RenderPass(int pass, CommandBuffer cmd) {
 			int num = Manager.ParticleCount;
-
 			if (num == 0) {
 				return;
 			}

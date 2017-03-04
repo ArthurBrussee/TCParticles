@@ -22,10 +22,10 @@ namespace TC.Internal {
 			set { ParticleCount = value; }
 		}
 
-		[SerializeField] private Space _simulationSpace = Space.Local;
-		[SerializeField] private bool m_noSimulation;
+		[SerializeField] Space _simulationSpace = Space.Local;
+		[SerializeField] bool m_noSimulation;
 
-		private bool UseShuriken {
+		bool UseShuriken {
 			get { return !Supported && shurikenFallback != null; }
 		}
 		
@@ -35,7 +35,7 @@ namespace TC.Internal {
 
 		#region PublicApi
 
-		[SerializeField] private int _maxParticles = 10000;
+		[SerializeField] int _maxParticles = 10000;
 
 		public int MaxParticles {
 			get { return _maxParticles; }
@@ -70,7 +70,7 @@ namespace TC.Internal {
 		public float RealTime { get; private set; }
 		public float SystemTime { get; private set; }
 
-		[SerializeField] private float _duration = 3.0f;
+		[SerializeField] float _duration = 3.0f;
 
 		public float Duration {
 			get { return _duration; }
@@ -90,25 +90,22 @@ namespace TC.Internal {
 		public float MaxSpeed = -1.0f;
 
 
-		[SerializeField] private AnimationCurve dampingCurve;
+		[SerializeField] AnimationCurve dampingCurve;
 
-		[SerializeField] private bool dampingIsCurve = false;
-
+		[SerializeField] bool dampingIsCurve = false;
 
 
 		public float ParticleTimeDelta { get; private set; }
-
 		/// <summary>
 		/// Is the particle system paused?
 		/// </summary>
 		public bool IsPaused { get; private set; }
-
 		/// <summary>
 		/// Is the particle system paused?
 		/// </summary>
 		public bool IsStopped { get; private set; }
 
-		private bool m_isPlaying = true;
+		bool m_isPlaying = true;
 
 		/// <summary>
 		/// Is the particle system playing?
@@ -116,11 +113,6 @@ namespace TC.Internal {
 		public bool IsPlaying {
 			get { return m_isPlaying && !IsStopped && !IsPaused && SystemTime < _duration; }
 		}
-
-		public int MaxParticlesBuffer {
-			get { return Mathf.CeilToInt(_maxParticles * 1.15f / GroupSize) * GroupSize; }
-		}
-
 
 		/// <summary>
 		/// Number of particles emitted each second
@@ -152,13 +144,10 @@ namespace TC.Internal {
 		SystemParameters[] m_systArray = new SystemParameters[1];
 		ComputeBuffer m_systemBuffer;
 
-
 		[NonSerialized]
 		public int Offset;
 
-
 		List<TCParticleSystem> m_children;
-
 		List<TCParticleSystem> Children {
 			get {
 				if (m_children == null) {
@@ -189,7 +178,7 @@ namespace TC.Internal {
 				particles.Release();
 			}
 
-			particles = new ComputeBuffer(MaxParticlesBuffer, TCParticleSystem.ParticleStride);
+			particles = new ComputeBuffer(MaxParticles, TCParticleSystem.ParticleStride);
 		}
 
 		public override void OnEnable() {
@@ -219,17 +208,15 @@ namespace TC.Internal {
 				}
 			}
 
-			if (particles.count != MaxParticlesBuffer) {
+			if (particles.count != MaxParticles) {
 				CreateParticleBuffer();
 			}
-
 
 			if (IsPaused || IsStopped) {
 				return;
 			}
 
 			Profiler.BeginSample("Update loop");
-
 			if (m_isPlaying) {
 				if (SystemTime > Duration && !looping) {
 					m_isPlaying = false;
@@ -247,7 +234,6 @@ namespace TC.Internal {
 				ParticleTimeDelta = Time.deltaTime;
 				Dispatch(false);
 			}
-
 			Profiler.EndSample();
 		}
 
@@ -270,7 +256,6 @@ namespace TC.Internal {
 			}
 
 			Dispatch(true);
-
 			Profiler.EndSample();
 		}
 
@@ -278,7 +263,7 @@ namespace TC.Internal {
 			Profiler.BeginSample("Dispatch loop");
 			PartEmitter.UpdateParticleBursts();
 
-			SetParticles();
+			BindParticles();
 
 			if (emit) {
 				PartEmitter.UpdatePlayEvent();
@@ -317,7 +302,6 @@ namespace TC.Internal {
 			Release(ref m_systemBuffer);
 		}
 
-
 		protected override void Bind() {
 			float d = dampingIsCurve ? dampingCurve.Evaluate(SystemTime / Duration) : damping;
 
@@ -345,7 +329,7 @@ namespace TC.Internal {
 			RealTime = 0.0f;
 		}
 
-		private IEnumerator PlayRoutine() {
+		IEnumerator PlayRoutine() {
 			if (delay != 0.0f) {
 				yield return new WaitForSeconds(delay);
 			}
@@ -366,7 +350,7 @@ namespace TC.Internal {
 
 		static WaitForEndOfFrame s_waitFrame = new WaitForEndOfFrame();
 
-		private IEnumerator SimulateRoutine(float simTime) {
+		IEnumerator SimulateRoutine(float simTime) {
 			yield return s_waitFrame;
 
 			for (int i = 0; i < 75; ++i) {

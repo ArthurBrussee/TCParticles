@@ -535,7 +535,6 @@ namespace TC.Internal {
 			Rotation.t = t;
 
 			var emitter = m_emitSet[0];
-
 			emitter.SizeMax = Size.Max;
 			emitter.SizeMin = Size.Min;
 			emitter.SpeedMax = Speed.Max;
@@ -544,7 +543,7 @@ namespace TC.Internal {
 			emitter.RotationMin = Rotation.Min * Mathf.Deg2Rad;
 			emitter.StartSpeed = m_velocity * InheritVelocity;
 			emitter.MassVariance = ForceManager.MassVariance;
-			emitter.Time = (uint)Random.Range(0, Manager.MaxParticlesBuffer);
+			emitter.Time = (uint)Random.Range(0, Manager.MaxParticles);
 			m_emitSet[0] = emitter;
 
 			SetShapeData(pes, Transform, ref m_emitPrevPos, ref m_emitPrevSpeed);
@@ -658,10 +657,9 @@ namespace TC.Internal {
 			Manager.Offset = 0;
 			m_burstsDone.Clear();
 
-
 			//TODO: Only need to set offsets and such, optimise away more of these SetParticles
 			//If set particles is only called in one place we can remove some other silly Set == Manager tracking BS
-			SetParticles();
+			BindParticles();
 
 			Manager.SetPariclesToKernel(ComputeShader, ClearKernel);
 			ComputeShader.Dispatch(ClearKernel, Manager.DispatchCount, 1, 1);
@@ -691,18 +689,17 @@ namespace TC.Internal {
 
 			m_toEmitList = prototypes;
 			m_emitUseVelSizeColor = new Vector4(useVelocity ? 1 : 0, useSize ? 1 : 0, useColor ? 1 : 0);
-
 			Emit(prototypes.Length);
 		}
 		
 
 		//Emits without doing any kind of buffer setting first
 		public void Emit(int count) {
-			if (count <= 0 && (m_shapeEmitters == null || m_shapeEmitters.Count == 0)) {
+			if (count <= 0) {
 				return;
 			}
 
-			SetParticles();
+			BindParticles();
 			EmitAfterSet(count);
 		}
 
@@ -714,13 +711,13 @@ namespace TC.Internal {
 				m_burstsDone.Enqueue(b);
 			}
 
-
 			Manager.NumParticles += count;
 			ComputeShader.SetInt("numToGo", count);
 
-			int dispatch = Manager.DispatchCount;
+			int dispatch = Mathf.CeilToInt(count / (float) GroupSize);
 			Manager.SetPariclesToKernel(ComputeShader, EmitKernel);
 			ComputeShader.Dispatch(EmitKernel, dispatch, 1, 1);
+
 			Profiler.EndSample();
 		}
 

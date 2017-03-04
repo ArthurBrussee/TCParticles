@@ -14,9 +14,7 @@ public class EmissionTest : MonoBehaviour {
 					p[count].Position = new Vector3((float)i / num, (float)j / num, (float)k / num) * 2.0f - Vector3.one;
 					p[count].Color = Color.HSVToRGB((float)i / num, (float)j / num, (float)k / num);
 					p[count].Size = 1.0f;
-
 					p[count].Velocity = Vector3.zero;
-
 					++count;
 				}
 			}

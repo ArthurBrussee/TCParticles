@@ -218,11 +218,6 @@ public class TCForce : MonoBehaviour {
 		}
 
 		m_rigidbody = GetComponent<Rigidbody>();
-
-		if (forceType == ForceType.Turbulence && forceTexture == null) {
-			Debug.Log("Turbulence has not been generated! Make sure you do so in the editor!");
-		}
-
 		UpdateForceBake();
 	}
 

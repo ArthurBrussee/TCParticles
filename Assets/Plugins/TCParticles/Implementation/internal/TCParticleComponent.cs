@@ -5,29 +5,21 @@ namespace TC.Internal {
 	[Serializable]
 	public class ParticleComponent {
 		#region ComponentReferences
-
 		[NonSerialized] protected ParticleColliderManager ColliderManager;
-
 		[NonSerialized] protected ParticleEmitter PartEmitter;
-
 		[NonSerialized] protected ParticleForceManager ForceManager;
-
 		[NonSerialized] protected ParticleRenderer Renderer;
-
 		[NonSerialized] protected ParticleManager Manager;
 
 		[NonSerialized] public TCParticleSystem SystemComp;
-
 		#endregion
 
 		#region ForceTypeKernel enum
-
 		public enum ForceTypeKernel {
 			Normal,
 			Turbulence,
 			Count
-		};
-
+		}
 		#endregion
 
 		protected const int ForceTypeKernelCount = (int) ForceTypeKernel.Count;
@@ -46,16 +38,15 @@ namespace TC.Internal {
 	
 		protected const int EmitterStride = 156;
 
-
-
 		protected ComputeShader ComputeShader;
-		protected int GroupSize = 128;
+
+		protected const int GroupSize = 128;
 
 
-		protected float LastUpdate;
+		float m_lastUpdate;
 		protected float SimulationDeltTIme;
-		public Transform Transform;
 
+		public Transform Transform;
 
 		protected bool Supported {
 			get { return SystemInfo.supportsComputeShaders; }
@@ -74,8 +65,8 @@ namespace TC.Internal {
 
 		protected bool ShouldUpdate() {
 			if (Renderer.isVisible || Renderer.culledSimulationMode == CulledSimulationMode.UpdateNormally) {
-				SimulationDeltTIme = CurTime - LastUpdate;
-				LastUpdate = CurTime;
+				SimulationDeltTIme = CurTime - m_lastUpdate;
+				m_lastUpdate = CurTime;
 				return true;
 			}
 
@@ -85,9 +76,9 @@ namespace TC.Internal {
 					return false;
 
 				case CulledSimulationMode.SlowSimulation:
-					SimulationDeltTIme = CurTime - LastUpdate;
+					SimulationDeltTIme = CurTime - m_lastUpdate;
 					if (SimulationDeltTIme > Renderer.cullSimulationDelta) {
-						LastUpdate = CurTime;
+						m_lastUpdate = CurTime;
 						return true;
 					}
 
@@ -96,7 +87,6 @@ namespace TC.Internal {
 
 			return false;
 		}
-
 
 		public void Awake(ParticleEmitter emitter, ParticleColliderManager colliderManager, ParticleRenderer renderer,
 			ParticleForceManager forceManager, ParticleManager system) {
@@ -135,18 +125,13 @@ namespace TC.Internal {
 
 
 		public virtual void Initialize() {}
-
 		public virtual void OnEnable() {}
-
 		public virtual void OnDisable() {}
-
 		public virtual void OnDestroy() {}
-
-		//each component can override this function, to set the memory to the buffer of that system, before dispatching a kernel.
 		protected virtual void Bind() {}
 
 		//SetParticles does a global set, so you can be sure all kernels neccesary for updating use the right memory.
-		protected void SetParticles() {
+		protected void BindParticles() {
 			Manager.Bind();
 			PartEmitter.Bind();
 			ForceManager.Bind();
