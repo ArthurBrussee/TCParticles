@@ -11,7 +11,7 @@ namespace TC.Internal {
 
 		//Number of threads that should be dispatched in X
 		public int DispatchCount {
-			get { return Mathf.CeilToInt(ParticleCount / GroupSize) + 1; }
+			get { return Mathf.CeilToInt(ParticleCount / (float)GroupSize); }
 		}
 
 		public ComputeBuffer particles;
@@ -118,7 +118,7 @@ namespace TC.Internal {
 		}
 
 		public int MaxParticlesBuffer {
-			get { return Mathf.CeilToInt(_maxParticles * 1.15f / GroupSize) * (int) GroupSize; }
+			get { return Mathf.CeilToInt(_maxParticles * 1.15f / GroupSize) * GroupSize; }
 		}
 
 
@@ -481,7 +481,12 @@ namespace TC.Internal {
 
 		public void DispatchExtensionKernel(ComputeShader extension, int kern) {
 			SetPariclesToKernel(extension, kern);
-			extension.Dispatch(kern, DispatchCount, 1, 1);
+
+			uint x, y, z;
+			extension.GetKernelThreadGroupSizes(kern, out x, out y, out z);
+			int disp = Mathf.CeilToInt((float) ParticleCount / x);
+
+			extension.Dispatch(kern, disp, 1, 1);
 		}
 	}
 }

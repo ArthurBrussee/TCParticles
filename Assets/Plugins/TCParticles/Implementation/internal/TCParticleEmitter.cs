@@ -664,7 +664,7 @@ namespace TC.Internal {
 			SetParticles();
 
 			Manager.SetPariclesToKernel(ComputeShader, ClearKernel);
-			ComputeShader.Dispatch(ClearKernel, Mathf.CeilToInt(Manager.ParticleCount / GroupSize), 1, 1);
+			ComputeShader.Dispatch(ClearKernel, Manager.DispatchCount, 1, 1);
 
 			Manager.NumParticles = 0;
 		}
@@ -714,14 +714,13 @@ namespace TC.Internal {
 				m_burstsDone.Enqueue(b);
 			}
 
-			const int emitGroupSize = 32;
 
 			Manager.NumParticles += count;
-			int amount = Mathf.CeilToInt((float)count / emitGroupSize);
 			ComputeShader.SetInt("numToGo", count);
 
+			int dispatch = Manager.DispatchCount;
 			Manager.SetPariclesToKernel(ComputeShader, EmitKernel);
-			ComputeShader.Dispatch(EmitKernel, amount, 1, 1);
+			ComputeShader.Dispatch(EmitKernel, dispatch, 1, 1);
 			Profiler.EndSample();
 		}
 
