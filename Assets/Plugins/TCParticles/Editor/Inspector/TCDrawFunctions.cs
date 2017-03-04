@@ -4,8 +4,6 @@ using UnityEditor;
 using UnityEngine;
 
 public static class TCDrawFunctions {
-
-
 	public static void DrawEmitterShape(ParticleEmitterShape pes, Transform transform, TCWireframeDrawer drawer) {
 		var col = new Color(0.6f, 0.9f, 1.0f);
 
@@ -23,8 +21,6 @@ public static class TCDrawFunctions {
 					}
 					Handles.color = col;
 				}
-
-
 				break;
 
 
@@ -83,7 +79,6 @@ public static class TCDrawFunctions {
 				}
 
 				drawer.DrawWireMesh(transform);
-
 				break;
 		}
 	}
@@ -92,13 +87,13 @@ public static class TCDrawFunctions {
 	//=========================================
 	//Handle functions
 
-	private static float ValueSlider(Vector3 offset, float val, Vector3 dir, float scale) {
+	static float ValueSlider(Vector3 offset, float val, Vector3 dir, float scale) {
 		Vector3 pos = offset + val * dir * scale;
 		Vector3 newPos = Handles.Slider(pos, dir, HandleUtility.GetHandleSize(Vector3.zero) * 0.045f, Handles.DotCap, 0.0f);
 		return Mathf.Abs(val + Vector3.Dot(newPos - pos, dir) / scale);
 	}
 
-	private static void DrawDiscCap(Vector3 p1, Vector3 p2, float mSign, Vector3 h, float hsign, float rounding,
+	static void DrawDiscCap(Vector3 p1, Vector3 p2, float mSign, Vector3 h, float hsign, float rounding,
 		Vector3 discNorm,
 		Vector3 move, Vector3 up, float rMin) {
 		Vector3 rup = hsign * h + hsign * rounding * up;
@@ -120,7 +115,7 @@ public static class TCDrawFunctions {
 	}
 
 
-	private static void DrawDiscWiresVertical(float rMin, float rMax, float height, float rounding, float angle) {
+	static void DrawDiscWiresVertical(float rMin, float rMax, float height, float rounding, float angle) {
 		Vector3 up = Vector3.up;
 		Vector3 right = Vector3.right;
 		Vector3 fw = Vector3.forward;
@@ -160,7 +155,7 @@ public static class TCDrawFunctions {
 		}
 	}
 
-	private static void ArcAngle(float angle, float radius, float height, float rounding, float roundMult) {
+	static void ArcAngle(float angle, float radius, float height, float rounding, float roundMult) {
 		Handles.DrawWireArc((height / 2.0f - rounding) * Vector3.up, -Vector3.up, Vector3.right, angle,
 			radius + roundMult * rounding);
 		Handles.DrawWireArc(-(height / 2.0f - rounding) * Vector3.up, -Vector3.up, Vector3.right, angle,
@@ -170,7 +165,7 @@ public static class TCDrawFunctions {
 		Handles.DrawWireArc(-height / 2.0f * Vector3.up, -Vector3.up, Vector3.right, angle, radius);
 	}
 
-	private static void DiscValueSlider(float rMin, float rMax, Vector3 dir, float sc, out float rMinOut, out float rMaxOut) {
+	static void DiscValueSlider(float rMin, float rMax, Vector3 dir, float sc, out float rMinOut, out float rMaxOut) {
 		if (rMin != 0.0f) {
 			rMin = ValueSlider(Vector3.zero, rMin, dir, sc);
 		}
@@ -182,7 +177,7 @@ public static class TCDrawFunctions {
 	}
 
 
-	private static void DrawBoxCorner(Vector3 sz, float xflip, float yflip, float zflip, float r) {
+	static void DrawBoxCorner(Vector3 sz, float xflip, float yflip, float zflip, float r) {
 		sz = sz * 0.5f;
 		Handles.DrawWireArc(new Vector3(xflip * (sz.x - r), yflip * (sz.y - r), zflip * (sz.z - r)),
 			yflip * xflip * Vector3.forward,
@@ -195,7 +190,7 @@ public static class TCDrawFunctions {
 			zflip * Vector3.forward, 90.0f, r);
 	}
 
-	private static void DrawBoxLine(Vector3 d1, Vector3 d2, Vector3 d3, float r, float x, float y, float z) {
+	static void DrawBoxLine(Vector3 d1, Vector3 d2, Vector3 d3, float r, float x, float y, float z) {
 		x *= 0.5f;
 		y *= 0.5f;
 		z *= 0.5f;
@@ -208,7 +203,7 @@ public static class TCDrawFunctions {
 	}
 
 
-	private static float RadiusDisc(Vector3 offset, Vector3 norm, Vector3 right, Vector3 forward, float r, float sc) {
+	static float RadiusDisc(Vector3 offset, Vector3 norm, Vector3 right, Vector3 forward, float r, float sc) {
 		Handles.DrawWireDisc(offset, norm, r);
 
 		float newVal = ValueSlider(offset, r, right, sc);
@@ -229,15 +224,15 @@ public static class TCDrawFunctions {
 	}
 
 
-	private static void BaseHandle(Transform trans, Vector3 scale) {
+	static void BaseHandle(Transform trans, Vector3 scale) {
 		Handles.matrix = Matrix4x4.TRS(trans.position, trans.rotation, scale);
 	}
 
-	private static float ScaleXZ(Transform trans) {
+	static float ScaleXZ(Transform trans) {
 		return Mathf.Max(trans.localScale.x, trans.localScale.z);
 	}
 
-	private static float ScaleTrans(Transform trans) {
+	static float ScaleTrans(Transform trans) {
 		return Mathf.Max(trans.localScale.x, trans.localScale.y, trans.localScale.z);
 	}
 
@@ -272,7 +267,6 @@ public static class TCDrawFunctions {
 		return size;
 	}
 
-
 	public static float HemisphereHandle(Transform trans, float radius, bool nonUniform = false) {
 		Vector3 scale;
 		float sc = 1.0f;
@@ -284,7 +278,6 @@ public static class TCDrawFunctions {
 			sc = ScaleTrans(trans);
 			scale = new Vector3(sc, sc, sc);
 		}
-
 
 		BaseHandle(trans, scale);
 

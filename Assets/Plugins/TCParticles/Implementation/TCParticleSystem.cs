@@ -236,6 +236,8 @@ public class TCParticleSystem : MonoBehaviour {
 	[NonSerialized]
 	bool m_inited;
 
+
+
 	void Init() {
 		if (m_inited) {
 			return;
@@ -438,6 +440,10 @@ public class TCParticleSystem : MonoBehaviour {
 
 	void OnDrawGizmos() {
 		Gizmos.DrawIcon(transform.position, "TCParticles.png", true);
+	}
+
+	void OnApplicationQuit() {
+		TCParticleGlobalRender.ReleaseCaches();
 	}
 
 	void OnDrawGizmosSelected() {

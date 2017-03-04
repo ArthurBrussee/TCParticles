@@ -12,6 +12,7 @@ public class TCShapeEmitter : MonoBehaviour {
 
 	public ParticleEmitterShape ShapeData = new ParticleEmitterShape();
 	public float EmissionRate;
+
 	public ParticleEmitter.EmissionTypeEnum EmissionType;
 	public bool Emit = true;
 

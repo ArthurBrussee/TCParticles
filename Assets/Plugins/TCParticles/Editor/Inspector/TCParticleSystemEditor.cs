@@ -140,7 +140,6 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 				t.Emitter.EmissionRate = Mathf.Clamp(t.Emitter.EmissionRate, 0, 5000000);
 			}
 
-
 			SerializedProperty bursts = GetProperty("_emitter.bursts");
 
 			if (!bursts.hasMultipleDifferentValues) {
@@ -178,8 +177,6 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 				}
 
 				Space();
-
-
 			}
 
 			PropField("_emitter.pes", new GUIContent("", "Emitter Shape"));
@@ -385,8 +382,6 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 				}
 
 
-
-
 				EditorGUILayout.BeginHorizontal();
 				PropField("_colliderManager._colliderLayers",
 					new GUIContent("Collider Layers", "Layers to filter which colliders can affect this system"));
@@ -507,12 +502,13 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 			}
 		}
 
+		serializedObject.ApplyModifiedProperties();
+
 		if (GUI.changed) {
+
 			EditorUtility.SetDirty(m_tabGroup);
 
-
 			foreach (var system in Targets) {
-
 				if (system.Emitter.Shape == EmitShapes.Mesh) {
 					m_drawers[system].UpdateMesh((system.Emitter as ParticleEmitter).EmitMesh);
 				}
@@ -543,9 +539,8 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 	}
 
 
-
 	[DrawGizmo(GizmoType.InSelectionHierarchy)]
-	private static void RenderGizmo(TCParticleSystem syst, GizmoType type) {
+	static void RenderGizmo(TCParticleSystem syst, GizmoType type) {
 		if (syst.ParticleRenderer == null) {
 			return;
 		}

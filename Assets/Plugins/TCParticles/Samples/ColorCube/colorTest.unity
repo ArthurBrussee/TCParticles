@@ -848,7 +848,7 @@ MonoBehaviour:
   boxSize: {x: 1, y: 1, z: 1}
   forceType: 4
   attenuationType: 0
-  power: 3
+  power: 1
   _attenuation: 1
   forceDirection: {x: 0, y: 1, z: 0}
   forceDirectionSpace: 0

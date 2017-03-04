@@ -13,13 +13,11 @@ public class TCParticleEmitterShapeDrawer : PropertyDrawer {
 
 	void PropField(string property) {
 		var prop = GetProperty(property);
-
 		EditorGUILayout.PropertyField(prop, true);
 	}
 
 	void PropField(string property, Rect rect) {
 		var prop = GetProperty(property);
-
 		EditorGUI.PropertyField(rect, prop, true);
 	}
 
@@ -54,6 +52,16 @@ public class TCParticleEmitterShapeDrawer : PropertyDrawer {
 			case (int) EmitShapes.Mesh:
 				PropField("emitMesh");
 				PropField("spawnOnMeshSurface");
+
+				if (GetProperty("spawnOnMeshSurface").boolValue) {
+					PropField("normalizeArea");
+				}
+
+				PropField("texture");
+
+				if (GetProperty("texture").objectReferenceValue != null) {
+					PropField("uvChannel");
+				}
 				break;
 		}
 

@@ -1,26 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class TCWireframeDrawer {
-	private readonly Material m_lineMat;
-	private Vector3[] m_lines;
-
-	private void BuildLineMesh(Mesh mesh) {
-		if (mesh == null) {
-			return;
-		}
-
-		var vertices = mesh.vertices;
-		var triangles = mesh.triangles;
-
-		m_lines = new Vector3[triangles.Length];
-
-		for (int i = 0; i < triangles.Length; i += 3) {
-			m_lines[i + 0] = vertices[triangles[i]];
-			m_lines[i + 1] = vertices[triangles[i + 1]];
-			m_lines[i + 2] = vertices[triangles[i + 2]];
-		}
-	}
+	readonly Material m_lineMat;
+	Vector3[] m_lines;
 
 	public TCWireframeDrawer(Mesh mesh) {
 		m_lineMat =
@@ -29,6 +11,23 @@ public class TCWireframeDrawer {
 			};
 
 		BuildLineMesh(mesh);
+	}
+
+
+	void BuildLineMesh(Mesh mesh) {
+		if (mesh == null) {
+			return;
+		}
+
+		var vertices = mesh.vertices;
+		var triangles = mesh.triangles;
+
+		m_lines = new Vector3[triangles.Length];
+		for (int i = 0; i < triangles.Length; i += 3) {
+			m_lines[i + 0] = vertices[triangles[i]];
+			m_lines[i + 1] = vertices[triangles[i + 1]];
+			m_lines[i + 2] = vertices[triangles[i + 2]];
+		}
 	}
 
 	public void UpdateMesh(Mesh mesh) {

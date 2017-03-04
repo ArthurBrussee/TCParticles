@@ -104,7 +104,6 @@
 				mpos.xyz += uv - 0.5f;
 				mpos = mul(_ModelMatrix, mpos);
 
-
 				o.pos = UnityObjectToClipPos(float4(mpos.xyz / mpos.w, 1.0f));
 				
 				float3 uvX = uv + float3(1.0f / _Resolution, 0.0f, 0.0f);

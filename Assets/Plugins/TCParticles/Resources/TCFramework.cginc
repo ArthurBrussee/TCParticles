@@ -37,6 +37,17 @@ StructuredBuffer<SystemParameters> systemParameters;
 float4 _LifeMinMax;
 float _DeltTime;
 
+
+struct VertexData {
+	float3 pos;
+	float3 color;
+	float3 normal;
+
+	float2 uv;
+
+
+};
+
 //===============================
 //variables
 //Groupsize is the number of threads in X direction in a thread group. Constraints:

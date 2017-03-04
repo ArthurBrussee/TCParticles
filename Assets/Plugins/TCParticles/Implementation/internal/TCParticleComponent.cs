@@ -35,11 +35,8 @@ namespace TC.Internal {
 
 		protected const int ColliderStride = 96;
 		protected const int ForcesStride = 124;
-	
-		protected const int EmitterStride = 156;
 
 		protected ComputeShader ComputeShader;
-
 		protected const int GroupSize = 128;
 
 
@@ -86,6 +83,10 @@ namespace TC.Internal {
 			}
 
 			return false;
+		}
+
+		public static int SizeOf<T>() {
+			return System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
 		}
 
 		public void Awake(ParticleEmitter emitter, ParticleColliderManager colliderManager, ParticleRenderer renderer,

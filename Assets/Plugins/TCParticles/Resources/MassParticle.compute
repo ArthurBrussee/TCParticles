@@ -82,32 +82,24 @@ struct TCEmitter {
 
 	uint shape;
 
-	//General parameters
 	float radiusMax;
 	float radiusMin;
 
-	//Box
 	float3 cubeSize;
-	
-	//Cone
 	float coneHeight;
 	float3 conePointUnder;
 
-	//Line
 	float lineLength;
-
-	//Mesh
 	uint meshVertLen;
-
 	uint velType;
 
 	float randomAngle;
 	float3 startSpeed;
-
 	float massVariance;
 
 	uint time;
 	uint emitOffset;
+
 	float3 scale;
 	uint onSurface;
 };
@@ -123,24 +115,37 @@ float3x3 emitterStartRotationMatrix;
 //Number of particles to emit in this emit call
 uint numToGo = 0;
 
+
+StructuredBuffer<VertexData> _VertexBuffer;
+StructuredBuffer<uint> _TriangleBuffer;
+
+
 //Mesh emitter faces
 struct Face {
-	float3 a;
+	float3 a;	
     float3 b;
     float3 c;
 
     float3 na;
     float3 nb;
     float3 nc;
-	
+
+	float2 uva;
+	float2 uvb;
+	float2 uvc;
+
 	float cweight;
 };
 StructuredBuffer<Face> emitFaces;
 
+
+Texture2D _MeshTexture;
+SamplerState sampler_MeshTexture;
+
+
 struct ParticleProto {
 	float3 pos;
 	float3 velocity;
-
 	float size;
 
 	float4 color;
@@ -194,7 +199,6 @@ uint turbulenceKernelOffset = 0;
 #define ES_LINE			5
 #define ES_MESH			6
 
-
 #define ES_LIST			ES_MESH + 1
 
 //Emit velocities
@@ -209,6 +213,7 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	uint emitID = GetEmitId(DTid.x, tcEmit.emitOffset);
 	
 	if (DTid.x >= numToGo) {
+		//Don't wrap, for low max particles to avoid clearing start of buffer incorrectly.
 		particles[DTid.x + tcEmit.emitOffset].life = -1.0f;
 		return;
 	}
@@ -312,16 +317,27 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 		case ES_MESH:
 			float val = Random();
 			Face face = emitFaces[(uint)(val * tcEmit.meshVertLen)];
-			float a = 0.0f, b = 0.0f, c = 0.0f;
 
+			float a = 0.0f, b = 0.0f, c = 0.0f;
+			
 			if (tcEmit.onSurface == 1 || tcEmit.onSurface == 2) {
+
 				if (tcEmit.onSurface == 1) {
-					for(uint j = 0; j < tcEmit.meshVertLen; ++j) {
-						if (val < emitFaces[j].cweight) {
-							face = emitFaces[j];
-							break;
+					//Binary search properly weighted face
+					uint lo = 0;
+					uint hi = tcEmit.meshVertLen;
+
+					while (lo < hi){
+						uint mid = lo + (hi - lo) / 2;
+
+						if (val < emitFaces[mid].cweight){
+							hi = mid;
+						} else{
+							lo = mid + 1;
 						}
 					}
+
+					face = emitFaces[lo];					
 				}
 				
 				//random number in parralelogram
@@ -333,7 +349,6 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 					b = 1 - b;
 					c = 1 - c;
 				}
-				
 				a = 1 - b - c;
 			} else {
 				if (val < 0.333f) {
@@ -344,31 +359,34 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 					c = 1.0f;
 				}
 			}
-			
+
 			emitPart.pos = face.a * a + face.b * b + face.c *c;
-			
+			//TODO: Sample main tex, uv * vert color 
+
+			float2 uv = face.uva * a + face.uvb * b + face.uvc * c;
+
+			emitPart.color = PackColor(_MeshTexture.SampleLevel(sampler_MeshTexture, uv, 0));
+
 			//weighed average of normals
 			if (normalVel){
 				emitPart.velocity = face.na * a + face.nb * b + face.nc * c;
 			}
-
-			//TODO: Sample main tex, uv * vert color 
 		break;
+
 		case ES_LIST:
 			ParticleProto prot = emitList[DTid.x];
 			emitPart.pos = prot.pos;
 
 			if (_UseVelSizeColor.x > 0.5f) {
 				emitPart.velocity = prot.velocity;
-			} else {
-				if (tcEmit.velType == EV_NORMAL) {
-					emitPart.velocity = RandomInUnitSphere();
-				}
+			} else if(tcEmit.velType == EV_NORMAL) {
+				emitPart.velocity = RandomInUnitSphere();
 			}
 
 			if (_UseVelSizeColor.y > 0.5f) {
 				emitPart.baseSize *= prot.size;
 			}
+
 			if (_UseVelSizeColor.z > 0.5f){
 				emitPart.color = PackColor(prot.color);
 			}
@@ -380,7 +398,6 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 		float phi = RandomRange(0, PI2);
 		float z = RandomRange(tcEmit.randomAngle, 1);
 		float sq = sqrt(1 - z * z);
-		//rotate cone and set velocity
 		emitPart.velocity = mul(emitterStartRotationMatrix, float3(sq * cos(phi), sq * sin(phi), z));
 	}
 	else if (tcEmit.velType == EV_RANDOM){
@@ -391,10 +408,9 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	emitPart.velocity = emitPart.velocity * lerp(tcEmit.speedMin, tcEmit.speedMax, Random()) + tcEmit.startSpeed;
 	emitPart.velocity = mul(emitterRotationMatrix, normalize(tcEmit.scale) * emitPart.velocity);
 	emitPart.pos = mul(emitterMatrix, float4(emitPart.pos, 1.0f)).xyz;
-
-	float fr = (float)(DTid.x) / (float)numToGo;
-
+	
 	//interpolate of current and previous tcEmit position
+	float fr = (float)(DTid.x) / (float)numToGo;
 	emitPart.pos += tcEmit.pos + tcEmit.vel * fr + tcEmit.accel / 2.0f * fr * fr - tcEmit.accel / 2.0f * fr * fr * fr;
 	emitPart.pos -= emitPart.velocity * _DeltTime * fr;
 

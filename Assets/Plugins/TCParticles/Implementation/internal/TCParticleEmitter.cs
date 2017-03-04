@@ -12,7 +12,7 @@ namespace TC.Internal {
 	public class ParticleEmitter : ParticleComponent, TCParticleEmitter {
 		#region ParticleEmitterInterface
 
-		[SerializeField] ParticleEmitterShape pes = new ParticleEmitterShape();
+		[SerializeField] internal ParticleEmitterShape pes = new ParticleEmitterShape();
 
 		public EmitShapes Shape {
 			get { return pes.shape; }
@@ -247,15 +247,17 @@ namespace TC.Internal {
 
 
 		// ReSharper disable NotAccessedField.Local
-		struct Emitter {
+		public struct Emitter {
 			public Vector3 Pos;
 			public Vector3 Vel;
 			public Vector3 Accel;
 
 			public float SizeMin;
 			public float SizeMax;
+
 			public float SpeedMin;
 			public float SpeedMax;
+
 			public float RotationMin;
 			public float RotationMax;
 			public uint Shape;
@@ -272,6 +274,7 @@ namespace TC.Internal {
 			//MESH
 			public uint MeshVertLen;
 			public uint VelType;
+
 			public float RandomAngle;
 			public Vector3 StartSpeed;
 			public float MassVariance;
@@ -279,11 +282,10 @@ namespace TC.Internal {
 			public uint EmitOffset;
 			public Vector3 Scale;
 			public uint OnSurface;
+			
+
 		};
-
 		// ReSharper restore NotAccessedField.Local
-
-
 		public ParticleEmitterShape GetEmitterShapeData() {
 			return pes;
 		}
@@ -296,7 +298,8 @@ namespace TC.Internal {
 
 			UpdateLifetimeTexture();
 
-			m_emitBuffer = new ComputeBuffer(1, EmitterStride);
+
+			m_emitBuffer = new ComputeBuffer(1, SizeOf<Emitter>());
 			m_emitSet = new Emitter[1];
 			m_emitPrevPos = GetEmitPos(Transform);
 			m_emitPrevSpeed = Vector3.zero;
@@ -406,9 +409,7 @@ namespace TC.Internal {
 						break;
 
 					case EmitShapes.Mesh:
-						pes.SetMeshData(ComputeShader, EmitKernel, "emitFaces");
-						emitter.MeshVertLen = (uint) emitShape.meshCount;
-						emitter.OnSurface = (uint)emitShape.OnSurface;
+						pes.SetMeshData(ComputeShader, EmitKernel, ref emitter);
 						break;
 
 					case EmitShapes.Ring:
@@ -659,8 +660,6 @@ namespace TC.Internal {
 
 			//TODO: Only need to set offsets and such, optimise away more of these SetParticles
 			//If set particles is only called in one place we can remove some other silly Set == Manager tracking BS
-			BindParticles();
-
 			Manager.SetPariclesToKernel(ComputeShader, ClearKernel);
 			ComputeShader.Dispatch(ClearKernel, Manager.DispatchCount, 1, 1);
 

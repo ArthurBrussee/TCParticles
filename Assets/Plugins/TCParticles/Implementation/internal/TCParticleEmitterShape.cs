@@ -1,21 +1,25 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using Object = UnityEngine.Object;
 
 namespace TC.Internal {
-
 	[Serializable]
 	public class ParticleEmitterShape {
 		public EmitShapes shape = EmitShapes.Sphere;
 		public MinMax radius = MinMax.Constant(5.0f);
 
 		public Vector3 cubeSize = Vector3.one;
-		public int meshCount;
 		public Mesh emitMesh;
+		public bool normalizeArea = true;
+
+
+		public Texture2D texture;
+		public int uvChannel;
+
+
 
 		[Range(0.0f, 89.9f)] public float coneAngle;
+
 		public float coneHeight;
 		public float coneRadius;
 		public float ringOuterRadius;
@@ -24,17 +28,14 @@ namespace TC.Internal {
 		public float lineLength;
 		public float lineRadius;
 
-		public bool spawnOnMeshSurface = true;
-		public static int maxUniformMeshCount = 756;
-
 		public StartDirectionType startDirectionType = StartDirectionType.Normal;
 		public Vector3 startDirectionVector;
 		public float startDirectionRandomAngle;
-		public static Mesh setMesh;
+
+		public bool spawnOnMeshSurface = true;
 
 		float m_totalArea;
 
-		static Dictionary<Mesh, ComputeBuffer> s_emitMeshData;
 		static ComputeBuffer s_emitProtoBuffer;
 
 		struct Face {
@@ -46,90 +47,106 @@ namespace TC.Internal {
 			public Vector3 nb;
 			public Vector3 nc;
 
+			public Vector2 uva;
+			public Vector2 uvb;
+			public Vector2 uvc;
+
 			public float cweight;
 		}
 
-		public int OnSurface {
-			get {
-				if (!spawnOnMeshSurface) return 0;
-				return (meshCount > maxUniformMeshCount) ? 2 : 1;
-			}
-		}
 
-		public ParticleEmitterShape() {
-			if (s_emitMeshData == null)
-				s_emitMeshData = new Dictionary<Mesh, ComputeBuffer>();
-		}
-
-		public void GenerateMeshData() {
-			meshCount = emitMesh.triangles.Length / 3;
-
-			foreach (KeyValuePair<Mesh, ComputeBuffer> kp in s_emitMeshData.Where(pair => pair.Value == null)) {
-				kp.Value.Release();
-				s_emitMeshData.Remove(kp.Key);
-				Object.Destroy(kp.Key);
-			}
-
-			if (emitMesh == null) {
-				s_emitMeshData[emitMesh].Release();
-				s_emitMeshData.Remove(emitMesh);
-
-				Object.Destroy(emitMesh);
-
-				setMesh = null;
-			}
-
-			if (s_emitMeshData.ContainsKey(emitMesh))
+		void GenerateMeshData() {
+			//Data already cached!
+			if (TCParticleGlobalRender.MeshStore.ContainsKey(emitMesh)) {
 				return;
-
+			}
+			
+			//Build mesh data structure
 			Vector3[] vertices = emitMesh.vertices;
 			Vector3[] normals = emitMesh.normals;
 			int[] triangles = emitMesh.triangles;
 
+			int count = triangles.Length / 3;
 
-			var faces = new Face[meshCount];
+			List<Vector2> uvs = new List<Vector2>();
+			uvChannel = Mathf.Clamp(uvChannel, 0, 4);
+			emitMesh.GetUVs(uvChannel, uvs);
 
-			for (int i = 0; i < meshCount; ++i) {
+			var faces = new Face[count];
+			for (int i = 0; i < count; ++i) {
+				int t0 = triangles[i * 3 + 0];
+				int t1 = triangles[i * 3 + 1];
+				int t2 = triangles[i * 3 + 2];
+
 				faces[i] = new Face {
-					a = vertices[triangles[i * 3 + 0]],
-					b = vertices[triangles[i * 3 + 1]],
-					c = vertices[triangles[i * 3 + 2]],
-					na = normals[triangles[i * 3 + 0]],
-					nb = normals[triangles[i * 3 + 1]],
-					nc = normals[triangles[i * 3 + 2]]
+					a = vertices[t0],
+					b = vertices[t1],
+					c = vertices[t2],
+
+					na = normals[t0],
+					nb = normals[t1],
+					nc = normals[t2],
+
+					uva = uvs[t0],
+					uvb = uvs[t1],
+					uvc = uvs[t2]
 				};
 
-				if (meshCount < maxUniformMeshCount) {
+				//Do we accumulate area for normlisation?
+				if (normalizeArea) {
 					float area = Vector3.Cross(faces[i].a - faces[i].b, faces[i].c - faces[i].a).magnitude / 2.0f;
 					faces[i].cweight = area;
 					m_totalArea += area;
-				}
-				else
+				} else {
 					faces[i].cweight = 0.0f;
+				}
 			}
 
-
-			if (meshCount < maxUniformMeshCount) {
+			if (normalizeArea) {
 				float cumulative = 0;
-				for (int i = 0; i < meshCount; ++i) {
+
+				for (int i = 0; i < count; ++i) {
 					cumulative += faces[i].cweight / m_totalArea;
 					faces[i].cweight = cumulative;
 				}
 			}
 
-			var cb = new ComputeBuffer(meshCount, 76);
-			cb.SetData(faces);
-			s_emitMeshData[emitMesh] = cb;
+			var buffer = new ComputeBuffer(count, ParticleComponent.SizeOf<Face>());
+			buffer.SetData(faces);
+			TCParticleGlobalRender.MeshStore[emitMesh] = buffer;
 		}
 
-		public void SetMeshData(ComputeShader cs, int kern, string name) {
+		public void SetMeshData(ComputeShader cs, int kern, ref ParticleEmitter.Emitter emitter) {
+			if (emitMesh == null) {
+				return;
+			}
 
 			GenerateMeshData();
-			if (setMesh == emitMesh) return;
-			if (emitMesh == null) return;
-			if (!s_emitMeshData.ContainsKey(emitMesh)) return;
-			cs.SetBuffer(kern, name, s_emitMeshData[emitMesh]);
-			setMesh = emitMesh;
+
+			var buffer = TCParticleGlobalRender.MeshStore[emitMesh];
+
+			uint onSurface;
+
+			if (!spawnOnMeshSurface)
+				onSurface = 0;
+			else {
+				onSurface = normalizeArea ? (uint) 1 : 2;
+			}
+
+
+
+			emitter.MeshVertLen = (uint)buffer.count;
+			emitter.OnSurface = onSurface;
+
+
+			cs.SetBuffer(kern, "emitFaces", buffer);
+
+			if (texture != null) {
+				cs.SetTexture(kern, "_MeshTexture", texture);
+			}
+			else {
+				cs.SetTexture(kern, "_MeshTexture", Texture2D.whiteTexture);
+			}
 		}
 
 		public void SetListData(ComputeShader cs, int kern, ParticleProto[] particlePrototypes) {
@@ -148,20 +165,9 @@ namespace TC.Internal {
 		public void ReleaseData() {
 			//TODO: this releases the buffer too often if others still use it.
 			//Not a big deal for point clouds though
-			//Bug: Leaks if someone nulls positions buffer
 			if (s_emitProtoBuffer != null) {
 				s_emitProtoBuffer.Release();
 			}
-
-
-			//bug this leaks if we switch meshes at runtime
-			if (emitMesh == null) return;
-			if (!s_emitMeshData.ContainsKey(emitMesh)) return;
-
-			s_emitMeshData[emitMesh].Release();
-			s_emitMeshData.Remove(emitMesh);
-
-			setMesh = null;
 		}
 	}
 }
