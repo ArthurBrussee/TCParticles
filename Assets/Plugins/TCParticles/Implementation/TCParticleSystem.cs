@@ -14,15 +14,15 @@ public class TCParticleSystem : MonoBehaviour {
 
 	public static List<TCParticleSystem> All = new List<TCParticleSystem>();
 	
-	[SerializeField] private ParticleColliderManager _colliderManager = new ParticleColliderManager();
-	[SerializeField] private ParticleEmitter _emitter = new ParticleEmitter();
+	[SerializeField] ParticleColliderManager _colliderManager = new ParticleColliderManager();
+	[SerializeField] ParticleEmitter _emitter = new ParticleEmitter();
 
-	[SerializeField] private ParticleForceManager _forcesManager = new ParticleForceManager();
-	[SerializeField] private ParticleManager _manager = new ParticleManager();
+	[SerializeField] ParticleForceManager _forcesManager = new ParticleForceManager();
+	[SerializeField] ParticleManager _manager = new ParticleManager();
 
-	[SerializeField] private ParticleRenderer _particleRenderer = new ParticleRenderer();
+	[SerializeField] ParticleRenderer _particleRenderer = new ParticleRenderer();
 	
-	private bool m_doVisualize;
+	bool m_doVisualize;
 
 	public bool DoVisualize {
 		get { return m_doVisualize; }
@@ -236,7 +236,7 @@ public class TCParticleSystem : MonoBehaviour {
 	[NonSerialized]
 	private bool m_inited;
 
-	private void Init() {
+	void Init() {
 		if (m_inited) {
 			return;
 		}
@@ -436,11 +436,11 @@ public class TCParticleSystem : MonoBehaviour {
 		_colliderManager.RemoveCollider(colliderReg);
 	}
 
-	private void OnDrawGizmos() {
+	void OnDrawGizmos() {
 		Gizmos.DrawIcon(transform.position, "TCParticles.png", true);
 	}
 
-	private void OnDrawGizmosSelected() {
+	void OnDrawGizmosSelected() {
 		if (_emitter.Shape == EmitShapes.Box) {
 			Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.localScale);
 			Gizmos.matrix = rotationMatrix;

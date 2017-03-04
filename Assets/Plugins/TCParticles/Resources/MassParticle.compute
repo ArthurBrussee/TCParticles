@@ -150,7 +150,6 @@ StructuredBuffer<ParticleProto> emitList;
 float4 _UseVelSizeColor;
 
 float _ParticleThickness;
-float _DeltTime;
 
 #define S_SPHERE 0
 #define S_CAPSULE 1
@@ -203,13 +202,18 @@ uint turbulenceKernelOffset = 0;
 #define EV_NORMAL 1
 #define EV_RANDOM 2
 
-[numthreads(64, 1, 1)]
+[numthreads(TCGroupSize, 1, 1)]
 void Emit(uint3 DTid : SV_DispatchThreadID) {
-	if (DTid.x > (uint)numToGo){
+
+	TCEmitter tcEmit = emitter[0];
+	//Write adjusted particle to memory
+	uint emitID = GetEmitId(DTid.x, tcEmit.emitOffset);
+	
+	if (DTid.x >= numToGo) {
+		particles[emitID].life = -1.0f;
 		return;
 	}
 
-	TCEmitter tcEmit = emitter[0];
 
 	//Set properties for current particles.
 	Particle emitPart;
@@ -219,9 +223,7 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	
 	//Setup size properties of the particle
 	emitPart.baseSize = RandomRange(tcEmit.sizeMin, tcEmit.sizeMax);
-
 	emitPart.life = RandomRange(_LifeMinMax.x, _LifeMinMax.y);
-
 
 	if (emitPart.life < 0) {
 		emitPart.life = 3e+38;
@@ -229,7 +231,6 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 
 	//Randomly rotate the particle
 	emitPart.rotation = RandomRange(tcEmit.rotationMin, tcEmit.rotationMax);
-
 	emitPart.pos = 0.0f;
 	emitPart.velocity = 0.0f;
 	emitPart.color = PackColor(float4(1, 1, 1, 1));
@@ -396,12 +397,9 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	else if (tcEmit.velType == EV_RANDOM){
 		emitPart.velocity = RandomOnUnitSphere();
 	}
-	//In case of EV_NORMAL -> Already set
 
 	//Scale velocity to proper speed
 	emitPart.velocity = emitPart.velocity * lerp(tcEmit.speedMin, tcEmit.speedMax, Random()) + tcEmit.startSpeed;
-
-	//adjust position to emitter position, rotation, and scale
 	emitPart.velocity = mul(emitterRotationMatrix, normalize(tcEmit.scale) * emitPart.velocity);
 	emitPart.pos = mul(emitterMatrix, float4(emitPart.pos, 1.0f)).xyz;
 
@@ -411,8 +409,6 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	emitPart.pos += tcEmit.pos + tcEmit.vel * fr + tcEmit.accel / 2.0f * fr * fr - tcEmit.accel / 2.0f * fr * fr * fr;
 	emitPart.pos -= emitPart.velocity * _DeltTime * fr;
 
-	//Write adjusted particle to memory
-	uint emitID = GetEmitId(DTid.x, tcEmit.emitOffset);
 	particles[emitID] = emitPart;
 }
 
@@ -420,17 +416,20 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 [numthreads(TCGroupSize, 1, 1)]
 void UpdateAll(uint3 DTid : SV_DispatchThreadID) {	
 	//Read particle from global memory
-	SystemParameters syst = systemParameters[0];
 	uint id = GetId(DTid.x);
-
 	Particle part = particles[id];
-	float3 velocity = part.velocity;
+	
+	if (part.life < 0) {
+		return;
+	}
 
+	SystemParameters syst = systemParameters[0];
+
+	float3 velocity = part.velocity;
 	float4 lifetime = lifetimeTexture.SampleLevel(samplerlifetimeTexture, float2(1 - part.life / _LifeMinMax.y, 0.0f), 0);
 
 	//Update particle properties
 	part.life -= _DeltTime;
-
 	float velLen = max(0.0001f, length(velocity)) ;
 	float velFac = min(velLen, syst.maxSpeed) / velLen;
 	

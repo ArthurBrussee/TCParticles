@@ -136,7 +136,11 @@ particle_fragment particle_vertex(uint id : SV_VertexID, uint inst : SV_Instance
 	o.pos = float4(0.0f, 0.0f, 0.0f, 0.0f);
 #endif
 	
-	//o.pos.w *= step(life, 0);
+	if (life < 0) {
+		o.pos.w = 0;
+	}
+
+	//o.pos.w *= step(0, life);
 
 	// calculate color
 #ifndef TC_HOOK_COLOR

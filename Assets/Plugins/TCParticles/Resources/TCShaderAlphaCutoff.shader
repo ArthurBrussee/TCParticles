@@ -34,11 +34,12 @@ Shader "TCParticles/Alpha cutout"
 
 				float4 frag (particle_fragment i) : SV_Target
 				{
-					half4 col =  tex2Dbias(_MainTex, float4(i.uv, 0, -3)) * i.col;
+					half4 col =  tex2Dbias(_MainTex, float4(i.uv, 0, -4)) * i.col;
 
 
-					if (col.a < _Cutoff)
+					if (col.a < _Cutoff){
 						discard;
+					}
 
 					return col;
 				}

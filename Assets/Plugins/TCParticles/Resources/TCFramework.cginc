@@ -35,7 +35,7 @@ struct SystemParameters
 StructuredBuffer<SystemParameters> systemParameters;
 
 float4 _LifeMinMax;
-
+float _DeltTime;
 
 //===============================
 //variables

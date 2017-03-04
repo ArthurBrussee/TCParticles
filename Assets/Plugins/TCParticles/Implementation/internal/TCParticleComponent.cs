@@ -49,7 +49,7 @@ namespace TC.Internal {
 
 
 		protected ComputeShader ComputeShader;
-		protected float GroupSize = 128.0f;
+		protected int GroupSize = 128;
 
 
 		protected float LastUpdate;
