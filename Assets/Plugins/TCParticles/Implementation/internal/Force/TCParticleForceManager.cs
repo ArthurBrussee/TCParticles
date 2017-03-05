@@ -40,14 +40,14 @@ namespace TC.Internal
 		/// <summary>
 		/// Maxinum number of forces particles collide with.
 		/// </summary>
-		[SerializeField] private int _maxForces = 1;
+		[SerializeField] int _maxForces = 1;
 
 		public int MaxForces {
 			get { return _maxForces; }
 			set { _maxForces = value; }
 		}
 
-		[SerializeField] [Range(0.0f, 1.0f)] private float _massVariance;
+		[SerializeField] [Range(0.0f, 1.0f)] float _massVariance;
 
 		public float MassVariance {
 			get { return _massVariance; }
@@ -60,7 +60,7 @@ namespace TC.Internal
 			get { return Mathf.Min(m_forcesList.Count, _maxForces); }
 		}
 
-		[SerializeField] private List<TCForce> _baseForces = new List<TCForce>();
+		[SerializeField] List<TCForce> _baseForces = new List<TCForce>();
 
 		public List<TCForce> BaseForces {
 			get { return _baseForces; }
@@ -72,17 +72,17 @@ namespace TC.Internal
 		[Range(0.0f, 5.0f)] public float boidsCenterStrength = 1.0f;
 
 
-		private ComputeBuffer[] m_forcesBuffer;
-		private TCParticlesBoidsFlock m_boidsFlock;
+		ComputeBuffer[] m_forcesBuffer;
+		TCParticlesBoidsFlock m_boidsFlock;
 
-		private Force[][] m_forcesStruct;
-		private TCForce[][] m_forcesReference;
-		private int[] m_forcesCount;
+		Force[][] m_forcesStruct;
+		TCForce[][] m_forcesReference;
+		int[] m_forcesCount;
 
-		private List<TCForce> m_forcesList = new List<TCForce>();
+		List<TCForce> m_forcesList = new List<TCForce>();
 
 
-		[SerializeField] private LayerMask _forceLayers = -1;
+		[SerializeField] LayerMask _forceLayers = -1;
 
 		public LayerMask ForceLayers {
 			get { return _forceLayers; }
@@ -90,11 +90,10 @@ namespace TC.Internal
 		}
 
 
-		private void CreateBuffers() {
+		void CreateBuffers() {
 			if (MaxForces == 0) {
 				return;
 			}
-
 
 			for (int t = 0; t < ForceTypeKernelCount; ++t) {
 				if (m_forcesBuffer[t] != null) {
@@ -123,7 +122,7 @@ namespace TC.Internal
 			}
 		}
 
-		private void CreateBoids() {
+		void CreateBoids() {
 			m_boidsFlock = new TCParticlesBoidsFlock(Manager, this, ComputeShader);
 		}
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TC;
 using TC.Internal;
@@ -145,53 +146,100 @@ public class TCForce : MonoBehaviour {
 	/// The force texture used in force type TurbulenceTexture
 	/// </summary>
 	public Texture3D forceTexture;
-	public Texture CurrentForceVolume { get { return forceType == ForceType.Turbulence ? (Texture)m_forceBaked : forceTexture; } }
 
-	/// <summary>
-	/// The resolution of the force 
-	/// </summary>
-	[Range(0, 256)]
-	public int resolution = 32;
+
 
 	/// <summary>
 	/// The smoothness value 
 	/// </summary>
 	[Range(0.0f, 1.0f)] public float smoothness = 1.0f;
 
-	/// <summary>
-	/// The frequency of the selected noise type
-	/// </summary>
-	public float frequency = 1.0f;
-
-	/// <summary>
-	/// The octave count for the selected noise type
-	/// </summary>
-	[Range(1.0f, 10.0f)] public int octaveCount = 4;
-
-	/// <summary>
-	/// The lacunarity (chaos) for the selected noise type
-	/// </summary>
-	[Range(0.05f, 6.0f)] public float lacunarity = 2.17f;
-
-	/// <summary>
-	/// The persistence (strength of high frequency) for selected noise type
-	/// </summary>
-	[Range(0.0f, 1.0f)] public float persistence = 0.5f;
-
-	/// <summary>
-	/// The type of the noise
-	/// </summary>
-	public NoiseType noiseType;
-
-	/// <summary>
-	/// The seed of the noise
-	/// </summary>
-	public int seed;
 
 	/// <summary>
 	/// The period in which the noise should be repeated
 	/// </summary>
 	public Vector3 noiseExtents = Vector3.one;
+
+
+
+	//Noise properties - keep track of whether they have changed!
+
+	/// <summary>
+	/// The resolution of the force 
+	/// </summary>
+	[Range(0, 256)]
+	public int resolution = 32;
+	int m_prevResolution;
+
+	/// <summary>
+	/// The frequency of the selected noise type
+	/// </summary>
+	public float frequency = 1.0f;
+	float m_prevFreq = -1.0f;
+
+	/// <summary>
+	/// The octave count for the selected noise type
+	/// </summary>
+	[Range(1.0f, 10.0f)] public int octaveCount = 4;
+	int m_prevOct = -1;
+
+	/// <summary>
+	/// The lacunarity (chaos) for the selected noise type
+	/// </summary>
+	[Range(0.05f, 6.0f)] public float lacunarity = 2.17f;
+	float m_prevLac = -1.0f;
+
+	/// <summary>
+	/// The persistence (strength of high frequency) for selected noise type
+	/// </summary>
+	[Range(0.0f, 1.0f)] public float persistence = 0.5f;
+	float m_prevPersist = -1.0f;
+
+	/// <summary>
+	/// The seed of the noise
+	/// </summary>
+	public Vector3 noiseOffset;
+	Vector3 m_prevNoiseOffset;
+
+	/// <summary>
+	/// The type of the noise
+	/// </summary>
+	public NoiseType noiseType;
+	NoiseType m_prevType;
+
+	
+	bool Changed<T>(T cur, ref T prev) {
+		if (!EqualityComparer<T>.Default.Equals(cur, prev)) {
+			prev = cur;
+			return true;
+		}
+		return false;
+	}
+
+
+	public Texture CurrentForceVolume {
+		get {
+
+			if (forceType == ForceType.Turbulence) {
+				//Don't short circuit or! Make sure all prevs are set
+				if (Changed(resolution, ref m_prevResolution) |
+					Changed(frequency, ref m_prevFreq) |
+					Changed(octaveCount, ref m_prevOct) |
+					Changed(lacunarity, ref m_prevLac) |
+					Changed(persistence, ref m_prevPersist) |
+					Changed(noiseOffset, ref m_prevNoiseOffset) |
+					Changed(noiseType, ref m_prevType)) {
+					UpdateForceBake();
+				}
+
+				return m_forceBaked;
+			}
+
+
+			return forceTexture;
+		}
+	}
+
 
 	Vector3 m_lastPos;
 	Rigidbody m_rigidbody;
@@ -216,12 +264,10 @@ public class TCForce : MonoBehaviour {
 				discType = forces[0].discType;
 			}
 		}
-
 		m_rigidbody = GetComponent<Rigidbody>();
-		UpdateForceBake();
 	}
 
-	public void UpdateForceBake() {
+	void UpdateForceBake() {
 		Profiler.BeginSample("Bake force");
 		if (m_forceBaked == null || m_forceBaked.width != resolution) {
 			if (m_forceBaked != null) {
@@ -241,7 +287,7 @@ public class TCForce : MonoBehaviour {
 
 		int kernel = s_forceBaker.FindKernel("BakeForce");
 		s_forceBaker.SetFloat("_Frequency", frequency);
-		s_forceBaker.SetInt("_Seed", seed);
+		s_forceBaker.SetVector("_NoiseOffset", noiseOffset);
 		s_forceBaker.SetFloat("_Resolution", resolution);
 		s_forceBaker.SetFloat("_Lacunarity", lacunarity);
 		s_forceBaker.SetFloat("_Persistence", persistence);

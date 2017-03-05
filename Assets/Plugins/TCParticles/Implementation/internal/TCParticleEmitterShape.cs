@@ -16,8 +16,6 @@ namespace TC.Internal {
 		public Texture2D texture;
 		public int uvChannel;
 
-
-
 		[Range(0.0f, 89.9f)] public float coneAngle;
 
 		public float coneHeight;
@@ -134,13 +132,10 @@ namespace TC.Internal {
 			}
 
 
-
 			emitter.MeshVertLen = (uint)buffer.count;
 			emitter.OnSurface = onSurface;
 
-
 			cs.SetBuffer(kern, "emitFaces", buffer);
-
 			if (texture != null) {
 				cs.SetTexture(kern, "_MeshTexture", texture);
 			}

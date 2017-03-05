@@ -116,7 +116,7 @@ public class TCForceEditor : TCEdtiorBase<TCForce> {
 					PropField("lacunarity", new GUIContent("Lacunarity"));
 					PropField("persistence", new GUIContent("Persistence"));
 					PropField("octaveCount", new GUIContent("Octave Count"));
-					PropField("seed", new GUIContent("Seed", "The random seed that drives the random number generation"));
+					PropField("noiseOffset", new GUIContent("Offset", "Spatial offset to scroll the noise (useful for animation)"));
 					break;
 			}
 

@@ -38,12 +38,6 @@ public class TCNoiseForceGenerator {
 	}
 
 	public void DrawTurbulencePreview() {
-		//Update bake cause why not
-		m_target.UpdateForceBake();
-		DrawBakedTurbulencePreview();
-	}
-
-	void DrawBakedTurbulencePreview() {	
 		arrowMat.SetFloat("_Slice", PreviewSlice);
 		arrowMat.SetInt("_PreviewMode", (int)PreviewMode);
 		arrowMat.SetInt("_Resolution", m_target.resolution);

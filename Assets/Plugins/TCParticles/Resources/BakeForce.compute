@@ -21,12 +21,7 @@ float _Resolution;
 #define NOISE_RIDGED 2
 #define NOISE_VORONOI 3
 
-uint _Seed;
-
-//TODO: Get a noise library thingie
-float GradientCoherentNoise(float3 pos) {
-	return snoise(pos);
-}
+float4 _NoiseOffset;
 
 #define NOISE_SCALE 0.3f
 
@@ -90,14 +85,14 @@ float3 CalculateRidged(float3 pos) {
 	float off = 0;
 
 	for (uint index = 0; index < _OctaveCount; ++index) {
-		float3 samp = abs(GradientCoherentNoise3D(pos) * 2);
+		float3 samp = abs(GradientCoherentNoiseCurl(pos) * 2);
 		
 		float3 invSamp = 1 - samp;
 		float3 finalSamp = invSamp * invSamp * weight;
 
 		x *= _Lacunarity;
 
-		off += 1.25f * NOISE_SCALE * weight / x;
+		off += 2.0f * NOISE_SCALE * weight / x;
 		val += finalSamp / x;
 
 		weight = saturate(length(finalSamp) * 2);
@@ -118,7 +113,7 @@ float3 CalculateNoise(float3 pos) {
 
 [numthreads(4, 4, 4)]
 void BakeForce(uint3 id : SV_DispatchThreadID) {
-	float3 nn = CalculateNoise(id / _Resolution * 0.6f + _Seed);
+	float3 nn = CalculateNoise(id / _Resolution * 0.6f + _NoiseOffset.xyz);
 	float4 packed = float4(nn * 0.5f + 0.5f, 0);
 	_ForceTexture[id] = packed;
 }

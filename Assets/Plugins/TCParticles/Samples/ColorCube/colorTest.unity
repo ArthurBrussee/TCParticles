@@ -141,8 +141,10 @@ MonoBehaviour:
         valueProp: 5
         modeProp: 0
       cubeSize: {x: 1, y: 1, z: 1}
-      meshCount: 0
       emitMesh: {fileID: 0}
+      normalizeArea: 1
+      texture: {fileID: 0}
+      uvChannel: 0
       coneAngle: 0
       coneHeight: 0
       coneRadius: 0
@@ -150,10 +152,10 @@ MonoBehaviour:
       ringRadius: 0
       lineLength: 0
       lineRadius: 0
-      spawnOnMeshSurface: 1
       startDirectionType: 1
       startDirectionVector: {x: 0, y: 0, z: 0}
       startDirectionRandomAngle: 0
+      spawnOnMeshSurface: 1
     _speed:
       minProp: 0.2
       maxProp: 0.2
@@ -841,8 +843,8 @@ MonoBehaviour:
   shape: 5
   radius:
     minProp: 0
-    maxProp: 2
-    valueProp: 2
+    maxProp: 1
+    valueProp: 1
     modeProp: 0
   height: 2
   boxSize: {x: 1, y: 1, z: 1}
@@ -859,16 +861,16 @@ MonoBehaviour:
   discType: 0
   globalShape: 0
   _inheritVelocity: 0
-  forceTexture: {fileID: 11700000, guid: ef21c48a333db5f4fb50414ace107b61, type: 2}
-  resolution: 64
-  smoothness: 0.5
-  frequency: 4.87
-  octaveCount: 3
-  lacunarity: 2.366
-  persistence: 0.638
-  noiseType: 1
-  seed: 270
-  noiseExtents: {x: 10, y: 10, z: 10}
+  forceTexture: {fileID: 0}
+  smoothness: 1
+  noiseExtents: {x: 5, y: 5, z: 5}
+  resolution: 32
+  frequency: 1.79
+  octaveCount: 4
+  lacunarity: 1.3
+  persistence: 0.5
+  noiseOffset: {x: 5.71, y: 0, z: 10.29}
+  noiseType: 2
 --- !u!4 &1197426077
 Transform:
   m_ObjectHideFlags: 0
