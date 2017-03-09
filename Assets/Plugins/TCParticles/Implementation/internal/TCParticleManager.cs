@@ -269,7 +269,7 @@ namespace TC.Internal {
 				PartEmitter.UpdatePlayEvent();
 			}
 
-			if (!m_noSimulation) {
+			if (!NoSimulation) {
 				//Dispatch the update kernel.
 				SetPariclesToKernel(ComputeShader, UpdateAllKernel);
 
@@ -280,6 +280,7 @@ namespace TC.Internal {
 				ColliderManager.Dispatch();
 				ForceManager.Dispatch();
 			}
+
 
 			Profiler.EndSample();
 		}

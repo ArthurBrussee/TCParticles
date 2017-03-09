@@ -9,8 +9,6 @@ struct Particle {
 	float baseSize;
 
 	float life;
-	float mass;
-
 	uint color;
 };
 RWStructuredBuffer<Particle> particles;
@@ -37,16 +35,13 @@ StructuredBuffer<SystemParameters> systemParameters;
 float4 _LifeMinMax;
 float _DeltTime;
 
-
 struct VertexData {
 	float3 pos;
 	float3 color;
 	float3 normal;
-
 	float2 uv;
-
-
 };
+
 
 //===============================
 //variables
@@ -60,8 +55,7 @@ struct VertexData {
 //-----------------------------------------------------------------------------
 // R8G8B8A8_UNORM <-> FLOAT4
 //-----------------------------------------------------------------------------
-uint D3DX_FLOAT_to_UINT(float _V, float _Scale)
-{
+uint D3DX_FLOAT_to_UINT(float _V, float _Scale) {
 	return (uint)floor(_V * _Scale + 0.5f);
 }
 

@@ -11,7 +11,6 @@ using Space = TC.Space;
 [AddComponentMenu("TC Particles/TC Particle Manager")]
 [ExecuteInEditMode]
 public class TCParticleSystem : MonoBehaviour {
-
 	public static List<TCParticleSystem> All = new List<TCParticleSystem>();
 	
 	[SerializeField] ParticleColliderManager _colliderManager = new ParticleColliderManager();
@@ -230,12 +229,12 @@ public class TCParticleSystem : MonoBehaviour {
 		set { _manager.gravityMultiplier = value; }
 	}
 
-	public const int ParticleStride = 44;
+
+	public const int ParticleStride = 40;
 	#endregion
 
 	[NonSerialized]
 	bool m_inited;
-
 
 
 	void Init() {
@@ -404,6 +403,25 @@ public class TCParticleSystem : MonoBehaviour {
 	/// <param name="count">Number of particles to emit</param>
 	public void Emit(int count) {
 		_emitter.Emit(count);
+	}
+
+	/// <summary>
+	/// Emit a number of particles at some set positions
+	/// </summary>
+	/// <param name="positions">Positions of particles to emit</param>
+	public void Emit(Vector3[] positions) {
+		_emitter.Emit(positions);
+	}
+
+	/// <summary>
+	/// Emit a number of particles based on a prototype
+	/// </summary>
+	/// <param name="proto">Prototypes of particles to emit</param>
+	/// <param name="useColor">Use color from prototypes or default</param>
+	/// <param name="useSize">Use size (multiplicative) from prototypes or default</param>
+	/// <param name="useVelocity">Use velocity from prototypes or default</param>
+	public void Emit(ParticleProto[] proto, bool useColor = true, bool useSize = true, bool useVelocity = true) {
+		_emitter.Emit(proto, useColor, useSize, useVelocity);
 	}
 
 	/// <summary>

@@ -9,7 +9,6 @@ namespace TC.Internal {
 
 		//Prodcues a texture of resolution of dimx1 encoding a gradient
 		public static void TextureFromGradient(Gradient gradient, Texture2D toSet, Color tint, float firstA) {
-
 			for (int i = 0; i < c_dimSize; ++i) {
 				s_colours[i] = gradient.Evaluate(i / (c_dimSize - 1.0f)) * tint;
 			}

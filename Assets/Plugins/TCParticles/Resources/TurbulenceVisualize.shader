@@ -98,7 +98,7 @@
 				float3 zz = cross(xx, dir);
 				
 				float4 mpos = float4(vertices[vert], 1.0f);
-				mpos.xyz = (mpos.x * xx + mpos.y * dir + mpos.z * zz) * length(force) / (_Resolution * 4) + force * 0.025f;
+				mpos.xyz = (mpos.x * xx + mpos.y * dir + mpos.z * zz) * length(force) / (_Resolution * 4) + force * 0.03f;
 
 				//Move to grid pos
 				mpos.xyz += uv - 0.5f;

@@ -64,45 +64,45 @@ namespace TC.Internal {
 		}
 
 
-		[SerializeField] private MinMaxRandom _speed = MinMaxRandom.Constant(3.0f);
+		[SerializeField] MinMaxRandom _speed = MinMaxRandom.Constant(3.0f);
 
 		public MinMaxRandom Speed {
 			get { return _speed; }
 		}
 
-		[SerializeField] private MinMaxRandom _energy = MinMaxRandom.Constant(3.0f);
+		[SerializeField] MinMaxRandom _energy = MinMaxRandom.Constant(3.0f);
 
 		public MinMaxRandom Energy {
 			get { return _energy; }
 		}
 
-		[SerializeField] private MinMaxRandom _size = MinMaxRandom.Constant(0.5f);
+		[SerializeField] MinMaxRandom _size = MinMaxRandom.Constant(0.5f);
 
 		public MinMaxRandom Size {
 			get { return _size; }
 		}
 
-		[SerializeField] private MinMaxRandom _rotation = MinMaxRandom.Constant(0.0f);
+		[SerializeField] MinMaxRandom _rotation = MinMaxRandom.Constant(0.0f);
 
 		public MinMaxRandom Rotation {
 			get { return _rotation; }
 		}
 
-		[SerializeField] private float _angularVelocity;
+		[SerializeField] float _angularVelocity;
 
 		public float AngularVelocity {
 			get { return _angularVelocity; }
 			set { _angularVelocity = value; }
 		}
 
-		[SerializeField] private Vector3Curve _constantForce = Vector3Curve.Zero();
+		[SerializeField] Vector3Curve _constantForce = Vector3Curve.Zero();
 
 		public Vector3Curve ConstantForce {
 			get { return _constantForce; }
 			set { _constantForce = value; }
 		}
 
-		[SerializeField] private float _emissionRate = 100.0f;
+		[SerializeField] float _emissionRate = 100.0f;
 
 		public float EmissionRate {
 			get { return _emissionRate; }
@@ -114,7 +114,7 @@ namespace TC.Internal {
 			PerUnit
 		}
 
-		[SerializeField] private EmissionTypeEnum m_emissionType;
+		[SerializeField] EmissionTypeEnum m_emissionType;
 
 		public EmissionTypeEnum EmissionType {
 			get { return m_emissionType; }
@@ -125,7 +125,7 @@ namespace TC.Internal {
 			get { return Manager.ParticleCount; }
 		}
 
-		[SerializeField] private AnimationCurve _sizeOverLifetime = AnimationCurve.Linear(0.0f, 1.0f, 1.0f, 1.0f);
+		[SerializeField] AnimationCurve _sizeOverLifetime = AnimationCurve.Linear(0.0f, 1.0f, 1.0f, 1.0f);
 
 		public AnimationCurve SizeOverLifetime {
 			get { return _sizeOverLifetime; }
@@ -145,7 +145,7 @@ namespace TC.Internal {
 		}
 
 
-		[SerializeField] private Vector3Curve _velocityOverLifetime = Vector3Curve.Zero();
+		[SerializeField] Vector3Curve _velocityOverLifetime = Vector3Curve.Zero();
 
 		public Vector3Curve VelocityOverLifetime {
 			get { return _velocityOverLifetime; }
@@ -155,9 +155,9 @@ namespace TC.Internal {
 			}
 		}
 
-		private Texture2D m_lifetimeTexture;
+		Texture2D m_lifetimeTexture;
 
-		[SerializeField] private bool emit = true;
+		[SerializeField] bool emit = true;
 
 		public bool DoEmit {
 			get { return emit; }
@@ -168,7 +168,7 @@ namespace TC.Internal {
 			get { return Renderer.ColourOverLifetime.Evaluate(0.0f); }
 		}
 
-		[SerializeField] [Range(0.0f, 1.0f)] private float _inheritVelocity;
+		[SerializeField] [Range(0.0f, 1.0f)] float _inheritVelocity;
 
 		public float InheritVelocity {
 			get { return _inheritVelocity; }
@@ -198,8 +198,7 @@ namespace TC.Internal {
 			get { return m_lifetimeTexture; }
 		}
 
-		private bool m_doSizeOverLifetime;
-
+		bool m_doSizeOverLifetime;
 		public bool DoSizeOverLifetime {
 			get { return m_doSizeOverLifetime; }
 
@@ -213,10 +212,9 @@ namespace TC.Internal {
 		float m_prevTime = -1.0f;
 		//We can't clear particles with infinite life. 
 
-
 		//Bursts sequences
 		[Serializable]
-		private class Burst {
+		class Burst {
 			public int amount;
 			public float time;
 			public float life;
@@ -241,8 +239,7 @@ namespace TC.Internal {
 		ComputeBuffer m_emitBuffer;
 		float m_femit;
 
-		const int c_texDim = 64;
-
+		const int c_texDim = 128;
 		static readonly Color[] Colors = new Color[c_texDim];
 
 
@@ -277,13 +274,10 @@ namespace TC.Internal {
 
 			public float RandomAngle;
 			public Vector3 StartSpeed;
-			public float MassVariance;
 			public uint Time;
 			public uint EmitOffset;
 			public Vector3 Scale;
 			public uint OnSurface;
-			
-
 		};
 		// ReSharper restore NotAccessedField.Local
 		public ParticleEmitterShape GetEmitterShapeData() {
@@ -292,12 +286,8 @@ namespace TC.Internal {
 
 		public override void Initialize() {
 			InitializeProperties();
-			//allocate the buffers and arrays and such
-			m_lifetimeTexture = new Texture2D(64, 1, TextureFormat.RGBAHalf, false, true)
-			{wrapMode = TextureWrapMode.Clamp, anisoLevel = 0};
 
 			UpdateLifetimeTexture();
-
 
 			m_emitBuffer = new ComputeBuffer(1, SizeOf<Emitter>());
 			m_emitSet = new Emitter[1];
@@ -342,6 +332,13 @@ namespace TC.Internal {
 
 
 		void UpdateLifetimeTexture() {
+			if (m_lifetimeTexture == null) {
+				m_lifetimeTexture = new Texture2D(c_texDim, 1, TextureFormat.RGBAHalf, false, true) {
+					wrapMode = TextureWrapMode.Clamp,
+					anisoLevel = 0
+				};
+			}
+
 			m_doSizeOverLifetime = false;
 
 			for (int i = 0; i < c_texDim; ++i) {
@@ -425,11 +422,9 @@ namespace TC.Internal {
 						break;
 				}
 			} else {
-				//Only exist GPU side, don't clutter UI
 				emitter.Shape = (uint)EmitShapes.Mesh + 1;
 				pes.SetListData(ComputeShader, EmitKernel, m_toEmitList);
 				ComputeShader.SetVector("_UseVelSizeColor", m_emitUseVelSizeColor);
-
 				m_toEmitList = null;
 			}
 
@@ -522,12 +517,16 @@ namespace TC.Internal {
 			return pos;
 		}
 
+		public event OnParticleEvent OnEmissionBind;
 
 		protected override void Bind() {
 			ComputeShader.SetTexture(UpdateAllKernel, "lifetimeTexture", m_lifetimeTexture);
 			ComputeShader.SetBuffer(EmitKernel, "emitter", m_emitBuffer);
-
 			ComputeShader.SetVector("_LifeMinMax", new Vector4(Energy.Min, Energy.Max));
+
+			if (OnEmissionBind != null) {
+				OnEmissionBind(ComputeShader, EmitKernel);
+			}
 
 			float t = Manager.SystemTime / Manager.Duration;
 			Energy.t = t;
@@ -543,7 +542,6 @@ namespace TC.Internal {
 			emitter.RotationMax = Rotation.Max * Mathf.Deg2Rad;
 			emitter.RotationMin = Rotation.Min * Mathf.Deg2Rad;
 			emitter.StartSpeed = m_velocity * InheritVelocity;
-			emitter.MassVariance = ForceManager.MassVariance;
 			emitter.Time = (uint)Random.Range(0, Manager.MaxParticles);
 			m_emitSet[0] = emitter;
 
@@ -672,10 +670,6 @@ namespace TC.Internal {
 
 		ParticleProto[] m_toEmitList;
 		Vector4 m_emitUseVelSizeColor;
-
-		public void Emit(List<Vector3> positions) {
-			Emit(positions.Select(pos => new ParticleProto { Position = pos }).ToArray(), false, false, false);
-		}
 
 		public void Emit(Vector3[] positions) {
 			Emit(positions.Select(pos => new ParticleProto { Position = pos}).ToArray(), false, false, false);

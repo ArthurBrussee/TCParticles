@@ -268,9 +268,6 @@ public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 					PropField("_emitter._constantForce",
 						new GUIContent("Constant Force",
 							"A force that is constantly applied to the particles, accelerating them in one direction"));
-					PropField("_forcesManager._massVariance",
-						new GUIContent("Mass Variance",
-							"The amount of variance in the masses of the particles. Heavier particles are less influenced by forces"));
 				}
 
 

@@ -157,10 +157,6 @@ public interface TCParticleEmitter
 	/// </summary>
 	void Emit(int count);
 
-	///<summary> 
-	/// Emit a given amount of particles with some initial starting positions
-	/// </summary>
-	void Emit(List<Vector3> positions);
 
 	///<summary> 
 	/// Emit a given amount of particles with some initial starting positions
@@ -171,4 +167,12 @@ public interface TCParticleEmitter
 	/// Emit a given amount of particles with some initial settings
 	/// </summary>
 	void Emit(ParticleProto[] positions, bool useColor = true, bool useSize = true, bool useVelocity = true);
+
+
+	/// <summary>
+	/// Callback when emission binds it's variables
+	/// </summary>
+	/// <param name="shader"></param>
+	/// <returns></returns>
+	event OnParticleEvent OnEmissionBind;
 }

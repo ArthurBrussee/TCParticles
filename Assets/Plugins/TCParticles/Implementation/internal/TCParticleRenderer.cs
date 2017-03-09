@@ -82,6 +82,7 @@ namespace TC.Internal {
 		public float maxSpeed = 1.0f;
 		public float glow;
 
+
 		Texture2D colourOverLifetimeTexture;
 		Color TintColor {
 			get { return _material.HasProperty("_TintColor") ? _material.GetColor("_TintColor") : Color.white; }
@@ -148,7 +149,7 @@ namespace TC.Internal {
 
 			BuildBuffer();
 
-			colourOverLifetimeTexture = new Texture2D(64, 1, TextureFormat.RGBA32, false, true)
+			colourOverLifetimeTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true)
 			{wrapMode = TextureWrapMode.Clamp, anisoLevel = 0};
 			colourOverLifetimeTexture.hideFlags = HideFlags.HideAndDontSave;
 

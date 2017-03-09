@@ -95,7 +95,6 @@ struct TCEmitter {
 
 	float randomAngle;
 	float3 startSpeed;
-	float massVariance;
 
 	uint time;
 	uint emitOffset;
@@ -115,10 +114,8 @@ float3x3 emitterStartRotationMatrix;
 //Number of particles to emit in this emit call
 uint numToGo = 0;
 
-
 StructuredBuffer<VertexData> _VertexBuffer;
 StructuredBuffer<uint> _TriangleBuffer;
-
 
 //Mesh emitter faces
 struct Face {
@@ -138,10 +135,8 @@ struct Face {
 };
 StructuredBuffer<Face> emitFaces;
 
-
 Texture2D _MeshTexture;
 SamplerState sampler_MeshTexture;
-
 
 struct ParticleProto {
 	float3 pos;
@@ -153,7 +148,6 @@ struct ParticleProto {
 StructuredBuffer<ParticleProto> emitList;
 
 float4 _UseVelSizeColor;
-
 float _ParticleThickness;
 
 #define S_SPHERE 0
@@ -176,6 +170,7 @@ float _ParticleThickness;
 #define FORCE_ATTEN_EASEINOUT 2
 
 Texture2D lifetimeTexture;
+
 Texture2D terrainTexture;
 Texture3D turbulenceTexture;
 
@@ -206,6 +201,8 @@ uint turbulenceKernelOffset = 0;
 #define EV_NORMAL 1
 #define EV_RANDOM 2
 
+
+
 [numthreads(TCGroupSize, 1, 1)]
 void Emit(uint3 DTid : SV_DispatchThreadID) {
 	TCEmitter tcEmit = emitter[0];
@@ -220,12 +217,11 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 
 	//Set properties for current particles.
 	Particle emitPart;
-
-	//Note the FirstRandom, first random wang hashes the ID, to get rid of correlation between threads 
-	emitPart.mass = 1.0f - FirstRandom(DTid.x, tcEmit.time) * tcEmit.massVariance;
 	
+	//Note the FirstRandom, first random wang hashes the ID, to get rid of correlation between threads 
+
 	//Setup size properties of the particle
-	emitPart.baseSize = RandomRange(tcEmit.sizeMin, tcEmit.sizeMax);
+	emitPart.baseSize = lerp(tcEmit.sizeMin, tcEmit.sizeMax, FirstRandom(DTid.x, tcEmit.time));
 	emitPart.life = RandomRange(_LifeMinMax.x, _LifeMinMax.y);
 
 	if (emitPart.life < 0) {
@@ -620,7 +616,6 @@ void UpdateForces(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID) {
 			if (gf.type == FORCE_VORTEX){
 				forceApply += gf.inwardForce * length(particles[id].velocity) * float3(rawDif.x, 0.0f, rawDif.z);
 			}
-	
 		}
 	} else {
 		float3 dif = gf.pos - particles[id].pos;
@@ -632,7 +627,7 @@ void UpdateForces(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID) {
 	}
 
 
-	particles[id].velocity += (forceApply + gf.velocity) * particles[id].mass;
+	particles[id].velocity += (forceApply + gf.velocity);
 }
 
 [numthreads(TCGroupSize, 1, 1)]
@@ -657,22 +652,22 @@ void UpdateTurbulenceForces(uint3 DTid : SV_DispatchThreadID) {
 	
 			float3 uv = 0.5f +  mul(rawDif, invTurbulenceRotation) / gf.axis;
 			float3 untransForce = turbulenceTexture.SampleLevel(TurbulenceLinearRepeatSampler, uv, 0.0f).rgb * 2.0f - 1.0f;
-			float3 force = mul(untransForce, turbulenceRotation) * gf.force ;
+			float3 force = mul(untransForce, turbulenceRotation) * gf.force * 2;
 	
 			applyForce = GetForceStrength(d, gf.enclosingRadius, gf.attenType, gf.attenuation) * gf.force * force;
 
-			particles[id].pos += applyForce * gf.turbulencePosFac * particles[id].mass;
-			particles[id].velocity += (applyForce * (1.0f - gf.turbulencePosFac) + gf.velocity)* particles[id].mass;
+			particles[id].pos += applyForce * gf.turbulencePosFac;
+			particles[id].velocity += (applyForce * (1.0f - gf.turbulencePosFac) + gf.velocity);
 		}
 	} else {
 		float3 uv = 0.5f +  mul(rawDif, invTurbulenceRotation) / gf.axis;
 		float3 untransForce = turbulenceTexture.SampleLevel(TurbulenceLinearRepeatSampler, uv, 0.0f).rgb * 2.0f - 1.0f;
 
-		float3 force = mul(untransForce, turbulenceRotation) * gf.force;
+		float3 force = mul(untransForce, turbulenceRotation) * gf.force * 2;
 		applyForce = force + gf.velocity;
 
-		particles[id].pos += applyForce * gf.turbulencePosFac * particles[id].mass;
-		particles[id].velocity += (applyForce * (1.0f - gf.turbulencePosFac) + gf.velocity)* particles[id].mass;
+		particles[id].pos += applyForce * gf.turbulencePosFac;
+		particles[id].velocity += (applyForce * (1.0f - gf.turbulencePosFac) + gf.velocity);
 	}
 }
 

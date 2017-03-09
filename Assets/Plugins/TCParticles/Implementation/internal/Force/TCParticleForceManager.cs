@@ -47,12 +47,6 @@ namespace TC.Internal
 			set { _maxForces = value; }
 		}
 
-		[SerializeField] [Range(0.0f, 1.0f)] float _massVariance;
-
-		public float MassVariance {
-			get { return _massVariance; }
-		}
-
 		/// <summary>
 		/// Maxinum number of forces particles react to
 		/// </summary>
@@ -376,20 +370,20 @@ namespace TC.Internal
 				ComputeShader.SetBuffer(UpdateTurbulenceForcesKernel, "turbulenceForces", m_forcesBuffer[1]);
 
 				for (int k = 0; k < m_forcesCount[1]; ++k) {
-					TCForce t = m_forcesReference[1][k];
-					if (t.CurrentForceVolume == null) {
+					TCForce force = m_forcesReference[1][k];
+
+					if (force.CurrentForceVolume == null) {
 						continue;
 					}
 
-					ComputeShader.SetTexture(UpdateTurbulenceForcesKernel, "turbulenceTexture", t.CurrentForceVolume);
+					ComputeShader.SetTexture(UpdateTurbulenceForcesKernel, "turbulenceTexture", force.CurrentForceVolume);
 
-					Matrix4x4 rotation = Matrix4x4.TRS(Vector3.zero, t.transform.rotation, Vector3.one);
-
+					Matrix4x4 rotation = Matrix4x4.TRS(Vector3.zero, force.transform.rotation, Vector3.one);
 					TCHelper.SetMatrix3(ComputeShader, "turbulenceRotation", rotation);
 					TCHelper.SetMatrix3(ComputeShader, "invTurbulenceRotation", rotation.inverse);
-					ComputeShader.SetInt("kernelOffset", k);
-
+					ComputeShader.SetInt("turbulenceKernelOffset", k);
 					Manager.SetPariclesToKernel(ComputeShader,UpdateTurbulenceForcesKernel);
+
 					ComputeShader.Dispatch(UpdateTurbulenceForcesKernel, Manager.DispatchCount, 1, 1);
 				}
 			}

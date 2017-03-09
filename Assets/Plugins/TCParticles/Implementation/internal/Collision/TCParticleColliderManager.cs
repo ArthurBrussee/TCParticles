@@ -9,7 +9,7 @@ namespace TC.Internal {
 		///<summary>
 		///The struct containing information for forces and colliders
 		///</summary>
-		private struct Collider {
+		struct Collider {
 			public float Bounciness;
 			public float LifeLoss;
 
@@ -355,15 +355,14 @@ namespace TC.Internal {
 			ComputeShader.Dispatch(UpdateCollidersKernel, Manager.DispatchCount, m_colliderCount, 1);
 		}
 
-		private float GetColliderPoints(TCCollider collider) {
+		float GetColliderPoints(TCCollider collider) {
 			if (BaseColliders != null && BaseColliders.Contains(collider)) {
 				return float.MaxValue;
 			}
 
 			if (!collider.enabled) {
-				return int.MinValue;
+				return float.MinValue;
 			}
-
 
 			float points = 0.0f;
 			if (collider.transform.parent == Transform) {
@@ -388,7 +387,7 @@ namespace TC.Internal {
 
 			if (m_collidersList.Count > MaxColliders) {
 				if (m_colliderSort == null) {
-					m_colliderSort = (c1, c2) => GetColliderPoints(c2).CompareTo(c1);
+					m_colliderSort = (c1, c2) => GetColliderPoints(c2).CompareTo(GetColliderPoints(c1));
 				}
 
 				m_collidersList.Sort(m_colliderSort);

@@ -228,7 +228,8 @@ public class TCForce : MonoBehaviour {
 					Changed(lacunarity, ref m_prevLac) |
 					Changed(persistence, ref m_prevPersist) |
 					Changed(noiseOffset, ref m_prevNoiseOffset) |
-					Changed(noiseType, ref m_prevType)) {
+					Changed(noiseType, ref m_prevType) |
+					(m_forceBaked == null)) {
 					UpdateForceBake();
 				}
 
@@ -317,7 +318,6 @@ public class TCForce : MonoBehaviour {
 		}
 
 		All.RemoveUnordered(this);
-
 		DestroyImmediate(m_forceBaked);
 		m_forceBaked = null;
 	}

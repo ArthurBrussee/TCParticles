@@ -72,7 +72,7 @@ public class TCOffscreenRenderer : MonoBehaviour {
 
 			case CompositeMode.Gradient:
 				m_compositeMat = new Material(Shader.Find("Hidden/TCParticles/OffscreenCompositeGradient"));
-				m_gradientTexture = new Texture2D(64, 1, TextureFormat.RGBA32, false, true) {wrapMode = TextureWrapMode.Clamp};
+				m_gradientTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true) {wrapMode = TextureWrapMode.Clamp};
 				UpdateCompositeGradient();
 				m_compositeMat.SetTexture("_Gradient", m_gradientTexture);
 				break;

@@ -1,6 +1,5 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel BakeForce
-
 #include "SimplexNoise3D.cginc"
 
 // Create a RenderTexture with enableRandomWrite flag and set it
@@ -23,7 +22,7 @@ float _Resolution;
 
 float4 _NoiseOffset;
 
-#define NOISE_SCALE 0.3f
+#define NOISE_SCALE 0.4f
 
 float3 GradientCoherentNoise3D(float3 pos) {
 	return snoise_grad(pos) * NOISE_SCALE;
@@ -92,7 +91,7 @@ float3 CalculateRidged(float3 pos) {
 
 		x *= _Lacunarity;
 
-		off += 2.0f * NOISE_SCALE * weight / x;
+		off += 1.375f * NOISE_SCALE * weight / x;
 		val += finalSamp / x;
 
 		weight = saturate(length(finalSamp) * 2);
@@ -113,7 +112,7 @@ float3 CalculateNoise(float3 pos) {
 
 [numthreads(4, 4, 4)]
 void BakeForce(uint3 id : SV_DispatchThreadID) {
-	float3 nn = CalculateNoise(id / _Resolution * 0.6f + _NoiseOffset.xyz);
+	float3 nn = CalculateNoise(id / _Resolution * 0.4f + _NoiseOffset.xyz);
 	float4 packed = float4(nn * 0.5f + 0.5f, 0);
 	_ForceTexture[id] = packed;
 }

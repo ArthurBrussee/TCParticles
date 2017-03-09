@@ -1,6 +1,10 @@
+using System;
 using UnityEngine;
 
 namespace TC {
+	public delegate void OnParticleEvent(ComputeShader shader, int kern);
+
+	[Serializable]
 	public struct ParticleProto {
 		public Vector3 Position;
 		public Vector3 Velocity;

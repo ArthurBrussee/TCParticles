@@ -116,7 +116,6 @@ namespace TC.Internal {
 			EmitKernel = ComputeShader.FindKernel("Emit");
 			ClearKernel = ComputeShader.FindKernel("Clear");
 
-
 			UpdateForcesKernel = ComputeShader.FindKernel("UpdateForces");
 			UpdateTurbulenceForcesKernel = ComputeShader.FindKernel("UpdateTurbulenceForces");
 
