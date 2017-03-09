@@ -25,6 +25,61 @@ The FX1 Microstar is kindly loaned from HEDRON central requisitions
 
 Release notes:
 
+1.6
+
+Particles now store their color!
+	-You can now emit particles from a textured mesh with uv1/2/3/4 channel
+	-Colors can also be set with new 'ParticleProto' emission (see API) 
+	-Color over lifetime is multiplicative with this base color 
+	-Stored in compact format, two other fields were optimised away, so particles are smaller than before! (few % performance increase)
+
+TC Force turbulence generation rewritten:
+	-Parameters can now be adjusted in real time! Automatically updates if needed, takes <1ms in nearly all cases. 
+	-No more hassle to manage textures in the project etc.
+	-Now uses 'curl' noise internally - this noise has a nice property (divergence free) that prevents clumps of particles & looks very fluid like
+	-Should match old settings mostly. If it doesn't - switch force to TurbulenceTexture mode and old texture will still be plugged in.
+	-Don't need power of 2 resolution anymore, can support higher resolutions than before
+	-New 'persistence' parameter on most noise types for mroe control
+	-Turbulence preview is much improved - now runs all on the GPU and was made very fast, colors show proper gradient instead of some made up derivative, now displaces arrows in direction of force for some additional feedback of the noise 'feel'
+	-Renamed Pink noise to Perlin noise (since that's always what it was)
+	-Voronoi was removed as it never worked super well, didn't port well to GPU
+	-The Turbulence Frequency & power was removed (an additional noise on top of the regular one). The new noises do well without + the new persistence parameter helps.
+
+Rewrote parts of mesh emission  
+	-Made NormalizeArea explicit instead of guessing it - faster if off, but particles may appear non uniform on the surface. On by default now as NormalizeArea was made MUCH faster too (binary instead of linear search).
+	-Fixed wireframe not updating correctly when changing meshes 
+	-Fixed a few memory leaks of the mesh buffers 
+
+New ParticleProto API: Emit from a list of 'particle prototypes' that can set initial position, size, velocity, color 
+
+Improved extension system:
+	-Now sets more parameters on extension kernels
+	-Recognizes numthreads and scales appropriately
+	-New TCFramework.cginc means you don't have to copy code anymore to extension compute shaders & will be in sync 
+	
+Colour over lifetime (& velocity over lifetime) is now basked to 128 sized gradients (was 64), little nicer!
+	
+Performance:
+	-Removed GC generated every frame by the renderer
+	-Removed GC when frustum culling was enabled
+	-Performance improvments in emission, forces & colliders (few %)
+	-Fixed emission launching 2x the nr of threads actually needed
+	-More buffer reuse & other micro optimizations
+
+Large code cleanup, small bug fixes
+	-Removed BurstsForSystem API on shape emitters - was confusing and didn't really work
+	-Removed some unused files
+	-Fixed particles sometimes spawning outside of sphere/hemisphere shape 
+	-Fixed random emission direction besides having a ranom direction also having a random speed and not using the start speed
+	
+Samples:
+	-New point cloud importer & Sample data! Shows rendering >3.5 million points 
+	-Added new ColorCube sampel showing ParticleProto sample 
+	-Forces sample was revamped, few bug fixes, nicer behaviour.
+	-Modernised old samples, cleaned, restructed folders to group each sample in own folder. 
+
+
+
 1.5
 
 -Moved the Editor folder now that it can be under the TC Particles root to make package managment easier
