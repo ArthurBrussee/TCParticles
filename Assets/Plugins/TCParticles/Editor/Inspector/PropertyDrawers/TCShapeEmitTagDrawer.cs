@@ -4,97 +4,95 @@ using UnityEditor;
 using UnityEngine;
 
 
-[CustomPropertyDrawer(typeof(TCShapeEmitTag))]
-public class TCShapeEmitTagDrawer : PropertyDrawer {
-	private SerializedProperty m_prop;
+namespace TC.EditorIntegration {
+	[CustomPropertyDrawer(typeof(TCShapeEmitTag))]
+	public class TCShapeEmitTagDrawer : PropertyDrawer {
+		SerializedProperty m_prop;
 
-	private static List<TCShapeEmitTag> s_tags;
-	private static GUIContent[] s_display;
+		static List<TCShapeEmitTag> s_tags;
+		static GUIContent[] s_display;
+
+		void InitTags() {
+			s_tags = new List<TCShapeEmitTag>();
+
+			var assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
 
 
-	private void InitTags() {
-		s_tags = new List<TCShapeEmitTag>();
+			foreach (var guid in assetPaths) {
+				var path = AssetDatabase.GUIDToAssetPath(guid);
+				var loaded = AssetDatabase.LoadAssetAtPath(path, typeof(TCShapeEmitTag)) as TCShapeEmitTag;
 
-		var assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
+				s_tags.Add(loaded);
+			}
+
+			s_display = new GUIContent[s_tags.Count + 2];
 
 
-		foreach (var guid in assetPaths) {
-			var path = AssetDatabase.GUIDToAssetPath(guid);
-			var loaded = AssetDatabase.LoadAssetAtPath(path, typeof(TCShapeEmitTag)) as TCShapeEmitTag;
+			s_display[0] = new GUIContent("None");
 
-			s_tags.Add(loaded);
+			for (int i = 0; i < s_tags.Count; ++i) {
+				s_display[i + 1] = new GUIContent(s_tags[i].name);
+			}
+
+			s_display[s_tags.Count + 1] = new GUIContent("+New Tag");
 		}
 
-		s_display = new GUIContent[s_tags.Count + 2];
+		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
+			//if (s_tags == null) {
+			InitTags();
+			//}
+
+			s_tags.RemoveAll(tag => tag == null);
 
 
-		s_display[0] = new GUIContent("None");
-
-		for (int i = 0; i < s_tags.Count; ++i) {
-			s_display[i + 1] = new GUIContent(s_tags[i].name);
+			DrawEmitTagUI(position, property, label);
 		}
 
-		s_display[s_tags.Count + 1] = new GUIContent("+New Tag");
-	}
+		private void DrawEmitTagUI(Rect pos, SerializedProperty prop, GUIContent label) {
 
-	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-		//if (s_tags == null) {
-		InitTags();
-		//}
+			EditorGUI.BeginProperty(pos, label, prop);
 
-		s_tags.RemoveAll(tag => tag == null);
+			EditorGUI.BeginChangeCheck();
 
+			var curTag = prop.objectReferenceValue as TCShapeEmitTag;
+			int curIndex;
 
-		DrawEmitTagUI(position, property, label);
-	}
+			if (curTag == null) {
+				curIndex = 0;
+			} else {
+				curIndex = s_tags.IndexOf(curTag) + 1;
+			}
 
-	private void DrawEmitTagUI(Rect pos, SerializedProperty prop, GUIContent label) {
+			int newIndex = EditorGUI.Popup(pos, label, curIndex, s_display);
 
-		EditorGUI.BeginProperty(pos, label, prop);
+			TCShapeEmitTag tag;
 
-		EditorGUI.BeginChangeCheck();
+			if (newIndex == s_tags.Count + 1) {
+				tag = CreateNewTag();
+			} else if (newIndex != 0) {
+				tag = s_tags[newIndex - 1];
+			} else {
+				tag = null;
+			}
 
-		var curTag = prop.objectReferenceValue as TCShapeEmitTag;
-		int curIndex;
-
-		if (curTag == null) {
-			curIndex = 0;
-		}
-		else {
-			curIndex = s_tags.IndexOf(curTag) + 1;
-		}
-
-		int newIndex = EditorGUI.Popup(pos, label, curIndex, s_display);
-
-		TCShapeEmitTag tag;
-
-		if (newIndex == s_tags.Count + 1) {
-			tag = CreateNewTag();
-		}
-		else if (newIndex != 0) {
-			tag = s_tags[newIndex - 1];
-		}
-		else {
-			tag = null;
+			if (EditorGUI.EndChangeCheck()) {
+				prop.objectReferenceValue = tag;
+			}
 		}
 
-		if (EditorGUI.EndChangeCheck()) {
-			prop.objectReferenceValue = tag;
+		private TCShapeEmitTag CreateNewTag() {
+			if (!Directory.Exists("Assets/TCParticleTags")) {
+				AssetDatabase.CreateFolder("Assets", "TCParticleTags");
+			}
+
+			string path = AssetDatabase.GenerateUniqueAssetPath("Assets/TCParticleTags/unnamedTag.asset");
+
+			var tag = ScriptableObject.CreateInstance<TCShapeEmitTag>();
+			s_tags.Add(tag);
+
+			ProjectWindowUtil.CreateAsset(tag, path);
+
+			return tag;
 		}
-	}
-
-	private TCShapeEmitTag CreateNewTag() {
-		if (!Directory.Exists("Assets/TCParticleTags")) {
-			AssetDatabase.CreateFolder("Assets", "TCParticleTags");
-		}
-
-		string path = AssetDatabase.GenerateUniqueAssetPath("Assets/TCParticleTags/unnamedTag.asset");
-
-		var tag = ScriptableObject.CreateInstance<TCShapeEmitTag>();
-		s_tags.Add(tag);
-
-		ProjectWindowUtil.CreateAsset(tag, path);
-
-		return tag;
 	}
 }

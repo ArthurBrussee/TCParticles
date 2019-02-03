@@ -2,38 +2,28 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
-  serializedVersion: 3
+  serializedVersion: 6
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: FusionOrangeSphere
   m_Shader: {fileID: 4800000, guid: 0e179da849082c042aa85ffd5a017f96, type: 3}
-  m_ShaderKeywords:
-  - TC_BILLBOARD_TAILSTRETCH
-  - TC_ALIGNED
-  - TC_COLOUR_LIFETIME
-  - TC_SIZE
-  - TC_PERSPECTIVE
-  - TC_UV_NORMAL
-  - TC_SIZE_OVER_TIME
+  m_ShaderKeywords: TC_ALIGNED TC_BILLBOARD_TAILSTRETCH TC_COLOUR_LIFETIME TC_PERSPECTIVE
+    TC_SIZE TC_SIZE_OVER_TIME TC_UV_NORMAL
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
   m_SavedProperties:
-    serializedVersion: 2
+    serializedVersion: 3
     m_TexEnvs:
-      data:
-        first:
-          name: _MainTex
-        second:
-          m_Texture: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
-          m_Scale: {x: 1, y: 1}
-          m_Offset: {x: 0, y: 0}
-    m_Floats: {}
+    - _MainTex:
+        m_Texture: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats: []
     m_Colors:
-      data:
-        first:
-          name: _Color
-        second: {r: 1, g: 1, b: 1, a: 1}
-      data:
-        first:
-          name: _TintColor
-        second: {r: .5, g: .5, b: .5, a: .5}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _TintColor: {r: 0.09558821, g: 0.09558821, b: 0.09558821, a: 0.128}

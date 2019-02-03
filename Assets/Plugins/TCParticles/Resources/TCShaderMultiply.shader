@@ -1,43 +1,38 @@
-Shader "TCParticles/Multiply" 
-{
-	Properties
-	{
-		_MainTex("Texture", 2D) = "white" { }
-		_TintColor("Tint Color", Color) = (0.5,0.5,0.5,0.5)
+Shader "TCParticles/Legacy/Multiply" {
+	Properties {
+		_MainTex ("Texture", 2D) = "white" { }
+		_TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
 	}
 
-	Category {
-		Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" "TCParticles" = "True" }
-		Blend Zero SrcColor
-		AlphaTest Greater .01
-		ColorMask RGB
-		ZWrite Off
+	Category  {
+		Tags { "Queue"="Transparent" "RenderType"="Transparent"}
 
 		SubShader {
 			Pass {
+				Blend Zero SrcColor
+				ColorMask RGB
+				ZWrite Off
+
 				CGPROGRAM
+					#pragma target 4.5
+					#pragma vertex TCDefaultVert
+					#pragma fragment frag
 
-				#pragma target 5.0
-				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-				#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
+					#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
+					#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
 
-				#pragma vertex particle_vertex
-				#pragma fragment frag
+					#pragma multi_compile_instancing
+					#pragma instancing_options procedural:TCDefaultProc
 
-				#include "TCShaderInc.cginc"
+					#include "TCFramework.cginc"
+					#include "TCDefaultVert.cginc"
 
-				sampler2D _MainTex;
-
-				float4 frag(particle_fragment i) : SV_Target
-				{
-					half4 prev = tex2Dbias(_MainTex, float4(i.uv, 0, -3)) * i.col;
-					return lerp(half4(1,1,1,1), prev, prev.a);
-				}
-
+					float4 frag(TCFragment i) : SV_Target {
+						half4 prev = tex2Dbias(_MainTex, float4(i.uv, 0, -3)) * i.col;
+						return lerp(half4(1,1,1,1), prev, prev.a);
+					}
 				ENDCG
 			}
 		}
 	}
-
-	Fallback "Diffuse"
 }

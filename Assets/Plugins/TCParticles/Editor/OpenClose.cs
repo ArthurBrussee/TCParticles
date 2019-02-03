@@ -2,70 +2,65 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class OpenClose : ScriptableObject {
-	[SerializeField] List<bool> open;
-	[SerializeField] List<string> names;
+namespace TC.EditorIntegration {
+	[Serializable]
+	public class OpenClose : ScriptableObject {
+		[SerializeField] List<bool> open;
+		[SerializeField] List<string> names;
 
-	int CheckIfOpen(string nameDecl) {
-		if (names.Contains(nameDecl)) {
+		int CheckIfOpen(string nameDecl) {
+			if (names.Contains(nameDecl)) {
+				return names.IndexOf(nameDecl);
+			}
+
+			open.Add(false);
+			names.Add(nameDecl);
 			return names.IndexOf(nameDecl);
 		}
 
-		open.Add(false);
-		names.Add(nameDecl);
-		return names.IndexOf(nameDecl);
-	}
+		public bool ToggleArea(string areaName, Color col) {
+			int i = CheckIfOpen(areaName);
+			Color oldCol = GUI.color;
 
-	public bool ToggleArea(string areaName, Color col)
-	{
-		int i = CheckIfOpen(areaName);
+			if (!open[i]) {
+				col *= 0.8f;
+			}
 
-		Color oldCol = GUI.color;
+			GUI.color = col;
 
-		if (!open[i]) {
-			col *= 0.8f;
+			var pos = GUILayoutUtility.GetRect(0.0f, 16.0f, "ShurikenModuleTitle");
+			pos.x -= 15.0f;
+			pos.width += 15.0f;
+
+			open[i] = GUI.Toggle(pos, open[i], new GUIContent(areaName), "ShurikenModuleTitle");
+
+			GUI.color = oldCol;
+
+			if (open[i]) {
+				GUILayout.BeginVertical(TCEditorStyles.GetBackgroundForColor(col), GUILayout.MinHeight(20.0f));
+			}
+
+			return open[i];
 		}
 
-		GUI.color = col;
+		public void ToggleAreaEnd(string areaName) {
+			int i = CheckIfOpen(areaName);
 
-		var pos = GUILayoutUtility.GetRect(0.0f, 16.0f, "ShurikenModuleTitle");
-		pos.x -= 15.0f;
-		pos.width += 15.0f;
+			if (!open[i]) {
+				return;
+			}
 
-		open[i] = GUI.Toggle(pos, open[i], new GUIContent(areaName), "ShurikenModuleTitle");
-
-		GUI.color = oldCol;
-
-
-		if (open[i]) {
-			GUILayout.BeginVertical(TCEditorStyles.GetBackgroundForColor(col), GUILayout.MinHeight(20.0f)); 
+			GUILayout.Space(5.5f);
+			GUILayout.EndVertical();
 		}
 
-		return open[i];
-	}
+		void OnEnable() {
+			if (open != null && names != null) {
+				return;
+			}
 
-	public void ToggleAreaEnd(string areaName)
-	{
-		int i = CheckIfOpen(areaName);
-
-		if (!open[i]) {
-			return;
+			open = new List<bool>();
+			names = new List<string>();
 		}
-
-
-		GUILayout.Space(5.5f);
-		GUILayout.EndVertical();
-	}
-
-
-	void OnEnable()
-	{
-		if (open != null && names != null) {
-			return;
-		}
-
-		open = new List<bool>();
-		names = new List<string>();
 	}
 }

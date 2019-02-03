@@ -1,41 +1,35 @@
-Shader "TCParticles/Alpha cutout" 
-{
-	Properties 
-	{
+Shader "TCParticles/Legacy/Alpha cutout" {
+	Properties {
 		_MainTex ("Texture", 2D) = "white" { }
 		_Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
 		_TintColor ("Tint Color", Color) = (0.5,0.5,0.5,0.5)
 	}
 
-	Category 
-	{
-		Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="Opaque" "TCParticles"="True" }
+	Category {
+		Tags { "Queue"="AlphaTest" "RenderType"="Opaque" }
 
+		SubShader {
+			Pass  {
+				Cull Off
 
-		SubShader 
-		{
-			Pass 
-			{
-
-				
 				CGPROGRAM				
+				#pragma target 4.5
+				#pragma vertex TCDefaultVert
+				#pragma fragment frag
 
-				#pragma target 5.0
 				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
 				#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
 
-				#pragma vertex particle_vertex
-				#pragma fragment frag
+				#pragma multi_compile_instancing
+				#pragma instancing_options procedural:TCDefaultProc
 
-				#include "TCShaderInc.cginc"
+				#include "TCFramework.cginc"
+				#include "TCDefaultVert.cginc"
 
-				sampler2D _MainTex;
 				float _Cutoff;
 
-				float4 frag (particle_fragment i) : SV_Target
-				{
+				float4 frag (TCFragment i) : SV_Target {
 					half4 col =  tex2Dbias(_MainTex, float4(i.uv, 0, -4)) * i.col;
-
 
 					if (col.a < _Cutoff){
 						discard;
@@ -48,7 +42,4 @@ Shader "TCParticles/Alpha cutout"
 			}
 		}
 	}
-
-	Fallback "Diffuse"
 }
-

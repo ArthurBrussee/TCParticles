@@ -1,0 +1,3457 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 8
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 0
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 0
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 0}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 11
+  m_GIWorkflowMode: 0
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_TemporalCoherenceThreshold: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 1
+    m_EnableRealtimeLightmaps: 1
+  m_LightmapEditorSettings:
+    serializedVersion: 9
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_TextureWidth: 1024
+    m_TextureHeight: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_FinalGather: 0
+    m_FinalGatherFiltering: 1
+    m_FinalGatherRayCount: 256
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 1
+    m_BakeBackend: 0
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 500
+    m_PVRBounces: 2
+    m_PVRFiltering: 0
+    m_PVRFilteringMode: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 5
+    m_PVRFilteringGaussRadiusAO: 2
+    m_PVRFilteringAtrousColorSigma: 1
+    m_PVRFilteringAtrousNormalSigma: 1
+    m_PVRFilteringAtrousPositionSigma: 1
+  m_LightingDataAsset: {fileID: 0}
+  m_UseShadowmask: 0
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 2
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    accuratePlacement: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &39250675
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 39250677}
+  - component: {fileID: 39250676}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &39250676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 39250675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &39250677
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 39250675}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 33
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &127356154
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 127356156}
+  - component: {fileID: 127356155}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &127356155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 127356154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &127356156
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 127356154}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 22
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &169391927
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 169391929}
+  - component: {fileID: 169391928}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &169391928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 169391927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &169391929
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 169391927}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 27
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &180286853
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 180286855}
+  - component: {fileID: 180286854}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &180286854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 180286853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &180286855
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 180286853}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &191224457
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 191224459}
+  - component: {fileID: 191224458}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &191224458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 191224457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &191224459
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 191224457}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &230759273
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 230759275}
+  - component: {fileID: 230759274}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &230759274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 230759273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &230759275
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 230759273}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 28
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &247752362
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 247752364}
+  - component: {fileID: 247752363}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &247752363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 247752362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &247752364
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 247752362}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 12
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &263245015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 263245017}
+  - component: {fileID: 263245016}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &263245016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 263245015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &263245017
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 263245015}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 13
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &360860549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 360860551}
+  - component: {fileID: 360860550}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &360860550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 360860549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &360860551
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 360860549}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 31
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &427153802
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 427153804}
+  - component: {fileID: 427153803}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &427153803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 427153802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &427153804
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 427153802}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &430433087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 430433089}
+  - component: {fileID: 430433088}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &430433088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 430433087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &430433089
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 430433087}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 24
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &473479554
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 473479556}
+  - component: {fileID: 473479555}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &473479555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 473479554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &473479556
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 473479554}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 25
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &508234951
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 508234953}
+  - component: {fileID: 508234952}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &508234952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 508234951}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &508234953
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 508234951}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 30
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &522153031
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 522153033}
+  - component: {fileID: 522153032}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &522153032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 522153031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &522153033
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 522153031}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &738163855
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 738163857}
+  - component: {fileID: 738163856}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &738163856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 738163855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &738163857
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 738163855}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 29
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &786191284
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 786191286}
+  - component: {fileID: 786191285}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &786191285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 786191284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &786191286
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 786191284}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 35
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &799721417
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 799721419}
+  - component: {fileID: 799721418}
+  m_Layer: 0
+  m_Name: TCParticleSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &799721418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 799721417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d96155723a13b4ba0e405af8c30a9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _colliderManager:
+    Transform: {fileID: 799721419}
+    _maxColliders: 1
+    _particleThickness: 0.25
+    _bounciness: 0.3
+    overrideBounciness: 0
+    _stickiness: 0.3
+    overrideStickiness: 0
+    _colliderLayers:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    _baseColliders: []
+  _emitter:
+    Transform: {fileID: 799721419}
+    pes:
+      shape: 0
+      radius:
+        minProp: 5
+        maxProp: 5
+        valueProp: 5
+        modeProp: 0
+      cubeSize: {x: 1, y: 1, z: 1}
+      emitMesh: {fileID: 0}
+      normalizeArea: 1
+      texture: {fileID: 0}
+      uvChannel: 0
+      coneAngle: 0
+      coneHeight: 0
+      coneRadius: 0
+      ringOuterRadius: 0
+      ringRadius: 0
+      lineLength: 0
+      lineRadius: 0
+      startDirectionType: 1
+      startDirectionVector: {x: 0, y: 0, z: 0}
+      startDirectionRandomAngle: 0
+      spawnOnMeshSurface: 1
+    _speed:
+      minProp: 0
+      maxProp: 0
+      valueProp: 0
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      valueCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      modeProp: 0
+      t: 0
+    _energy:
+      minProp: 10
+      maxProp: 10
+      valueProp: 10
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      valueCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 3
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      modeProp: 0
+      t: 0
+    _size:
+      minProp: 0.5
+      maxProp: 0.5
+      valueProp: 0.5
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0.5
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0.5
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      valueCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0.5
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      modeProp: 0
+      t: 0
+    _rotation:
+      minProp: 0
+      maxProp: 0
+      valueProp: 0
+      minCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      maxCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      valueCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      modeProp: 0
+      t: 0
+    _angularVelocity: 0
+    _constantForce:
+      x: 0
+      y: 0
+      z: 0
+      isConstant: 1
+      xCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      yCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      zCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    _emissionRate: 0
+    m_emissionType: 0
+    _sizeOverLifetime:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    _velocityOverLifetime:
+      x: 0
+      y: 0
+      z: 0
+      isConstant: 1
+      xCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      yCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      zCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 2
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        - serializedVersion: 2
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    emit: 1
+    _inheritVelocity: 0
+    m_emitTag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+    bursts: []
+  _forcesManager:
+    Transform: {fileID: 799721419}
+    _maxForces: 1
+    _baseForces: []
+    useBoidsFlocking: 0
+    boidsPositionStrength: 0.5
+    boidsVelocityStrength: 1
+    boidsCenterStrength: 1
+    _forceLayers:
+      serializedVersion: 2
+      m_Bits: 4294967295
+  _manager:
+    Transform: {fileID: 799721419}
+    _simulationSpace: 0
+    m_noSimulation: 0
+    _maxParticles: 100000
+    shurikenFallback: {fileID: 0}
+    _duration: 3
+    delay: 0
+    playOnAwake: 1
+    looping: 1
+    prewarm: 0
+    playbackSpeed: 1
+    gravityMultiplier: 0
+    damping: 0
+    MaxSpeed: -1
+    dampingCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    dampingIsCurve: 0
+  _particleRenderer:
+    Transform: {fileID: 799721419}
+    _material: {fileID: 2100000, guid: 63e5aec4bd15e804c87f6e44ec5261f9, type: 2}
+    _renderMode: 2
+    _lengthScale: 1
+    _speedScale: 0.25
+    _mesh: {fileID: 0}
+    TailUv: 0.5
+    colourGradientMode: 0
+    _colourOverLifetime:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 46646
+      atime2: 65535
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 3
+    maxSpeed: 1
+    glow: 0
+    _bounds:
+      m_Center: {x: 0, y: 0, z: 0}
+      m_Extent: {x: 0, y: 0, z: 0}
+    _useFrustumCulling: 0
+    CastShadows: 0
+    ReceiveShadows: 0
+    culledSimulationMode: 0
+    cullSimulationDelta: 0
+    isPixelSize: 0
+    spriteSheetAnimation: 0
+    spriteSheetColumns: 0
+    spriteSheetRows: 0
+    spriteSheetCycles: 1
+--- !u!4 &799721419
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 799721417}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12.5, y: 0, z: 12.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &986150485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 986150487}
+  - component: {fileID: 986150486}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &986150486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 986150485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &986150487
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 986150485}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 16
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1013709798
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1013709800}
+  - component: {fileID: 1013709799}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1013709799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1013709798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1013709800
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1013709798}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1119432565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1119432567}
+  - component: {fileID: 1119432566}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1119432566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1119432565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1119432567
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1119432565}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 34
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1126287482
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1126287484}
+  - component: {fileID: 1126287483}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1126287483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1126287482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1126287484
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1126287482}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1245685918
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_RootOrder
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224293324148092832, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 114529958147684804, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_Text
+      value: 'Demo: Shape emitters
+
+'
+      objectReference: {fileID: 0}
+    - target: {fileID: 114030083801007780, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: m_Text
+      value: 'Shape emitters allow to efficiently emit particles from multiple sources.
+        This scene has 25 shape emitters and just 1 Particle system is in the scene.
+        This is MUCH faster than 25 TC Particle systems for both CPU & GPU. '
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0.23292619
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0.24342534
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: -0.06034223
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 0.9396001
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: -6.1150026
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 17.316444
+      objectReference: {fileID: 0}
+    - target: {fileID: 4754917473605546, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: -14.904447
+      objectReference: {fileID: 0}
+    - target: {fileID: 114572171781384290, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: Target
+      value: 
+      objectReference: {fileID: 799721419}
+    - target: {fileID: 114572171781384290, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: DistanceMax
+      value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 114572171781384290, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: Distance
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 114572171781384290, guid: bb18be3b8e760e84d975c32f3fdb3456,
+        type: 2}
+      propertyPath: DistanceMin
+      value: 20
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: bb18be3b8e760e84d975c32f3fdb3456, type: 2}
+  m_IsPrefabParent: 0
+--- !u!1 &1282654087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1282654089}
+  - component: {fileID: 1282654088}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1282654088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282654087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1282654089
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1282654087}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 26
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1283308817
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1283308819}
+  - component: {fileID: 1283308818}
+  m_Layer: 0
+  m_Name: Directional Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!108 &1283308818
+Light:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1283308817}
+  m_Enabled: 1
+  serializedVersion: 8
+  m_Type: 1
+  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+  m_Intensity: 1
+  m_Range: 10
+  m_SpotAngle: 30
+  m_CookieSize: 10
+  m_Shadows:
+    m_Type: 2
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_Lightmapping: 4
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_FalloffTable:
+    m_Table[0]: 0
+    m_Table[1]: 0
+    m_Table[2]: 0
+    m_Table[3]: 0
+    m_Table[4]: 0
+    m_Table[5]: 0
+    m_Table[6]: 0
+    m_Table[7]: 0
+    m_Table[8]: 0
+    m_Table[9]: 0
+    m_Table[10]: 0
+    m_Table[11]: 0
+    m_Table[12]: 0
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+--- !u!4 &1283308819
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1283308817}
+  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &1387271622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1387271624}
+  - component: {fileID: 1387271623}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1387271623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1387271622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1387271624
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1387271622}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1426032152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1426032154}
+  - component: {fileID: 1426032153}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1426032153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1426032152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1426032154
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1426032152}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 11
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1447644723
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1447644725}
+  - component: {fileID: 1447644724}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1447644724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1447644723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1447644725
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1447644723}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 23
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1475780564
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1475780566}
+  - component: {fileID: 1475780565}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1475780565
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1475780564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1475780566
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1475780564}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 17
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1492309368
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1492309370}
+  - component: {fileID: 1492309369}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1492309369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1492309368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1492309370
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1492309368}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1502606067
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1502606069}
+  - component: {fileID: 1502606068}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1502606068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1502606067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1502606069
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1502606067}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 32
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1506492103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1506492105}
+  - component: {fileID: 1506492104}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1506492104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1506492103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1506492105
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1506492103}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 25, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 18
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1515138413
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1515138414}
+  m_Layer: 0
+  m_Name: shapeEmitters
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1515138414
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1515138413}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 180286855}
+  - {fileID: 1492309370}
+  - {fileID: 1013709800}
+  - {fileID: 191224459}
+  - {fileID: 1387271624}
+  - {fileID: 522153033}
+  - {fileID: 427153804}
+  - {fileID: 1799772482}
+  - {fileID: 1126287484}
+  - {fileID: 1862079035}
+  - {fileID: 1738718320}
+  - {fileID: 1426032154}
+  - {fileID: 247752364}
+  - {fileID: 263245017}
+  - {fileID: 1817962169}
+  - {fileID: 1827066092}
+  - {fileID: 986150487}
+  - {fileID: 1475780566}
+  - {fileID: 1506492105}
+  - {fileID: 1686527539}
+  - {fileID: 2023931842}
+  - {fileID: 1580863781}
+  - {fileID: 127356156}
+  - {fileID: 1447644725}
+  - {fileID: 430433089}
+  - {fileID: 473479556}
+  - {fileID: 1282654089}
+  - {fileID: 169391929}
+  - {fileID: 230759275}
+  - {fileID: 738163857}
+  - {fileID: 508234953}
+  - {fileID: 360860551}
+  - {fileID: 1502606069}
+  - {fileID: 39250677}
+  - {fileID: 1119432567}
+  - {fileID: 786191286}
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1580863779
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1580863781}
+  - component: {fileID: 1580863780}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1580863780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1580863779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1580863781
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1580863779}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 21
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1686527537
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1686527539}
+  - component: {fileID: 1686527538}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1686527538
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1686527537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1686527539
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1686527537}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 19
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1738718318
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1738718320}
+  - component: {fileID: 1738718319}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1738718319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1738718318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1738718320
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1738718318}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1799772480
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1799772482}
+  - component: {fileID: 1799772481}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1799772481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1799772480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1799772482
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1799772480}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1817962167
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1817962169}
+  - component: {fileID: 1817962168}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1817962168
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1817962167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1817962169
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1817962167}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1827066090
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1827066092}
+  - component: {fileID: 1827066091}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1827066091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1827066090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1827066092
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1827066090}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 15
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1862079033
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 1862079035}
+  - component: {fileID: 1862079034}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1862079034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1862079033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &1862079035
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1862079033}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 10, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2007499773
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 2007499775}
+  - component: {fileID: 2007499774}
+  - component: {fileID: 2007499776}
+  m_Layer: 0
+  m_Name: TCParticleForce
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2007499774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2007499773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef60910f50633374e831741178cc58ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shape: 5
+  radius:
+    minProp: 0
+    maxProp: 1
+    valueProp: 1
+    modeProp: 0
+  height: 2
+  boxSize: {x: 1, y: 1, z: 1}
+  forceType: 4
+  attenuationType: 0
+  power: 1
+  _attenuation: 1
+  forceDirection: {x: 0, y: 1, z: 0}
+  forceDirectionSpace: 0
+  vortexAxis: {x: 0, y: 1, z: 0}
+  inwardForce: 0
+  discHeight: 0
+  discRounding: 0
+  discType: 0
+  globalShape: 0
+  _inheritVelocity: 0
+  forceTexture: {fileID: 0}
+  smoothness: 1
+  noiseExtents: {x: 80, y: 80, z: 80}
+  resolution: 64
+  frequency: 1.4
+  octaveCount: 4
+  lacunarity: 2.17
+  persistence: 0.5
+  noiseOffset: {x: 0, y: 0, z: 0}
+  noiseType: 0
+--- !u!4 &2007499775
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2007499773}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6.1446686, y: 3.9785986, z: 7.1680193}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2007499776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2007499773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c6c3685215d6314aa62f0ac9ec0d171, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  strength: 1
+--- !u!1 &2023931840
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 2023931842}
+  - component: {fileID: 2023931841}
+  m_Layer: 0
+  m_Name: shapeEmitter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2023931841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2023931840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc4d9d4fc61f7448bfd6560c5bf5572, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShapeData:
+    shape: 0
+    radius:
+      minProp: 0
+      maxProp: 0.5
+      valueProp: 0.5
+      modeProp: 0
+    cubeSize: {x: 1, y: 1, z: 1}
+    emitMesh: {fileID: 0}
+    normalizeArea: 1
+    texture: {fileID: 0}
+    uvChannel: 0
+    coneAngle: 0
+    coneHeight: 0
+    coneRadius: 0
+    ringOuterRadius: 0
+    ringRadius: 0
+    lineLength: 0
+    lineRadius: 0
+    startDirectionType: 0
+    startDirectionVector: {x: 0, y: 1, z: 0}
+    startDirectionRandomAngle: 0
+    spawnOnMeshSurface: 1
+  EmissionRate: 100
+  EmissionType: 0
+  Emit: 1
+  m_tag: {fileID: 11400000, guid: b1022510f2d60ca49a5a1498fbbdb1f0, type: 2}
+--- !u!4 &2023931842
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2023931840}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 15, y: 0, z: 15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1515138414}
+  m_RootOrder: 20
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

@@ -1,33 +1,22 @@
 using System;
+using System.ComponentModel;
 using UnityEngine;
 
 namespace TC.Internal {
 	[Serializable]
 	public class ParticleComponent {
-		#region ComponentReferences
-		[NonSerialized] protected ParticleColliderManager ColliderManager;
-		[NonSerialized] protected ParticleEmitter PartEmitter;
-		[NonSerialized] protected ParticleForceManager ForceManager;
-		[NonSerialized] protected ParticleRenderer Renderer;
-		[NonSerialized] protected ParticleManager Manager;
+		protected ParticleColliderManager ColliderManager { get { return SystemComp.ColliderManager; } }
+		protected ParticleEmitter Emitter { get { return SystemComp.Emitter; } }
+		protected ParticleForceManager ForceManager { get { return SystemComp.ForceManager; } }
+		protected ParticleRenderer Renderer { get { return SystemComp.ParticleRenderer; } }
+		protected ParticleManager Manager { get { return SystemComp.Manager; } }
 
-		[NonSerialized] public TCParticleSystem SystemComp;
-		#endregion
-
-		#region ForceTypeKernel enum
-		public enum ForceTypeKernel {
-			Normal,
-			Turbulence,
-			Count
-		}
-		#endregion
-
-		protected const int ForceTypeKernelCount = (int) ForceTypeKernel.Count;
+		protected TCParticleSystem SystemComp;
 
 		protected int ClearKernel;
 		protected int EmitKernel;
 
-		protected int UpdateAllKernel;
+		public int UpdateAllKernel;
 		protected int UpdateCollidersKernel;
 
 		protected int UpdateForcesKernel;
@@ -36,23 +25,32 @@ namespace TC.Internal {
 		protected const int ColliderStride = 96;
 		protected const int ForcesStride = 124;
 
-		protected ComputeShader ComputeShader;
-		protected const int GroupSize = 128;
+		/*
+			float3 pos;
+			float rotation;
 
+			float3 velocity;
+			float baseSize;
+
+			float life;
+			uint color;
+
+			float random;
+			float pad;
+		*/
+
+		public const int ParticleStride = 4 * (3 + 1 + 3 + 1 + 1 + 1 + 1 + 1);
+
+		protected float SimulationDeltTime;
 
 		float m_lastUpdate;
-		protected float SimulationDeltTIme;
 
-		public Transform Transform;
-
-		protected bool Supported {
-			get { return SystemInfo.supportsComputeShaders; }
-		}
+		public ComputeShader ComputeShader;
 
 		protected Vector3 ParentPosition {
 			get {
-				if (Transform.parent == null) return Vector3.zero;
-				return Transform.parent.position;
+				if (SystemComp.transform.parent == null) return Vector3.zero;
+				return SystemComp.transform.parent.position;
 			}
 		}
 
@@ -61,20 +59,22 @@ namespace TC.Internal {
 		}
 
 		protected bool ShouldUpdate() {
-			if (Renderer.isVisible || Renderer.culledSimulationMode == CulledSimulationMode.UpdateNormally) {
-				SimulationDeltTIme = CurTime - m_lastUpdate;
+			bool culled = Renderer.UseFrustumCulling && !Renderer.isVisible;
+
+			if (!culled || Renderer.culledSimulationMode == CulledSimulationMode.UpdateNormally) {
+				SimulationDeltTime = CurTime - m_lastUpdate;
 				m_lastUpdate = CurTime;
 				return true;
 			}
 
 			switch (Renderer.culledSimulationMode) {
 				case CulledSimulationMode.StopSimulation:
-					SimulationDeltTIme = 0.0f;
+					SimulationDeltTime = 0.0f;
 					return false;
 
 				case CulledSimulationMode.SlowSimulation:
-					SimulationDeltTIme = CurTime - m_lastUpdate;
-					if (SimulationDeltTIme > Renderer.cullSimulationDelta) {
+					SimulationDeltTime = CurTime - m_lastUpdate;
+					if (SimulationDeltTime > Renderer.cullSimulationDelta) {
 						m_lastUpdate = CurTime;
 						return true;
 					}
@@ -89,27 +89,10 @@ namespace TC.Internal {
 			return System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
 		}
 
-		public void Awake(ParticleEmitter emitter, ParticleColliderManager colliderManager, ParticleRenderer renderer,
-			ParticleForceManager forceManager, ParticleManager system) {
+		internal void Awake(TCParticleSystem comp) {
 			//reference all components for easy acess
-
-			PartEmitter = emitter;
-			ColliderManager = colliderManager;
-			Renderer = renderer;
-			ForceManager = forceManager;
-			Manager = system;
-
-			//Load the compute shader reference
-			if (system.ComputeShader == null) {
-				ComputeShader = Resources.Load("MassParticle") as ComputeShader;
-			}
-
-			ComputeShader = system.ComputeShader;
-
-			if (ComputeShader == null) {
-				Debug.LogError("Failed to load compute shader!");
-				return;
-			}
+			SystemComp = comp;
+			ComputeShader = TCParticleGlobalManager.Instance.ComputeShader;
 
 			//find all kernels for quick acces.
 			UpdateAllKernel = ComputeShader.FindKernel("UpdateAll");
@@ -120,20 +103,26 @@ namespace TC.Internal {
 			UpdateTurbulenceForcesKernel = ComputeShader.FindKernel("UpdateTurbulenceForces");
 
 			UpdateCollidersKernel = ComputeShader.FindKernel("UpdateColliders");
-			Transform = SystemComp.transform;
+
+			Initialize();
 		}
 
+		internal virtual void OnEnable() {}
+		internal virtual void OnDisable() {}
+		internal virtual void OnDestroy() {}
 
-		public virtual void Initialize() {}
-		public virtual void OnEnable() {}
-		public virtual void OnDisable() {}
-		public virtual void OnDestroy() {}
+
+		[EditorBrowsable(EditorBrowsableState.Never)]
 		protected virtual void Bind() {}
+
+		[EditorBrowsable(EditorBrowsableState.Never)]
+		protected virtual void Initialize() { }
+
 
 		//SetParticles does a global set, so you can be sure all kernels neccesary for updating use the right memory.
 		protected void BindParticles() {
 			Manager.Bind();
-			PartEmitter.Bind();
+			Emitter.Bind();
 			ForceManager.Bind();
 			ColliderManager.Bind();
 		}

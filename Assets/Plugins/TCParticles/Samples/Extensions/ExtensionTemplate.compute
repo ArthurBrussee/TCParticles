@@ -1,0 +1,17 @@
+#include "Assets/Plugins/TCParticles/Resources/TCFramework.cginc"
+
+//===============================================================
+//Example kernel
+//pragma tells unity what kernels there are - don't forget this!
+#pragma kernel MyExtensionKernel
+
+//The amount to accelerate each particle each frame
+//set by CPU, see ExtensionTemplate.cs
+float AccelSpeed; 
+
+
+[numthreads(TCGroupSize, 1, 1)]
+void MyExtensionKernel(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID) {
+	uint id = GetId(DTid.x); //Never read directly from DTid.x, but use GetId(). THis gets the correct particle from the current ring buffer
+	particles[id].velocity += float3(AccelSpeed * 10 * _DeltTime, 0.0f, 0.0f);
+}

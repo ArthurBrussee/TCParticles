@@ -2,20 +2,19 @@ using UnityEngine;
 
 namespace TC.Internal {
 	public class TCParticlesBoidsFlock {
-		private ComputeBuffer m_posSumBuffer;
-		private ComputeBuffer m_velocitySumBuffer;
+		ComputeBuffer m_posSumBuffer;
+		ComputeBuffer m_velocitySumBuffer;
 
-		private ComputeBuffer m_tempPosBuffer;
-		private ComputeBuffer m_tempVelocityBuffer;
+		ComputeBuffer m_tempPosBuffer;
+		ComputeBuffer m_tempVelocityBuffer;
 
-		private int m_sumKernel;
-		private int m_updateBoidsKernel;
-		private int m_initKernel;
+		int m_sumKernel;
+		int m_updateBoidsKernel;
+		int m_initKernel;
 
-		private ParticleManager m_system;
-		private ParticleForceManager m_force;
-		private ComputeShader m_computeShader;
-
+		ParticleManager m_system;
+		ParticleForceManager m_force;
+		ComputeShader m_computeShader;
 
 		public TCParticlesBoidsFlock(ParticleManager system, ParticleForceManager force, ComputeShader computeShader) {
 			m_system = system;
@@ -34,13 +33,13 @@ namespace TC.Internal {
 			m_updateBoidsKernel = computeShader.FindKernel("BoidsFlockUpdate");
 		}
 
-		private void Sum(ComputeBuffer i, ComputeBuffer o, float groups) {
+		void Sum(ComputeBuffer i, ComputeBuffer o, float groups) {
 			m_computeShader.SetBuffer(m_sumKernel, "sumInput", i);
 			m_computeShader.SetBuffer(m_sumKernel, "sumOutput", o);
 			m_computeShader.Dispatch(m_sumKernel, Mathf.RoundToInt(groups), 1, 1);
 		}
 
-		private void SumRoutine(ComputeBuffer buf1, ComputeBuffer buf2, string setBuffer) {
+		void SumRoutine(ComputeBuffer buf1, ComputeBuffer buf2, string setBuffer) {
 			int nsum = Mathf.FloorToInt(m_system.ParticleCount / 2.0f);
 			float groups = nsum / 16.0f;
 			int rest = Mathf.RoundToInt(groups) % 32;
@@ -62,8 +61,8 @@ namespace TC.Internal {
 			m_computeShader.SetInt("rest", rest);
 		}
 
-		public void UpdateBoids() {
-			m_system.SetPariclesToKernel(m_computeShader, m_initKernel);
+		public void UpdateBoids(Transform systemTransform) {
+			m_system.BindPariclesToKernel(m_computeShader, m_initKernel);
 			m_computeShader.SetInt("n", m_system.ParticleCount);
 			m_computeShader.SetFloat("nDiv", 1.0f / m_system.ParticleCount);
 			m_computeShader.SetFloat("boidsPosStr", m_force.boidsPositionStrength);
@@ -72,12 +71,12 @@ namespace TC.Internal {
 			m_computeShader.SetBuffer(m_initKernel, "averageVelocity", m_velocitySumBuffer);
 			m_computeShader.Dispatch(m_initKernel, m_system.DispatchCount, 1, 1);
 
-			m_system.SetPariclesToKernel(m_computeShader, m_sumKernel);
+			m_system.BindPariclesToKernel(m_computeShader, m_sumKernel);
 			SumRoutine(m_posSumBuffer, m_tempPosBuffer, "averagePos");
 			SumRoutine(m_velocitySumBuffer, m_tempVelocityBuffer, "averageVelocity");
 
-			m_system.SetPariclesToKernel(m_computeShader, m_updateBoidsKernel);
-			m_computeShader.SetVector("boidsCenter", m_system.Transform.position);
+			m_system.BindPariclesToKernel(m_computeShader, m_updateBoidsKernel);
+			m_computeShader.SetVector("boidsCenter", systemTransform.position);
 			m_computeShader.SetFloat("boidsCenterStr", m_force.boidsCenterStrength);
 			m_computeShader.Dispatch(m_updateBoidsKernel, m_system.DispatchCount, 1, 1);
 		}

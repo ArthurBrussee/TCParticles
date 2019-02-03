@@ -1,128 +1,60 @@
 using System;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace TC.Internal {
 	[Serializable]
 	public class ParticleEmitterShape {
+		// Shape to emit from
 		public EmitShapes shape = EmitShapes.Sphere;
+
+		//Sphere emission
 		public MinMax radius = MinMax.Constant(5.0f);
 
+		//Cube emission
 		public Vector3 cubeSize = Vector3.one;
+
+		//Mesh emission settings
 		public Mesh emitMesh;
+		public Texture texture;
 		public bool normalizeArea = true;
+		[Range(0, 3)] public int uvChannel;
+		public bool spawnOnMeshSurface = true;
 
-
-		public Texture2D texture;
-		public int uvChannel;
-
+		//Cone emission
 		[Range(0.0f, 89.9f)] public float coneAngle;
-
 		public float coneHeight;
 		public float coneRadius;
+
+		//Ring emission
 		public float ringOuterRadius;
 		public float ringRadius;
 
+		//Line emission
 		public float lineLength;
 		public float lineRadius;
 
-		public StartDirectionType startDirectionType = StartDirectionType.Normal;
+		// Velocity vectors
+		public StartDirection startDirectionType = StartDirection.Normal;
 		public Vector3 startDirectionVector;
 		public float startDirectionRandomAngle;
 
-		public bool spawnOnMeshSurface = true;
+		// Point cloud emission
+		public PointCloudData pointCloud;
 
-		float m_totalArea;
+		ComputeBuffer m_emitProtoBuffer;
 
-		static ComputeBuffer s_emitProtoBuffer;
+		[NonSerialized]
+		ParticleProto[] m_toEmitBuffer;
 
-		struct Face {
-			public Vector3 a;
-			public Vector3 b;
-			public Vector3 c;
+		int m_toEmitListCount;
+		Vector4 m_emitUseVelSizeColorPos;
 
-			public Vector3 na;
-			public Vector3 nb;
-			public Vector3 nc;
-
-			public Vector2 uva;
-			public Vector2 uvb;
-			public Vector2 uvc;
-
-			public float cweight;
-		}
-
-
-		void GenerateMeshData() {
-			//Data already cached!
-			if (TCParticleGlobalRender.MeshStore.ContainsKey(emitMesh)) {
-				return;
-			}
-			
-			//Build mesh data structure
-			Vector3[] vertices = emitMesh.vertices;
-			Vector3[] normals = emitMesh.normals;
-			int[] triangles = emitMesh.triangles;
-
-			int count = triangles.Length / 3;
-
-			List<Vector2> uvs = new List<Vector2>();
-			uvChannel = Mathf.Clamp(uvChannel, 0, 4);
-			emitMesh.GetUVs(uvChannel, uvs);
-
-			var faces = new Face[count];
-			for (int i = 0; i < count; ++i) {
-				int t0 = triangles[i * 3 + 0];
-				int t1 = triangles[i * 3 + 1];
-				int t2 = triangles[i * 3 + 2];
-
-				faces[i] = new Face {
-					a = vertices[t0],
-					b = vertices[t1],
-					c = vertices[t2],
-
-					na = normals[t0],
-					nb = normals[t1],
-					nc = normals[t2],
-
-					uva = uvs[t0],
-					uvb = uvs[t1],
-					uvc = uvs[t2]
-				};
-
-				//Do we accumulate area for normlisation?
-				if (normalizeArea) {
-					float area = Vector3.Cross(faces[i].a - faces[i].b, faces[i].c - faces[i].a).magnitude / 2.0f;
-					faces[i].cweight = area;
-					m_totalArea += area;
-				} else {
-					faces[i].cweight = 0.0f;
-				}
-			}
-
-			if (normalizeArea) {
-				float cumulative = 0;
-
-				for (int i = 0; i < count; ++i) {
-					cumulative += faces[i].cweight / m_totalArea;
-					faces[i].cweight = cumulative;
-				}
-			}
-
-			var buffer = new ComputeBuffer(count, ParticleComponent.SizeOf<Face>());
-			buffer.SetData(faces);
-			TCParticleGlobalRender.MeshStore[emitMesh] = buffer;
-		}
-
-		public void SetMeshData(ComputeShader cs, int kern, ref ParticleEmitter.Emitter emitter) {
+		public void SetMeshData(ComputeShader cs, int kern, ref ParticleEmitterData emitter) {
 			if (emitMesh == null) {
 				return;
 			}
 
-			GenerateMeshData();
-
-			var buffer = TCParticleGlobalRender.MeshStore[emitMesh];
-
+			var buffer = TCParticleGlobalManager.GetMeshBuffer(emitMesh, uvChannel);
 			uint onSurface;
 
 			if (!spawnOnMeshSurface)
@@ -131,11 +63,10 @@ namespace TC.Internal {
 				onSurface = normalizeArea ? (uint) 1 : 2;
 			}
 
-
 			emitter.MeshVertLen = (uint)buffer.count;
 			emitter.OnSurface = onSurface;
-
 			cs.SetBuffer(kern, "emitFaces", buffer);
+
 			if (texture != null) {
 				cs.SetTexture(kern, "_MeshTexture", texture);
 			}
@@ -144,25 +75,47 @@ namespace TC.Internal {
 			}
 		}
 
-		public void SetListData(ComputeShader cs, int kern, ParticleProto[] particlePrototypes) {
-			if (s_emitProtoBuffer == null || s_emitProtoBuffer.count < particlePrototypes.Length) {
-				if (s_emitProtoBuffer != null) {
-					s_emitProtoBuffer.Release();
+		public void UpdateListData(ComputeShader cs, int kern) {
+			//Make sure we always have some buffer
+			if (m_emitProtoBuffer == null || m_emitProtoBuffer.count < m_toEmitListCount) {
+				if (m_emitProtoBuffer != null) {
+					m_emitProtoBuffer.Release();
 				}
 
-				s_emitProtoBuffer = new ComputeBuffer(particlePrototypes.Length, ParticleProto.Stride);
+				m_emitProtoBuffer = new ComputeBuffer(Mathf.Max(1, m_toEmitListCount), ParticleProto.Stride);
 			}
 
-			s_emitProtoBuffer.SetData(particlePrototypes);
-			cs.SetBuffer(kern, "emitList", s_emitProtoBuffer);
+			cs.SetBuffer(kern, "emitList", m_emitProtoBuffer);
+			 
+			if (m_toEmitBuffer != null) {
+				cs.SetFloat(SID._UseEmitList, 1.0f);
+				m_emitProtoBuffer.SetData(m_toEmitBuffer, 0, 0, m_toEmitListCount);
+				cs.SetVector(SID._UseVelSizeColorPos, m_emitUseVelSizeColorPos);
+				m_toEmitBuffer = null;
+			} else {
+				cs.SetFloat(SID._UseEmitList, 0.0f);
+			}
+		}
+
+		public void SetPointCloudData(ComputeShader cs, int kern, int count, ref ParticleEmitterData emitter) {
+			if (pointCloud == null) {
+				return;
+			}
+
+			var particlePrototypes = pointCloud.GetPrototypes(count);
+			SetPrototypeEmission(particlePrototypes, count, true, false, false, true);
 		}
 
 		public void ReleaseData() {
-			//TODO: this releases the buffer too often if others still use it.
-			//Not a big deal for point clouds though
-			if (s_emitProtoBuffer != null) {
-				s_emitProtoBuffer.Release();
+			if (m_emitProtoBuffer != null) {
+				m_emitProtoBuffer.Release();
 			}
+		}
+
+		internal void SetPrototypeEmission(ParticleProto[] prototypes, int count, bool useColor, bool useSize, bool useVelocity, bool usePosition) {
+			m_toEmitBuffer = prototypes;
+			m_emitUseVelSizeColorPos = new Vector4(useVelocity ? 1 : 0, useSize ? 1 : 0, useColor ? 1 : 0, usePosition ? 1 : 0);
+			m_toEmitListCount = count;
 		}
 	}
 }
