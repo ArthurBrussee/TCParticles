@@ -109,7 +109,6 @@ namespace TC {
 		Color curTintColor = Color.white;
 		[SerializeField] Bounds _bounds;
 
-
 		/// <summary>
 		/// Renderer bounds used for frustum culling when <see cref="UseFrustumCulling"/> is on.
 		/// </summary>
@@ -149,6 +148,11 @@ namespace TC {
 		/// </summary>
 		[Range(0.02f, 0.75f)] public float cullSimulationDelta;
 
+		/// <summary>
+		/// Bind the point cloud data Normals as a buffer. WARNING: These normals are directly flom the ply, and not stored in the particles.
+		/// </summary>
+		public bool usePointCloudNormals;
+		
 		/// <summary>
 		/// Is the size specified for the particles in pixels
 		/// </summary>
@@ -191,6 +195,9 @@ namespace TC {
 
 		uint[] m_argsData = new uint[5];
 		ComputeBuffer m_argsBuffer;
+
+		ComputeBuffer m_customNormalsBuffer;
+		
 		Mesh m_tailStretchMesh;
 		Mesh m_prevRenderModeMesh;
 
@@ -206,7 +213,6 @@ namespace TC {
 
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		protected override void Initialize() {
-			//Deal with normals buffer state
 			if (_material == null) {
 				_material = Resources.Load("TCMaterialDefault") as Material;
 			}
@@ -262,6 +268,7 @@ namespace TC {
 
 		void ReleaseBuffers() {
 			Release(ref m_argsBuffer);
+			Release(ref m_customNormalsBuffer);
 		}
 
 		void UpdateTailUv() {
@@ -337,6 +344,21 @@ namespace TC {
 			}
 
 			m_cacheMaterial.SetBuffer("particlesRead", Manager.GetParticlesBuffer());
+
+			if (usePointCloudNormals && Emitter.PointCloud != null && Emitter.Shape == EmitShapes.PointCloud) {
+				var cloud = Emitter.PointCloud;
+
+				if (m_customNormalsBuffer == null || m_customNormalsBuffer.count != cloud.PointCount) {
+					m_customNormalsBuffer = new ComputeBuffer(cloud.PointCount, 12);
+					m_customNormalsBuffer.SetData(cloud.Normals);
+				}
+
+				m_cacheMaterial.SetBuffer("_CustomNormalsBuffer", m_customNormalsBuffer);
+				m_cacheMaterial.EnableKeyword("TC_CUSTOM_NORMAL");
+			} else {
+				m_cacheMaterial.DisableKeyword("TC_CUSTOM_NORMAL");
+			}
+
 			m_cacheMaterial.SetTexture(SID._ColTex, colorOverLifetimeTexture);
 
 			if (Emitter.DoSizeOverLifetime) {
@@ -387,8 +409,6 @@ namespace TC {
 			//TODO: Combine into float?
 			float gl = glow + 1.0f;
 			m_cacheMaterial.SetVector(SID._Glow, new Vector4(gl, gl, gl, 1.0f));
-
-
 			m_cacheMaterial.SetVector(SID._LifeMinMax, new Vector4(Emitter.Lifetime.Min, Emitter.Lifetime.Max));
 
 			switch (RenderMode) {
@@ -418,7 +438,6 @@ namespace TC {
 				OnSetMaterial(m_cacheMaterial);
 			}
 
-
 			if (m_particleMesh == null) {
 				return;
 			}
@@ -430,7 +449,6 @@ namespace TC {
 			m_argsData[3] = 0;
 			m_argsData[4] = 0;
 			m_argsBuffer.SetData(m_argsData);
-
 
 			//Setup proper size mult depending on camera ortho size
 			if (isPixelSize) {

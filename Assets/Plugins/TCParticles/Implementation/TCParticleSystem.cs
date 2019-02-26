@@ -10,7 +10,7 @@ namespace TC {
 	/// GPU Particle system. Provides basic API to control particles
 	/// </summary>
 	/// <remarks>
-	/// To access more specific API's use the  <see cref="Manager"/>, <see cref="Emitter"/>, <see cref="ForceManager"/> and <see cref="ColliderManager"/> properties.
+	/// To access more specific APIs use the  <see cref="Manager"/>, <see cref="Emitter"/>, <see cref="ForceManager"/> and <see cref="ColliderManager"/> properties.
 	/// </remarks>
 	[AddComponentMenu("TC Particles/TC Particle Manager")]
 	[ExecuteInEditMode]

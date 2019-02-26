@@ -1,3 +1,4 @@
+using TC.Internal;
 using UnityEditor;
 using UnityEngine;
 
@@ -382,6 +383,11 @@ namespace TC.EditorIntegration {
 			if (m_tabGroup.ToggleArea("Renderer", new Color(0.8f, 1.0f, 1.0f))) {
 				PropField("_particleRenderer._material", new GUIContent("Material"));
 				PropField("_particleRenderer._renderMode", new GUIContent("Render Mode"));
+
+				var shapeProp = GetProperty("_emitter.pes.shape");
+				if (!shapeProp.hasMultipleDifferentValues && (EmitShapes) shapeProp.enumValueIndex == EmitShapes.PointCloud) {
+					PropField("_particleRenderer.usePointCloudNormals", new GUIContent("Point Cloud Normals"));
+				}
 
 				var renderMode = (GeometryRenderMode) GetProperty("_particleRenderer._renderMode").enumValueIndex;
 

@@ -691,7 +691,6 @@ namespace TC {
 			Profiler.EndSample();
 		}
 
-
 		/// <summary>
 		/// Clears all particles in the current particle system
 		/// </summary>
@@ -749,9 +748,6 @@ namespace TC {
 			Emit(count);
 		}
 
-
-
-
 		/// <summary>
 		/// Emit a given amount of particles using the current setting of the particle emitter
 		/// </summary>
@@ -765,8 +761,6 @@ namespace TC {
 
 			EmitSetInternal(count, pes, SystemComp.transform, ref m_emitPrevPos, ref m_emitPrevSpeed);
 		}
-
-
 
 		void EmitSetInternal(int count, ParticleEmitterShape emitShape, Transform trans, ref Vector3 prevPos, ref Vector3 prevSpeed) {
 			Profiler.BeginSample("Emit bind");

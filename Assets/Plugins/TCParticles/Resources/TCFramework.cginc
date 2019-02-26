@@ -43,6 +43,7 @@ struct SystemParameters {
 
 #if TC_COMPUTES
 	StructuredBuffer<SystemParameters> systemParameters : register(t2);
+	StructuredBuffer<float3> _CustomNormalsBuffer : register(t3);
 #endif
 
 float4 _LifeMinMax;
@@ -233,6 +234,10 @@ void TCDefaultProc(){}
 			input.normal = mul(UNITY_MATRIX_I_V, mul(unity_WorldToObject, float4(0.0f, 0.0f, 1.0f, 0.0f)));
 		#else
 			input.vertex.xyz += tc_Particle.pos;
+		#endif
+		
+		#if TC_CUSTOM_NORMAL 
+		    input.normal = _CustomNormalsBuffer[GetId(unity_InstanceID)];
 		#endif
 		
 		float4 partColor = UnpackColor(tc_Particle.color);

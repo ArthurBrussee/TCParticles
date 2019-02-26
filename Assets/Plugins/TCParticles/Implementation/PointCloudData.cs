@@ -10,7 +10,20 @@ namespace TC {
 			get { return _positions.Length; }
 		}
 
+		public Vector3[] Vertices {
+			get { return _positions; }
+		}
+
+		public Vector3[] Normals {
+			get { return _normals; }
+		}
+
+		public Color32[] Colors {
+			get { return _colors; }
+		}
+
 		[SerializeField] Vector3[] _positions;
+		[SerializeField] Vector3[] _normals;
 		[SerializeField] Color32[] _colors;
 
 		//TODO: Serialize this array instead? How big is this really?
@@ -25,8 +38,9 @@ namespace TC {
 			return ret;
 		}
 
-		public void Initialize(Vector3[] positions, Color32[] colors, float scale, Vector3 pivot) {
+		public void Initialize(Vector3[] positions, Vector3[] normals, Color32[] colors, float scale, Vector3 pivot) {
 			_positions = positions;
+			_normals = normals;
 
 			if (!Mathf.Approximately(scale, 1.0f)) {
 				for (int i = 0; i < _positions.Length; ++i) {

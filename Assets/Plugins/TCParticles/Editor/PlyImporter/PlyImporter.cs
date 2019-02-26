@@ -87,14 +87,14 @@ namespace Pcx {
 
 	[ScriptedImporter(1, "ply")]
 	class PlyImporter : ScriptedImporter {
-#pragma warning disable CS0649
 		[Header("Point Cloud Data Settings")]
 		public float Scale = 1;
+#pragma warning disable 649
 		public Vector3 PivotOffset;
+#pragma warning restore 649
 
 		[Header("Default Renderer")]
 		public float DefaultPointSize = 0.02f;
-#pragma warning restore CS0649
 
 		public override void OnImportAsset(AssetImportContext context) {
 			// ComputeBuffer container
@@ -105,7 +105,7 @@ namespace Pcx {
 			var system = gameObject.AddComponent<TCParticleSystem>();
 			system.Emitter.Shape = EmitShapes.PointCloud;
 			system.Emitter.PointCloud = data;
-			system.Emitter.SetBursts(new BurstEmission[] { new BurstEmission { Time = 0, Amount = data.PointCount } });
+			system.Emitter.SetBursts(new[] { new BurstEmission { Time = 0, Amount = data.PointCount } });
 			system.Emitter.EmissionRate = 0;
 			system.Emitter.Lifetime = MinMaxRandom.Constant(-1.0f);
 			system.Looping = false;
@@ -129,6 +129,7 @@ namespace Pcx {
 		enum DataProperty {
 			Invalid,
 			X, Y, Z,
+			NX, NY, NZ,
 			R, G, B, A,
 			Data8, Data16, Data32,
 			DataAscii
@@ -139,6 +140,11 @@ namespace Pcx {
 				case DataProperty.X: return 4;
 				case DataProperty.Y: return 4;
 				case DataProperty.Z: return 4;
+				
+				case DataProperty.NX: return 4;
+				case DataProperty.NY: return 4;
+				case DataProperty.NZ: return 4;
+				
 				case DataProperty.R: return 1;
 				case DataProperty.G: return 1;
 				case DataProperty.B: return 1;
@@ -158,10 +164,12 @@ namespace Pcx {
 
 		class DataBody {
 			public Vector3[] vertices;
+			public Vector3[] normals;
 			public Color32[] colors;
 
 			public DataBody(int vertexCount) {
 				vertices = new Vector3[vertexCount];
+				normals = new Vector3[vertexCount];
 				colors = new Color32[vertexCount];
 			}
 		}
@@ -172,7 +180,7 @@ namespace Pcx {
 			var body = ReadDataBody(header, stream);
 
 			var data = ScriptableObject.CreateInstance<PointCloudData>();
-			data.Initialize(body.vertices, body.colors, Scale, PivotOffset);
+			data.Initialize(body.vertices, body.normals, body.colors, Scale, PivotOffset);
 
 			data.name = Path.GetFileNameWithoutExtension(path);
 			return data;
@@ -252,6 +260,11 @@ namespace Pcx {
 						case "x": prop = DataProperty.X; break;
 						case "y": prop = DataProperty.Y; break;
 						case "z": prop = DataProperty.Z; break;
+						
+						case "nx": prop = DataProperty.NX; break;
+						case "ny": prop = DataProperty.NY; break;
+						case "nz": prop = DataProperty.NZ; break;
+						
 						case "red": case "r": case "diffuse_red": prop = DataProperty.R; break;
 						case "green": case "g": case "diffuse_green": prop = DataProperty.G; break;
 						case "blue": case "b": case "diffuse_blue": prop = DataProperty.B; break;
@@ -299,7 +312,6 @@ namespace Pcx {
 		}
 
 		DataBody ReadDataBody(DataHeader header, FileStream stream) {
-
 			byte[] arrfile = new byte[stream.Length - stream.Position];
 
 			int remainder = arrfile.Length;
@@ -330,6 +342,10 @@ namespace Pcx {
 								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleLittleEndian(); break;
 								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleLittleEndian(); break;
 
+								case DataProperty.NX: data.normals[i].x = reader.ReadSingleLittleEndian(); break;
+								case DataProperty.NY: data.normals[i].y = reader.ReadSingleLittleEndian(); break;
+								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleLittleEndian(); break;
+								
 								case DataProperty.R: r = reader.ReadByte(); break;
 								case DataProperty.G: g = reader.ReadByte(); break;
 								case DataProperty.B: b = reader.ReadByte(); break;
@@ -356,6 +372,10 @@ namespace Pcx {
 								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleBigEndian(); break;
 								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleBigEndian(); break;
 
+								case DataProperty.NX: data.normals[i].x = reader.ReadSingleBigEndian(); break;
+								case DataProperty.NY: data.normals[i].y = reader.ReadSingleBigEndian(); break;
+								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleBigEndian(); break;
+								
 								case DataProperty.R: r = reader.ReadByte(); break;
 								case DataProperty.G: g = reader.ReadByte(); break;
 								case DataProperty.B: b = reader.ReadByte(); break;
@@ -382,6 +402,10 @@ namespace Pcx {
 								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleAscii(); break;
 								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleAscii(); break;
 
+								case DataProperty.NX: data.normals[i].x = reader.ReadSingleAscii(); break;
+								case DataProperty.NY: data.normals[i].y = reader.ReadSingleAscii(); break;
+								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleAscii(); break;
+								
 								case DataProperty.R: r = reader.ReadByteAscii(); break;
 								case DataProperty.G: g = reader.ReadByteAscii(); break;
 								case DataProperty.B: b = reader.ReadByteAscii(); break;
