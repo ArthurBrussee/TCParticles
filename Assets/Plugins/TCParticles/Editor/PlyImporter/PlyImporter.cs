@@ -23,6 +23,21 @@ namespace Pcx {
 			Position = 0;
 		}
 
+		public string ReadLine() {
+			int charsRead = 0;
+
+			while (true) {
+				char c = (char)m_bytes[Position++];
+
+				if (c == '\n') {
+					return new string(m_readChars, 0, charsRead);
+				}
+
+				if (c != '\r') {
+					m_readChars[charsRead++] = c;
+				}
+			}
+		}
 		public float ReadSingleLittleEndian() {
 			m_scratchRead[0] = m_bytes[Position++];
 			m_scratchRead[1] = m_bytes[Position++];
@@ -174,10 +189,24 @@ namespace Pcx {
 			}
 		}
 
+		byte[] ReadFully(Stream input) {
+			byte[] buffer = new byte[16 * 1024];
+			using (MemoryStream ms = new MemoryStream()) {
+				int read;
+				while ((read = input.Read(buffer, 0, buffer.Length)) > 0) {
+					ms.Write(buffer, 0, read);
+				}
+
+				return ms.ToArray();
+			}
+		}
+
 		PointCloudData ImportAsPointCloudData(string path) {
 			var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-			var header = ReadDataHeader(new StreamReader(stream));
-			var body = ReadDataBody(header, stream);
+			var reader = new PclBinaryReader(ReadFully(stream));
+
+			var header = ReadDataHeader(reader);
+			var body = ReadDataBody(header, reader);
 
 			var data = ScriptableObject.CreateInstance<PointCloudData>();
 			data.Initialize(body.vertices, body.normals, body.colors, Scale, PivotOffset);
@@ -192,13 +221,10 @@ namespace Pcx {
 			ASCII
 		}
 
-		DataHeader ReadDataHeader(StreamReader reader) {
+		DataHeader ReadDataHeader(PclBinaryReader reader) {
 			var data = new DataHeader();
-			var readCount = 0;
-
 			// Magic number line ("ply")
-			var line = reader.ReadLine();
-			readCount += line.Length + 1;
+			string line = reader.ReadLine();
 
 			if (line != "ply") {
 				throw new ArgumentException("Magic number ('ply') mismatch.");
@@ -208,10 +234,9 @@ namespace Pcx {
 			while (true) {
 				// Read a line and split it with white space.
 				line = reader.ReadLine();
-				readCount += line.Length + 1;
 				if (line == "end_header") break;
+				
 				var col = line.Split(' ');
-
 				if (col[0] == "comment") {
 					continue;
 				}
@@ -271,34 +296,55 @@ namespace Pcx {
 						case "alpha": case "a": case "diffuse_alpha": prop = DataProperty.A; break;
 					}
 
-					// Check the property type.
-					if (col[1] == "char" || col[1] == "uchar" || col[1] == "uint8") {
-						if (prop == DataProperty.Invalid) {
-							prop = DataProperty.Data8;
-						} else if (GetPropertySize(prop) != 1)
-							throw new ArgumentException("Invalid property type ('" + line + "').");
-					} else if (col[1] == "short" || col[1] == "ushort") {
-						if (prop == DataProperty.Invalid) {
-							prop = DataProperty.Data16;
-						} else if (GetPropertySize(prop) != 2)
-							throw new ArgumentException("Invalid property type ('" + line + "').");
-					} else if (col[1] == "int" || col[1] == "uint") {
-						if (prop == DataProperty.Invalid) {
-							prop = DataProperty.Data32;
-						} else if (GetPropertySize(prop) != 4) {
-							throw new ArgumentException("Invalid property type ('" + line + "').");
-						}
-					} else if (col[1] == "float" || col[1] == "float32") {
-						if (prop == DataProperty.Invalid) {
-							if (data.Format == PlyFormat.ASCII) {
-								prop = DataProperty.DataAscii;
-							} else {
-								prop = DataProperty.Data32;
+					switch (col[1]) {
+						// Check the property type.
+						case "char":
+						case "uchar":
+						case "uint8": {
+							if (prop == DataProperty.Invalid) {
+								prop = DataProperty.Data8;
+							} else if (GetPropertySize(prop) != 1) {
+								throw new ArgumentException("Invalid property type ('" + line + "').");
 							}
-						} else if (GetPropertySize(prop) != 4)
-							throw new ArgumentException("Invalid property type ('" + line + "').");
-					} else {
-						throw new ArgumentException("Unsupported property type ('" + line + "').");
+
+							break;
+						}
+						case "short":
+						case "ushort": {
+							if (prop == DataProperty.Invalid) {
+								prop = DataProperty.Data16;
+							} else if (GetPropertySize(prop) != 2) {
+								throw new ArgumentException("Invalid property type ('" + line + "').");
+							}
+
+							break;
+						}
+						case "int":
+						case "uint": {
+							if (prop == DataProperty.Invalid) {
+								prop = DataProperty.Data32;
+							} else if (GetPropertySize(prop) != 4) {
+								throw new ArgumentException("Invalid property type ('" + line + "').");
+							}
+
+							break;
+						}
+						case "float":
+						case "float32": {
+							if (prop == DataProperty.Invalid) {
+								if (data.Format == PlyFormat.ASCII) {
+									prop = DataProperty.DataAscii;
+								} else {
+									prop = DataProperty.Data32;
+								}
+							} else if (GetPropertySize(prop) != 4) {
+								throw new ArgumentException("Invalid property type ('" + line + "').");
+							}
+
+							break;
+						}
+						default:
+							throw new ArgumentException("Unsupported property type ('" + line + "').");
 					}
 
 					data.properties.Add(prop);
@@ -306,29 +352,10 @@ namespace Pcx {
 			}
 
 			// Rewind the stream back to the exact position of the reader.
-			reader.BaseStream.Position = readCount;
-
 			return data;
 		}
 
-		DataBody ReadDataBody(DataHeader header, FileStream stream) {
-			byte[] arrfile = new byte[stream.Length - stream.Position];
-
-			int remainder = arrfile.Length;
-			int startIndex = 0;
-			int read;
-
-			do {
-				read = stream.Read(arrfile, startIndex, remainder);
-				startIndex += read;
-				remainder -= read;
-			} while (remainder > 0 && read > 0);
-
-			var reader = new PclBinaryReader(arrfile);
-
-			//var bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, StreamPclPath));
-			//var binReader = new PclBinaryReader(bytes);
-
+		DataBody ReadDataBody(DataHeader header, PclBinaryReader reader) {
 			var data = new DataBody(header.vertexCount);
 
 			byte r = 255, g = 255, b = 255, a = 255;

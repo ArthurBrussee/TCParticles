@@ -236,10 +236,10 @@ void TCDefaultProc(){}
 			input.vertex.xyz += tc_Particle.pos;
 		#endif
 		
-		#if TC_CUSTOM_NORMAL 
+		#ifdef TC_CUSTOM_NORMAL
 		    input.normal = _CustomNormalsBuffer[GetId(unity_InstanceID)];
 		#endif
-		
+
 		float4 partColor = UnpackColor(tc_Particle.color);
 		float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
 		input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;

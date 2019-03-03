@@ -68,6 +68,7 @@
 			
             #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
 			#pragma shader_feature _METALLICGLOSSMAP
+			
 			#pragma multi_compile_shadowcaster
 
             #pragma vertex vertParticleShadowCaster
@@ -80,9 +81,9 @@
         CGPROGRAM
 		#pragma target 4.6
 		#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-		
+        #pragma multi_compile TC_CUSTOM_NORMAL
 		// #pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
-		// #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
+		#pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
 		// #pragma shader_feature _METALLICGLOSSMAP
         // #pragma shader_feature _NORMALMAP
         // #pragma shader_feature _EMISSION

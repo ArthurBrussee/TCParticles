@@ -6,5 +6,5 @@ ScriptedImporter:
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 183c1cb276390b14e883dae29f585dfa, type: 3}
   Scale: 1
-  PivotOffset: {x: 100, y: 100, z: 0}
+  PivotOffset: {x: 60, y: 20, z: 0}
   DefaultPointSize: 0.02
