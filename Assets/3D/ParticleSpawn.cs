@@ -121,99 +121,95 @@ public class ParticleSpawn : MonoBehaviour {
 
 	IEnumerator GenerateParticles(int width, int height, int depth, string mapKernel) {
 		m_running = true;
-		
-		int dx = Mathf.CeilToInt(width / 8.0f);
-		int dy = Mathf.CeilToInt(height / 8.0f);
-		int dz = Mathf.CeilToInt(depth / 8.0f);
 
-		SetStep("Clear map");
+		try {
+			int dx = Mathf.CeilToInt(width / 8.0f);
+			int dy = Mathf.CeilToInt(height / 8.0f);
+			int dz = Mathf.CeilToInt(depth / 8.0f);
 
-		// Clear map texture 
-		{
-			int kernel = VoxelCompute.FindKernel("ClearMap");
-			VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
-			VoxelCompute.Dispatch(kernel, dx, dy, dz);
-		}
+			SetStep("Clear map");
 
-		yield return null;
-
-		SetStep("Apply map function");
-		
-		// DoMapping
-		{
-			int kernel = -1;
-			try {
-				kernel = VoxelCompute.FindKernel(mapKernel);
-			} catch {
-				m_running = false;
-				yield break;
+			// Clear map texture 
+			{
+				int kernel = VoxelCompute.FindKernel("ClearMap");
+				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
+				VoxelCompute.Dispatch(kernel, dx, dy, dz);
 			}
 
-			VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
-			VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
-			VoxelCompute.Dispatch(kernel, dx, dy, dz);
-		}
-
-		yield return null;
-		
-		SetStep("Gather Indices");
-
-		// GatherIndices
-		{
-			// Count up from 0
-			m_count.SetData(new uint[] {0});
-			
-			int kernel = VoxelCompute.FindKernel("GatherIndices");
-
-			VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
-			VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
-			VoxelCompute.SetBuffer(kernel, "_Count", m_count);
-			VoxelCompute.SetBuffer(kernel, "_FrameIndices", m_indices);
-			
-			VoxelCompute.Dispatch(kernel, dx, dy, dz);
-		}
-		
-		yield return null;
-		
-		SetStep("Emit particles");
-		
-		// EmitParticles
-		{
-			transform.localScale = new Vector3(VideoCubeSize.x / width, VideoCubeSize.y / height, VideoCubeSize.z / depth);
-			m_system.Emitter.Size = MinMaxRandom.Constant(1.0f);
-			
-			uint[] counterValue = new uint[1];
-			m_count.GetData(counterValue);
 			yield return null;
 
-			int particleCount = (int) counterValue[0];
+			SetStep("Apply map function");
 
-			m_system.Clear();
+			// DoMapping
+			{
+				int kernel = VoxelCompute.FindKernel(mapKernel);
 
-			// Construct the right amount of particles
-			m_system.Emit(particleCount);
+				VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
+				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
+				VoxelCompute.Dispatch(kernel, dx, dy, dz);
+			}
 
-			SetStep("Emitted " + particleCount + " particles");
+			yield return null;
+
+			SetStep("Gather Indices");
+
+			// GatherIndices
+			{
+				// Count up from 0
+				m_count.SetData(new uint[] {0});
+
+				int kernel = VoxelCompute.FindKernel("GatherIndices");
+
+				VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
+				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
+				VoxelCompute.SetBuffer(kernel, "_Count", m_count);
+				VoxelCompute.SetBuffer(kernel, "_FrameIndices", m_indices);
+
+				VoxelCompute.Dispatch(kernel, dx, dy, dz);
+			}
+
+			yield return null;
+
+			SetStep("Emit particles");
+
+			// EmitParticles
+			{
+				transform.localScale = new Vector3(VideoCubeSize.x / width, VideoCubeSize.y / height, VideoCubeSize.z / depth);
+				m_system.Emitter.Size = MinMaxRandom.Constant(1.0f);
+
+				uint[] counterValue = new uint[1];
+				m_count.GetData(counterValue);
+				yield return null;
+
+				int particleCount = (int) counterValue[0];
+
+				m_system.Clear();
+
+				// Construct the right amount of particles
+				m_system.Emit(particleCount);
+
+				SetStep("Emitted " + particleCount + " particles");
+			}
+
+			yield return null;
+
+			SetStep("Set positions");
+
+			// SetPositions
+			{
+				int kernel = VoxelCompute.FindKernel("SetPositions");
+
+				VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
+				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
+
+				VoxelCompute.SetBuffer(kernel, "_FrameIndices", m_indices);
+
+				// Now for each particle fire off a kernel that copies the right position
+				m_system.Manager.DispatchExtensionKernel(VoxelCompute, kernel);
+			}
+		} finally {
+			m_running = false;
 		}
-		
-		yield return null;
-		
-		SetStep("Set positions");
-		
-		// SetPositions
-		{
-			int kernel = VoxelCompute.FindKernel("SetPositions");
-			
-			VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
-			VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
-
-			VoxelCompute.SetBuffer(kernel, "_FrameIndices", m_indices);
-
-			// Now for each particle fire off a kernel that copies the right position
-			m_system.Manager.DispatchExtensionKernel(VoxelCompute, kernel);
-		}
-		
-		m_running = false;
 	}
 
 	void Update() {

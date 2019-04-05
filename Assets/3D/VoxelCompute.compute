@@ -129,7 +129,7 @@ void SliceMap(uint3 id : SV_DispatchThreadID) {
     }
     
     float3 col = _VideoTexture[id].rgb;
-    float alpha = id.z % 10 == 0 ? 1 : 0;
+    float alpha = fmod(dot(id, normalize(float3(0.3f, 0.2f, 0.2f))), 100.0f) <= 1.0f ? 1 : 0;
     
     _MappedTexture[id] = float4(col, alpha);
 }
@@ -142,8 +142,6 @@ void SobelMap(uint3 id : SV_DispatchThreadID) {
     }
     
     float3 col = _VideoTexture[id].rgb;
-    
-
     float alpha = GetSobelValue(id) - GetSobelValue(id - int3(0, 0, 1));
     _MappedTexture[id] = float4(col, saturate(alpha - 2.5f));
 }
