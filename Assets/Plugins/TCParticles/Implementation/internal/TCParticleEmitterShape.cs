@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace TC.Internal {
 	[Serializable]
@@ -88,10 +89,12 @@ namespace TC.Internal {
 			cs.SetBuffer(kern, "emitList", m_emitProtoBuffer);
 			 
 			if (m_toEmitBuffer != null) {
+				Profiler.BeginSample("Upload Particle Prototype data");
 				cs.SetFloat(SID._UseEmitList, 1.0f);
 				m_emitProtoBuffer.SetData(m_toEmitBuffer, 0, 0, m_toEmitListCount);
 				cs.SetVector(SID._UseVelSizeColorPos, m_emitUseVelSizeColorPos);
 				m_toEmitBuffer = null;
+				Profiler.EndSample();
 			} else {
 				cs.SetFloat(SID._UseEmitList, 0.0f);
 			}

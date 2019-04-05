@@ -75,6 +75,7 @@ float4 _SpriteAnimUv;
 float _Cycles;
 float _SpriteSheetBaseSpeed;
 float _SpriteSheetRandomStart;
+int _UvSpriteAnimation;
 
 //===============================
 //variables
@@ -115,6 +116,24 @@ uint PackColor(float4 unpackedInput) {
 
 	return packedOutput;
 }
+	
+// Generates an orthonormal (row-major) basis from a unit vector. TODO: make it column-major.
+// The resulting rotation matrix has the determinant of +1.
+// Ref: 'ortho_basis_pixar_r2' from http://marc-b-reynolds.github.io/quaternions/2016/07/06/Orthonormal.html
+void OrthonormalBasis(float3 localZ, out float3 localX, out float3 localY) {
+    float x  = localZ.x;
+    float y  = localZ.y;
+    float z  = localZ.z;
+    float sz = (z >= 0) ? 1.0 : -1.0;
+    
+    float a  = 1 / (sz + z);
+    float ya = y * a;
+    float b  = x * ya;
+    float c  = x * sz;
+
+    localX = float3(c * x * a - 1, sz * b, c);
+    localY = float3(b, y * ya - sz, y);
+}
 
 struct TCFragment {
 	float4 pos : SV_POSITION;
@@ -127,7 +146,7 @@ struct TCFragment {
 	//Initialize override system
 	//TODO: Little brittle - need to keep in sync with unity updates
 	#if TC_COMPUTES && defined(PROCEDURAL_INSTANCING_ON)
-		//Give access to original clip pos			
+		//Give access to original clip pos
 		inline float4 UnityObjectToClipPosRaw(float4 vertex) {
 			return UnityObjectToClipPos(vertex);
 		}
@@ -136,8 +155,9 @@ struct TCFragment {
 		{ \
 			unity_InstanceID = UNITY_GET_INSTANCE_ID(input); \
 			tc_Particle = particlesRead[GetId(unity_InstanceID)]; \
-			TCParticleProc procIn; \
+			TCParticleProc procIn = (TCParticleProc)0; \
 			procIn.vertex = input.vertex; \
+			procIn.normal = input.normal; \
 			procIn.texcoord = input.texcoord; \
 			procIn.texcoord1 = input.texcoord1; \
 			TCDefaultProc(procIn, tc_Particle); \
@@ -153,9 +173,8 @@ struct TCFragment {
 		#define UNITY_TRANSFER_INSTANCE_ID(input, output) TC_DO_PARTICLE(input)
 
 		//Redefine transform for normal vertex shaders
-
 		#if defined(TC_BILLBOARD) || defined(TC_BILLBOARD_STRETCHED)
-			float4 TcObjectToClipPos(float4 inVert, float3 partPos){
+			float4 TcObjectToClipPos(float4 inVert, float3 partPos) {
 				float4 screenPos = UnityObjectToClipPosRaw(float4(partPos.xyz, 1.0f));
 				float mult = _PixelMult.x * lerp(1.0f, screenPos.w, _PixelMult.y);
 				inVert.xyz *= mult;
@@ -187,16 +206,15 @@ struct TCFragment {
 //Dummy function necesarry to compile
 void TCDefaultProc(){}
 
-#if !SHADER_STAGE_COMPUTE && defined(PROCEDURAL_INSTANCING_ON)
+#if !SHADER_STAGE_COMPUTE && defined(PROCEDURAL_INSTANCING_ON) && TC_COMPUTES
 	struct TCParticleProc {
 		float4 vertex;
 		float2 texcoord;
 		float2 texcoord1;
 		float4 color;
-	
 		float3 normal;
 	};
-	
+
 	void TCDefaultProc(inout TCParticleProc input, in Particle tc_Particle) {
 		unity_ObjectToWorld = TC_MATRIX_M;
 		unity_WorldToObject = TC_MATRIX_M_INV;
@@ -209,58 +227,68 @@ void TCDefaultProc(){}
 		float totalSize = (tc_Particle.baseSize * lifeTex.a);
 		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;
 		
-		#if defined(TC_BILLBOARD) || defined(TC_BILLBOARD_STRETCHED)
-			#ifdef TC_BILLBOARD
-				//TODO: Do we include this in the actual rotation matrix?
-				float angle = tc_Particle.rotation;
-				
-				float c = cos(angle);
-				float s = sin(angle);
-				
-				input.vertex.xy = float2(input.vertex.x * c -  input.vertex.y * s,  input.vertex.x * s +  input.vertex.y * c);
-			#elif TC_BILLBOARD_STRETCHED
-				float3 screenSpaceVelocity = mul(UNITY_MATRIX_V, float4(realVelocity, 0.0f)).xyz + float3(0.0001f, 0.0f, 0.0f);
-				float3 vRight = screenSpaceVelocity / velLength;
-				float3 vUp = float3(-vRight.y, vRight.x, 0.0f);
+        #ifdef TC_BILLBOARD
+            //TODO: Do we include this in the actual rotation matrix?
+            float angle = tc_Particle.rotation;
+            
+            float c = cos(angle);
+            float s = sin(angle);
+            
+            input.vertex.xy = float2(input.vertex.x * c -  input.vertex.y * s,  input.vertex.x * s +  input.vertex.y * c);
+            
+            #if defined(TC_CUSTOM_NORMAL_ORIENT)
+                input.normal = _CustomNormalsBuffer[GetId(unity_InstanceID)];
+            #else
+                input.normal = mul(UNITY_MATRIX_I_V, mul(unity_WorldToObject, float4(0.0f, 0.0f, 1.0f, 0.0f)));
+            #endif
+        #elif TC_BILLBOARD_STRETCHED
+            float3 screenSpaceVelocity = mul(UNITY_MATRIX_V, float4(realVelocity, 0.0f)).xyz + float3(0.0001f, 0.0f, 0.0f);
+            float3 vRight = screenSpaceVelocity / velLength;
+            float3 vUp = float3(-vRight.y, vRight.x, 0.0f);
 
-				float2 vertStretch = input.vertex.xy;
+            float2 vertStretch = input.vertex.xy;
 
-				float stretchScaleFac = input.texcoord1.x;
-				float stretchFac = (1.0f + stretchScaleFac * (_LengthScale + velLength * _SpeedScale));
-				input.vertex.xyz = vertStretch.x * vRight * stretchFac + vertStretch.y * vUp;
-			#endif
-
-	
-			input.normal = mul(UNITY_MATRIX_I_V, mul(unity_WorldToObject, float4(0.0f, 0.0f, 1.0f, 0.0f)));
-		#else
-			input.vertex.xyz += tc_Particle.pos;
-		#endif
+            float stretchScaleFac = input.texcoord1.x;
+            float stretchFac = (1.0f + stretchScaleFac * (_LengthScale + velLength * _SpeedScale));
+            input.vertex.xyz = vertStretch.x * vRight * stretchFac + vertStretch.y * vUp;
+        #elif TC_MESH
+            #if defined(TC_CUSTOM_NORMAL_ORIENT)
+            
+                float3 localZ = _CustomNormalsBuffer[GetId(unity_InstanceID)];
+                float3 localX, localY;
+                OrthonormalBasis(localZ, localX, localY);
+                
+                input.vertex.xyz = input.vertex.x * localX + input.vertex.y * localY + input.vertex.z * localZ;
+                input.normal.xyz = input.normal.x * localX + input.normal.y * localY + input.vertex.z * localZ;
+                
+            #endif
+            
+            input.vertex.xyz += tc_Particle.pos;
+            float3 camFwd = _WorldSpaceCameraPos - tc_Particle.pos;
+            input.normal.xyz *= dot(input.normal, camFwd) < 0 ? -1 : 1;
+        #endif
 		
-		#ifdef TC_CUSTOM_NORMAL
-		    input.normal = _CustomNormalsBuffer[GetId(unity_InstanceID)];
-		#endif
-
-		float4 partColor = UnpackColor(tc_Particle.color);
 		float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
+		float4 partColor = UnpackColor(tc_Particle.color);
 		input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;
 
-#ifdef TC_UV_SPRITE_ANIM
-		float2 uv = input.texcoord.xy;
-		float spriteSheetTime = _LifeMinMax.y > 0 ? (tc_Particle.life / _LifeMinMax.y) : 0.0f;
-		spriteSheetTime += frac(_Time.y * _SpriteSheetBaseSpeed);
-		
-		//TODO: Make adding radnom controllable
-		spriteSheetTime += tc_Particle.random * _SpriteSheetRandomStart;
-		
-		//Normalize to 0-1
-		spriteSheetTime = frac(spriteSheetTime);
-
-		//Figure out sprite number
-		uint sprite = (uint)(spriteSheetTime * (_SpriteAnimSize.x * _SpriteAnimSize.y));
-		uint x = sprite % (uint)_SpriteAnimSize.x;
-		uint y = sprite / (uint)_SpriteAnimSize.x;
-		input.texcoord.xy = float2(x *_SpriteAnimSize.z, 1.0f - _SpriteAnimSize.w - y * _SpriteAnimSize.w) + uv * _SpriteAnimSize.zw;
-#endif
+        if (_UvSpriteAnimation > 0) {
+            float2 uv = input.texcoord.xy;
+            float spriteSheetTime = _LifeMinMax.y > 0 ? (tc_Particle.life / _LifeMinMax.y) : 0.0f;
+            spriteSheetTime += frac(_Time.y * _SpriteSheetBaseSpeed);
+            
+            //TODO: Make adding random controllable
+            spriteSheetTime += tc_Particle.random * _SpriteSheetRandomStart;
+            
+            //Normalize to 0-1
+            spriteSheetTime = frac(spriteSheetTime);
+    
+            //Figure out sprite number
+            uint sprite = (uint)(spriteSheetTime * (_SpriteAnimSize.x * _SpriteAnimSize.y));
+            uint x = sprite % (uint)_SpriteAnimSize.x;
+            uint y = sprite / (uint)_SpriteAnimSize.x;
+            input.texcoord.xy = float2(x *_SpriteAnimSize.z, 1.0f - _SpriteAnimSize.w - y * _SpriteAnimSize.w) + uv * _SpriteAnimSize.zw;
+        }
 	}
 #endif
 

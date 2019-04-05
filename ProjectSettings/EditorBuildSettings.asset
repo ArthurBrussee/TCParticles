@@ -6,8 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Plugins/TCParticles/Samples/FX1/FX1.unity
-    guid: 3fdafd26a3db59c4d996998f0bf01d8c
-  - enabled: 1
-    path: Assets/Plugins/TCParticles/Samples/SpringExtension/springParticles.unity
-    guid: 7bf21e51ae6da8a489603d721edc2c04
+    path: Assets/ballTest.unity
+    guid: 0e48b254ad2196e449da025d94ec107f
+  m_configObjects: {}

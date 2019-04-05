@@ -102,7 +102,7 @@ namespace TC {
 		/// <param name="useColor">Whether the color of the prototypes should be applied</param>
 		/// <param name="useSize">Whether the size of the prototypes should be applied</param>
 		/// <param name="useVelocity">Whether the velocity of the prototypes should be applied</param>
-		/// <param name="usePosition">Wether the position of the prototypes should be applied</param>
+		/// <param name="usePosition">Whether the position of the prototypes should be applied</param>
 		public void BurstEmit(ParticleProto[] prototypes, bool useColor = true, bool useSize = true, bool useVelocity = true, bool usePosition = true) {
 			BurstEmit(prototypes, prototypes.Length, useColor, useSize, useVelocity, usePosition);
 		}

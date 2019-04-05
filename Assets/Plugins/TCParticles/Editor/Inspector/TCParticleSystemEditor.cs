@@ -386,7 +386,7 @@ namespace TC.EditorIntegration {
 
 				var shapeProp = GetProperty("_emitter.pes.shape");
 				if (!shapeProp.hasMultipleDifferentValues && (EmitShapes) shapeProp.enumValueIndex == EmitShapes.PointCloud) {
-					PropField("_particleRenderer.usePointCloudNormals", new GUIContent("Point Cloud Normals"));
+					PropField("_particleRenderer.pointCloudNormals", new GUIContent("Point Cloud Normals"));
 				}
 
 				var renderMode = (GeometryRenderMode) GetProperty("_particleRenderer._renderMode").enumValueIndex;

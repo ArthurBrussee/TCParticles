@@ -301,7 +301,6 @@ namespace TC {
 			}
 #endif
 
-
 			_manager.OnEnable();
 			_emitter.OnEnable();
 			_colliderManager.OnEnable();

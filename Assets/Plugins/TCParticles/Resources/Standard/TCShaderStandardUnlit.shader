@@ -61,13 +61,14 @@
                 CGPROGRAM
 				#pragma target 4.5
 				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-				#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
+                #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
 
 				#pragma multi_compile_instancing
 				#pragma instancing_options procedural:TCDefaultProc
 
-                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
+                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
                 #pragma shader_feature _ _COLOROVERLAY_ON _COLORCOLOR_ON _COLORADDSUBDIFF_ON
+                
                 #pragma multi_compile_shadowcaster
 
                 #pragma vertex vertParticleShadowCaster
@@ -84,14 +85,14 @@
                 CGPROGRAM
 				#pragma target 4.5
 				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-				#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
+                #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
 
 				#pragma multi_compile_instancing
 				#pragma instancing_options procedural:TCDefaultProc
-
+    
                 #pragma multi_compile_fog
 
-                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
+                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
                 #pragma shader_feature _ _COLOROVERLAY_ON _COLORCOLOR_ON _COLORADDSUBDIFF_ON
                 #pragma shader_feature _EMISSION
 

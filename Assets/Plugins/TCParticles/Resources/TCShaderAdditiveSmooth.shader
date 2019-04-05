@@ -21,7 +21,6 @@ Shader "TCParticles/Legacy/Additive (soft)" {
 					#pragma instancing_options procedural:TCDefaultProc
 
 					#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-					#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
 
 					#include "TCFramework.cginc"
 					#include "TCDefaultVert.cginc"

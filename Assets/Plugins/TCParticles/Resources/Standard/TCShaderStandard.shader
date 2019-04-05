@@ -54,26 +54,22 @@
             Tags { "LightMode" = "ShadowCaster" }
 
             BlendOp Add
-            Blend One Zero
-            ZWrite On
+            ZWrite On 
             Cull Off
 
             CGPROGRAM
             #pragma target 4.6
 			#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-			#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
+            #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
 
 			#pragma multi_compile_instancing
 			#pragma instancing_options procedural:TCDefaultProc
 			
-            #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
-			#pragma shader_feature _METALLICGLOSSMAP
-			
+            #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
+            
 			#pragma multi_compile_shadowcaster
-
             #pragma vertex vertParticleShadowCaster
             #pragma fragment fragParticleShadowCaster
-
             #include "TcStandardParticleShadow.cginc"
             ENDCG
         }
@@ -81,18 +77,16 @@
         CGPROGRAM
 		#pragma target 4.6
 		#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-        #pragma multi_compile TC_CUSTOM_NORMAL
-		// #pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
-		#pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON _ALPHAMODULATE_ON
-		// #pragma shader_feature _METALLICGLOSSMAP
-        // #pragma shader_feature _NORMALMAP
-        // #pragma shader_feature _EMISSION
+        #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
 
+		#pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
+		#pragma shader_feature _METALLICGLOSSMAP
+        #pragma shader_feature _NORMALMAP
+        #pragma shader_feature _EMISSION
+		
 		#pragma multi_compile_instancing
 		#pragma instancing_options procedural:TCDefaultProc
-
         #pragma surface surf Standard nolightmap nometa noforwardadd keepalpha noshadowmask nolppv
-
         #include "TcStandardParticles.cginc"
         ENDCG
     }

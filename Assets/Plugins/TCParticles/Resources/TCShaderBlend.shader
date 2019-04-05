@@ -18,7 +18,6 @@ Shader "TCParticles/Legacy/Blend" {
 					#pragma fragment frag
 
 					#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-					#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
 
 					#pragma multi_compile_instancing
 					#pragma instancing_options procedural:TCDefaultProc
@@ -42,7 +41,6 @@ Shader "TCParticles/Legacy/Blend" {
 				#pragma fragment frag
 
 				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-				#pragma multi_compile TC_UV_NORMAL TC_UV_SPRITE_ANIM
 
 				#pragma multi_compile_instancing
 				#pragma instancing_options procedural:TCDefaultProc

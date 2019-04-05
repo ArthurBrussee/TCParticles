@@ -38,7 +38,7 @@ namespace TC {
 			return ret;
 		}
 
-		public void Initialize(Vector3[] positions, Vector3[] normals, Color32[] colors, float scale, Vector3 pivot) {
+		public void Initialize(Vector3[] positions, Vector3[] normals, Color32[] colors, float scale, Vector3 pivot, Vector3 normalRotate) {
 			_positions = positions;
 			_normals = normals;
 
@@ -53,6 +53,15 @@ namespace TC {
 					_positions[i].x += pivot.x;
 					_positions[i].y += pivot.y;
 					_positions[i].z += pivot.z;
+				}
+			}
+
+			if (_normals != null) {
+				Quaternion normalRotation = Quaternion.Euler(normalRotate);
+
+				// Rotate and normalize normals
+				for (int i = 0; i < _normals.Length; ++i) {
+					_normals[i] = normalRotation * _normals[i].normalized;
 				}
 			}
 

@@ -148,10 +148,11 @@ namespace TC {
 		/// </summary>
 		[Range(0.02f, 0.75f)] public float cullSimulationDelta;
 
+
 		/// <summary>
-		/// Bind the point cloud data Normals as a buffer. WARNING: These normals are directly flom the ply, and not stored in the particles.
+		/// Bind the point cloud data Normals as a buffer. WARNING: These normals are directly from the ply, and not stored in the particles.
 		/// </summary>
-		public bool usePointCloudNormals;
+		public bool pointCloudNormals;
 		
 		/// <summary>
 		/// Is the size specified for the particles in pixels
@@ -285,6 +286,26 @@ namespace TC {
 			isVisible = false;
 		}
 
+		void ToggleKeyword(string keyword, bool enabled) {
+			if (enabled) {
+				m_cacheMaterial.EnableKeyword(keyword);
+			} else {
+				m_cacheMaterial.DisableKeyword(keyword);
+			}
+		}
+
+		void ChooseKeyword(string keyword0, string keyword1, string keyword2, int index) {
+			ToggleKeyword(keyword0, index == 0);
+			ToggleKeyword(keyword1, index == 1);
+			ToggleKeyword(keyword2, index == 2);
+		}
+
+		
+		void ChooseKeyword(string keyword0, string keyword1, int index) {
+			ToggleKeyword(keyword0, index == 0);
+			ToggleKeyword(keyword1, index == 1);
+		}
+
 		internal void SetupDrawCall(Camera cam) {
 			if (UseFrustumCulling) {
 				GeometryUtility.CalculateFrustumPlanes(Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix, s_planes);
@@ -301,41 +322,36 @@ namespace TC {
 
 			m_cacheMaterial.CopyPropertiesFromMaterial(_material);
 
+
+			int index = -1;
+			
 			switch (RenderMode) {
 				case GeometryRenderMode.Billboard:
-					m_cacheMaterial.EnableKeyword("TC_BILLBOARD");
-					m_cacheMaterial.DisableKeyword("TC_BILLBOARD_STRETCHED");
-					m_cacheMaterial.DisableKeyword("TC_MESH");
+					index = 0;
 					break;
 
 				case GeometryRenderMode.StretchedBillboard:
 				case GeometryRenderMode.TailStretchBillboard:
-					m_cacheMaterial.DisableKeyword("TC_BILLBOARD");
-					m_cacheMaterial.EnableKeyword("TC_BILLBOARD_STRETCHED");
-					m_cacheMaterial.DisableKeyword("TC_MESH");
+					index = 1;
 					break;
 
 				case GeometryRenderMode.Mesh:
-					m_cacheMaterial.DisableKeyword("TC_BILLBOARD");
-					m_cacheMaterial.DisableKeyword("TC_BILLBOARD_STRETCHED");
-					m_cacheMaterial.EnableKeyword("TC_MESH");
+					index = 2;
 					break;
 			}
 
+			ChooseKeyword("TC_BILLBOARD", "TC_BILLBOARD_STRETCHED", "TC_MESH", index);
+			
+			m_cacheMaterial.SetInt("_UvSpriteAnimation", spriteSheetAnimation ? 1 : 0);
+
 			//enable sprite uv animation keyword
 			if (spriteSheetAnimation) {
-				m_cacheMaterial.EnableKeyword("TC_UV_SPRITE_ANIM");
-				m_cacheMaterial.DisableKeyword("TC_UV_NORMAL");
-
 				m_cacheMaterial.SetVector(SID._SpriteAnimSize, new Vector4(spriteSheetColumns, spriteSheetRows, 1.0f / spriteSheetColumns, 1.0f / spriteSheetRows));
 				m_cacheMaterial.SetFloat(SID._Cycles, spriteSheetCycles);
 				m_cacheMaterial.SetFloat(SID._SpriteSheetBaseSpeed, spriteSheetBasePlaySpeed);
 				m_cacheMaterial.SetFloat(SID._SpriteSheetRandomStart, spriteSheetRandomStart ? 1.0f : 0.0f);
-			} else {
-				m_cacheMaterial.EnableKeyword("TC_UV_NORMAL");
-				m_cacheMaterial.DisableKeyword("TC_UV_SPRITE_ANIM");
 			}
-
+			
 			Color tint = TintColor;
 
 			if (tint != curTintColor) {
@@ -345,19 +361,22 @@ namespace TC {
 
 			m_cacheMaterial.SetBuffer("particlesRead", Manager.GetParticlesBuffer());
 
-			if (usePointCloudNormals && Emitter.PointCloud != null && Emitter.Shape == EmitShapes.PointCloud) {
-				var cloud = Emitter.PointCloud;
+			var cloud = Emitter.PointCloud;
 
+			bool usePointCloudNormals = pointCloudNormals &&
+			                            cloud != null &&
+			                            cloud.Normals != null &&
+			                            Emitter.Shape == EmitShapes.PointCloud;
+			
+			if (usePointCloudNormals) {
 				if (m_customNormalsBuffer == null || m_customNormalsBuffer.count != cloud.PointCount) {
 					m_customNormalsBuffer = new ComputeBuffer(cloud.PointCount, 12);
 					m_customNormalsBuffer.SetData(cloud.Normals);
 				}
 
 				m_cacheMaterial.SetBuffer("_CustomNormalsBuffer", m_customNormalsBuffer);
-				m_cacheMaterial.EnableKeyword("TC_CUSTOM_NORMAL");
-			} else {
-				m_cacheMaterial.DisableKeyword("TC_CUSTOM_NORMAL");
 			}
+			ToggleKeyword("TC_CUSTOM_NORMAL_ORIENT", usePointCloudNormals);
 
 			m_cacheMaterial.SetTexture(SID._ColTex, colorOverLifetimeTexture);
 

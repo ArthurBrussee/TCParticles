@@ -1,0 +1,97 @@
+﻿#pragma kernel CopyVideoFrame
+
+#pragma kernel ClearMap
+
+#pragma kernel ColDifMap
+
+
+#pragma kernel GatherIndices
+#pragma kernel SetPositions
+
+//Include tc particles frammework code
+#include "Assets/Plugins/TCParticles/Resources/TCFramework.cginc"
+
+RWTexture3D<float4> _VideoTexture;
+RWTexture3D<float4> _MappedTexture;
+
+RWStructuredBuffer<uint> _Count;
+RWStructuredBuffer<uint3> _FrameIndices;
+
+// First kernel takes in the mapped frame
+// And adds all indices to be voxelized 
+// To a big buffer
+[numthreads(8, 8, 8)]
+void GatherIndices(uint3 id : SV_DispatchThreadID) {
+    float4 col = _MappedTexture[id];
+    
+    // TODO: FLT_EPS
+    const float eps = 0.00001f;
+    
+    uint orig;
+    // Invisible, never add
+    if (col.a < eps) {
+        return;
+    }
+
+    // Look for a neighbour that is not totally opaque
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            for(int z = -1; z <= 1; ++z) {
+                float alpha = _MappedTexture[id + int3(x, y, z)].a;
+             
+                if (alpha < 1 - eps) {
+                    InterlockedAdd(_Count[0], 1, orig);
+                    _FrameIndices[orig] = id;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+uint _Slice;
+Texture2D<float4> _VideoFrame;
+
+bool InVideoRange(uint3 id) {
+    uint width;
+    uint height;
+    uint depth;
+    _VideoTexture.GetDimensions(width, height, depth);
+    
+    uint3 dim = uint3(width, height, depth);
+    return all(id >= 0) && all(id < dim);
+}
+
+[numthreads(8, 8, 1)]
+void CopyVideoFrame(uint3 id : SV_DispatchThreadID) {
+    _VideoTexture[uint3(id.xy, _Slice)] = _VideoFrame[id.xy];
+}
+
+// This kernel takes in the list of positions to be voxelized and positions the voxels.
+[numthreads(TCGroupSize, 1, 1)]
+void SetPositions(uint3 id : SV_DispatchThreadID) {
+    uint3 frameIndex = _FrameIndices[id.x];
+    
+	float4 col = _MappedTexture[frameIndex];
+	particles[id.x].color = PackColor(float4(col.rgb, 1.0f));
+    particles[id.x].pos = float3((float)frameIndex.x, (float)frameIndex.y, frameIndex.z);
+}
+
+[numthreads(8, 8, 8)]
+void ClearMap(uint3 id : SV_DispatchThreadID) {
+    _MappedTexture[id] = 0.0f;
+}
+
+// Define some mapping functions
+[numthreads(8, 8, 8)]
+void ColDifMap(uint3 id : SV_DispatchThreadID) {
+    if (id.z == 0 || !InVideoRange(id)) {
+        return;
+    }
+    
+    float3 col = _VideoTexture[id].rgb;
+    float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
+	float alpha = max(0, length(col - prev) - 0.4f);
+
+    _MappedTexture[id] = float4(col.rgb, alpha);
+}

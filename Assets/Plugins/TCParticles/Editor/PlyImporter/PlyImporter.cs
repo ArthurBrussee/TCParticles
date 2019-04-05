@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using TC;
 using System.Runtime.CompilerServices;
+using Object = UnityEngine.Object;
 
 namespace Pcx {
 	//TODO: Agressive inline
@@ -106,10 +107,11 @@ namespace Pcx {
 		public float Scale = 1;
 #pragma warning disable 649
 		public Vector3 PivotOffset;
+		public Vector3 NormalRotation;
 #pragma warning restore 649
 
 		[Header("Default Renderer")]
-		public float DefaultPointSize = 0.02f;
+		public float DefaultPointSize = 0.1f;
 
 		public override void OnImportAsset(AssetImportContext context) {
 			// ComputeBuffer container
@@ -127,6 +129,15 @@ namespace Pcx {
 			system.MaxParticles = data.PointCount + 1000;
 			system.Emitter.Size = MinMaxRandom.Constant(DefaultPointSize);
 			system.Manager.NoSimulation = true;
+
+			if (data.Normals != null) {
+				system.ParticleRenderer.pointCloudNormals = true;
+				system.ParticleRenderer.RenderMode = GeometryRenderMode.Mesh;
+
+				var quadGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+				system.ParticleRenderer.Mesh = quadGo.GetComponent<MeshFilter>().sharedMesh;
+				Object.DestroyImmediate(quadGo);
+			}
 
 			context.AddObjectToAsset("prefab", gameObject);
 			if (data != null) {
@@ -209,9 +220,9 @@ namespace Pcx {
 			var body = ReadDataBody(header, reader);
 
 			var data = ScriptableObject.CreateInstance<PointCloudData>();
-			data.Initialize(body.vertices, body.normals, body.colors, Scale, PivotOffset);
-
+			data.Initialize(body.vertices, body.normals, body.colors, Scale, PivotOffset, NormalRotation);
 			data.name = Path.GetFileNameWithoutExtension(path);
+			
 			return data;
 		}
 
