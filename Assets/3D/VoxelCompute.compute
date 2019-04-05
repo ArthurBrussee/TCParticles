@@ -3,6 +3,8 @@
 #pragma kernel ClearMap
 
 #pragma kernel ColDifMap
+#pragma kernel SliceMap
+#pragma kernel SobelMap
 
 
 #pragma kernel GatherIndices
@@ -85,13 +87,64 @@ void ClearMap(uint3 id : SV_DispatchThreadID) {
 // Define some mapping functions
 [numthreads(8, 8, 8)]
 void ColDifMap(uint3 id : SV_DispatchThreadID) {
-    if (id.z == 0 || !InVideoRange(id)) {
+    if (id.z <= 2 || !InVideoRange(id)) {
         return;
     }
     
     float3 col = _VideoTexture[id].rgb;
     float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
-	float alpha = max(0, length(col - prev) - 0.4f);
+	float alpha = max(0, length(col - prev) - 0.2f);
 
     _MappedTexture[id] = float4(col.rgb, alpha);
 }
+
+float GetSobelValue(uint3 id) {
+    float3 gx = 0.0f;
+    
+    gx += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
+    gx += -2.0f * _VideoTexture[id + int3(-1, 0, 0)].rgb;
+    gx += -1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
+    
+    gx += 1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
+    gx += 2.0f * _VideoTexture[id + int3(1, 0, 0)].rgb;
+    gx += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
+    
+    float3 gy = 0.0f;
+    
+    gy += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
+    gy += -2.0f * _VideoTexture[id + int3(0, -1, 0)].rgb;
+    gy += -1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
+    
+    gy += 1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
+    gy += 2.0f * _VideoTexture[id + int3(0, 1, 0)].rgb;
+    gy += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
+    
+    return length(dot(gx, gx) + dot(gy, gy));
+}
+
+[numthreads(8, 8, 8)]
+void SliceMap(uint3 id : SV_DispatchThreadID) {
+    if (id.z <= 2 || !InVideoRange(id)) {
+        return;
+    }
+    
+    float3 col = _VideoTexture[id].rgb;
+    float alpha = id.z % 10 == 0 ? 1 : 0;
+    
+    _MappedTexture[id] = float4(col, alpha);
+}
+
+
+[numthreads(8, 8, 8)]
+void SobelMap(uint3 id : SV_DispatchThreadID) {
+    if (id.z <= 2 || !InVideoRange(id)) {
+        return;
+    }
+    
+    float3 col = _VideoTexture[id].rgb;
+    
+
+    float alpha = GetSobelValue(id) - GetSobelValue(id - int3(0, 0, 1));
+    _MappedTexture[id] = float4(col, saturate(alpha - 2.5f));
+}
+

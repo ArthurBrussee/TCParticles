@@ -1,13 +1,6 @@
 fileFormatVersion: 2
 guid: 3cde18cf7f7d2a44c9af2a3ad9e596f8
 ScriptedImporter:
-  fileIDToRecycleName:
-    100000: prefab/New Game Object
-    400000: prefab/New Game Object/Transform
-    11400000: prefab/New Game Object/MonoBehaviour-TC.TCParticleSystem
-    11400002: data
-    100100000: prefab
-  externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
