@@ -1,37 +1,59 @@
-﻿#pragma kernel CopyVideoFrame
+﻿// Main shader defining mappings
 
+#pragma kernel CopyVideoFrame
 #pragma kernel ClearMap
 
-#pragma kernel ColDifMap
+#pragma kernel FullMap
 #pragma kernel SliceMap
+#pragma kernel ColDifMap
 #pragma kernel SobelMap
-
 
 #pragma kernel GatherIndices
 #pragma kernel SetPositions
 
+#pragma kernel GaussianBlur
+
 //Include tc particles frammework code
 #include "Assets/Plugins/TCParticles/Resources/TCFramework.cginc"
 
+
+// Main video buffer
 RWTexture3D<float4> _VideoTexture;
+
+// Mapped texture we're writing to
 RWTexture3D<float4> _MappedTexture;
 
+// Particle count
 RWStructuredBuffer<uint> _Count;
+
+// Particle frame positions
 RWStructuredBuffer<uint3> _FrameIndices;
 
-// First kernel takes in the mapped frame
-// And adds all indices to be voxelized 
-// To a big buffer
+uint _Slice;
+Texture2D<float4> _VideoFrame;
+
+// Variables for gaussian blur
+Texture2D<float4> _GaussianTextureIn;
+RWTexture2D<float4> _GaussianTextureOut;
+float _GaussianSigma;
+
+// Copy over 1 frame to the video buffer
+[numthreads(8, 8, 1)]
+void CopyVideoFrame(uint3 id : SV_DispatchThreadID) {
+	_VideoTexture[uint3(id.xy, _Slice)] = _VideoFrame[id.xy];
+}
+
 [numthreads(8, 8, 8)]
 void GatherIndices(uint3 id : SV_DispatchThreadID) {
-    float4 col = _MappedTexture[id];
+	// Takes in the mapped frame
+	// And adds all indices to be voxelized 
+	// To a big buffer
+	float4 col = _MappedTexture[id];
     
-    // TODO: FLT_EPS
-    const float eps = 0.00001f;
+	const float threshold = 0.4f;
     
-    uint orig;
-    // Invisible, never add
-    if (col.a < eps) {
+    // Invisible, don't add
+    if (col.a < threshold) {
         return;
     }
 
@@ -41,8 +63,14 @@ void GatherIndices(uint3 id : SV_DispatchThreadID) {
             for(int z = -1; z <= 1; ++z) {
                 float alpha = _MappedTexture[id + int3(x, y, z)].a;
              
-                if (alpha < 1 - eps) {
+                if (alpha < 0.9f) {
+					// Count up particles
+					uint orig;
                     InterlockedAdd(_Count[0], 1, orig);
+
+					// Write offset to buffer.
+					// Orig is value before increment
+					// InterlockedAdd makes this thread safe 
                     _FrameIndices[orig] = id;
                     return;
                 }
@@ -51,75 +79,63 @@ void GatherIndices(uint3 id : SV_DispatchThreadID) {
     }
 }
 
-uint _Slice;
-Texture2D<float4> _VideoFrame;
-
-bool InVideoRange(uint3 id) {
-    uint width;
-    uint height;
-    uint depth;
-    _VideoTexture.GetDimensions(width, height, depth);
-    
-    uint3 dim = uint3(width, height, depth);
-    return all(id >= 0) && all(id < dim);
-}
-
-[numthreads(8, 8, 1)]
-void CopyVideoFrame(uint3 id : SV_DispatchThreadID) {
-    _VideoTexture[uint3(id.xy, _Slice)] = _VideoFrame[id.xy];
-}
-
 // This kernel takes in the list of positions to be voxelized and positions the voxels.
 [numthreads(TCGroupSize, 1, 1)]
 void SetPositions(uint3 id : SV_DispatchThreadID) {
+	// Read position in buffer for particle
     uint3 frameIndex = _FrameIndices[id.x];
     
+	// Read color for particle
 	float4 col = _MappedTexture[frameIndex];
-	particles[id.x].color = PackColor(float4(col.rgb, 1.0f));
+
+	// And set its propertiies
+	particles[id.x].color = PackColor(col);
     particles[id.x].pos = float3((float)frameIndex.x, (float)frameIndex.y, frameIndex.z);
+	particles[id.x].baseSize = 1.0f;
 }
 
+// Clear out mapped texture
 [numthreads(8, 8, 8)]
 void ClearMap(uint3 id : SV_DispatchThreadID) {
     _MappedTexture[id] = 0.0f;
 }
 
+
+bool InVideoRange(uint3 id) {
+	uint width;
+	uint height;
+	uint depth;
+	_VideoTexture.GetDimensions(width, height, depth);
+
+	uint3 dim = uint3(width, height, depth);
+	return all(id >= 0) && all(id < dim);
+}
+
 // Define some mapping functions
+
+
+// Col dif: Alpha == magnitude of difference with previous frame
 [numthreads(8, 8, 8)]
 void ColDifMap(uint3 id : SV_DispatchThreadID) {
+	// Don't read out of range
     if (id.z <= 2 || !InVideoRange(id)) {
         return;
     }
     
+	// Figure out dif alpha
     float3 col = _VideoTexture[id].rgb;
     float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
-	float alpha = max(0, length(col - prev) - 0.2f);
+	float alpha = length(col - prev) * 75.0f;
 
+	// Write to map
     _MappedTexture[id] = float4(col.rgb, alpha);
 }
 
-float GetSobelValue(uint3 id) {
-    float3 gx = 0.0f;
-    
-    gx += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
-    gx += -2.0f * _VideoTexture[id + int3(-1, 0, 0)].rgb;
-    gx += -1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
-    
-    gx += 1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
-    gx += 2.0f * _VideoTexture[id + int3(1, 0, 0)].rgb;
-    gx += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
-    
-    float3 gy = 0.0f;
-    
-    gy += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
-    gy += -2.0f * _VideoTexture[id + int3(0, -1, 0)].rgb;
-    gy += -1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
-    
-    gy += 1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
-    gy += 2.0f * _VideoTexture[id + int3(0, 1, 0)].rgb;
-    gy += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
-    
-    return length(dot(gx, gx) + dot(gy, gy));
+// Function to get sovel 
+
+[numthreads(8, 8, 8)]
+void FullMap(uint3 id : SV_DispatchThreadID) {
+	_MappedTexture[id] = _VideoTexture[id];
 }
 
 [numthreads(8, 8, 8)]
@@ -128,12 +144,15 @@ void SliceMap(uint3 id : SV_DispatchThreadID) {
         return;
     }
     
+	float3 normal = normalize(float3(0, 0, 1));
+	float period = 50.0f;
+	float phase = 20.0f;
+
     float3 col = _VideoTexture[id].rgb;
-    float alpha = fmod(dot(id, normalize(float3(0.3f, 0.2f, 0.2f))), 100.0f) <= 1.0f ? 1 : 0;
+	float alpha = saturate(1.0f - fmod(dot(id, normal) + phase, period));
     
     _MappedTexture[id] = float4(col, alpha);
 }
-
 
 [numthreads(8, 8, 8)]
 void SobelMap(uint3 id : SV_DispatchThreadID) {
@@ -142,7 +161,70 @@ void SobelMap(uint3 id : SV_DispatchThreadID) {
     }
     
     float3 col = _VideoTexture[id].rgb;
-    float alpha = GetSobelValue(id) - GetSobelValue(id - int3(0, 0, 1));
-    _MappedTexture[id] = float4(col, saturate(alpha - 2.5f));
+
+	// Figure out sobel value by applying 2 2D convolution filters
+	float3 gx = 0.0f;
+	gx += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
+	gx += -2.0f * _VideoTexture[id + int3(-1, 0, 0)].rgb;
+	gx += -1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
+
+	gx += 1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
+	gx += 2.0f * _VideoTexture[id + int3(1, 0, 0)].rgb;
+	gx += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
+
+
+	float3 gy = 0.0f;
+	gy += -1.0f * _VideoTexture[id + int3(-1, -1, 0)].rgb;
+	gy += -2.0f * _VideoTexture[id + int3(0, -1, 0)].rgb;
+	gy += -1.0f * _VideoTexture[id + int3(1, -1, 0)].rgb;
+
+	gy += 1.0f * _VideoTexture[id + int3(-1, 1, 0)].rgb;
+	gy += 2.0f * _VideoTexture[id + int3(0, 1, 0)].rgb;
+	gy += 1.0f * _VideoTexture[id + int3(1, 1, 0)].rgb;
+
+	float alpha = length(dot(gx, gx) + dot(gy, gy));
+	_MappedTexture[id] = float4(col, saturate(alpha - 7.5f));
 }
 
+#define PI 3.14156
+
+// Simple gaussian blur routine
+float GetGaussWeight(float dist, float sigma) {
+	return 1.0f / (sigma * sqrt(2 * PI)) * exp(-dist * dist / (sigma * sigma));
+}
+
+float3 GammaToSRGB(float3 gamma) {
+	float3 S1 = sqrt(gamma);
+	float3 S2 = sqrt(S1);
+	float3 S3 = sqrt(S2);
+	float3 sRGB = 0.662002687 * S1 + 0.684122060 * S2 - 0.323583601 * S3 - 0.0225411470 * gamma;
+	return sRGB;
+}
+
+[numthreads(8, 8, 1)]
+void GaussianBlur(uint3 id : SV_DispatchThreadID) {
+	float totalWeight = 0.0f;
+	float3 blur = 0.0f;
+
+	const int range = 8;
+
+	uint width;
+	uint height;
+	_GaussianTextureIn.GetDimensions(width, height);
+
+	uint2 maxSize = uint2(width, height);
+
+	// Perform 5x5 convolution. Seems to be wide enough
+	for (int y = -range; y <= range; ++y) {
+		for (int x = -range; x <= range; ++x) {
+			int2 sampPos = int2(id.xy) + int2(x, y);
+
+			float weight = GetGaussWeight(length(float2(x, y)), _GaussianSigma);
+			
+			totalWeight += weight;
+			blur += _GaussianTextureIn[clamp(sampPos, 0, maxSize - 1)].rgb * weight;
+		}
+	}
+	
+	_GaussianTextureOut[id.xy] = float4(blur / totalWeight, 1.0f);
+}

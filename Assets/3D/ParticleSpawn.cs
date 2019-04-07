@@ -9,6 +9,8 @@ public class ParticleSpawn : MonoBehaviour {
 	public VideoClip Clip;
     public Vector3 VideoCubeSize;
 
+	public Texture2D Image;
+
     public int ResX;
 	public int ResY;
 	public int ResZ;
@@ -28,20 +30,40 @@ public class ParticleSpawn : MonoBehaviour {
 	bool m_running;
 
 	float m_lastRefresh;
-	
-	void Awake() {
-		ProcessVideoAsync(Clip, ResX, ResY, ResZ, MapFunc);
+
+	void ClearResources() {
+		// Create resources
+		DestroyImmediate(m_videoCube);
+		DestroyImmediate(m_mappedCube);
+		DestroyImmediate(m_videoPlayTexture);
+		
+		if (m_indices != null) {
+			m_indices.Dispose();
+		}
 	}
 
-	uint GetCounterValue(ComputeBuffer buffer) {
-		var cmd = new CommandBuffer();
-		var tmpCount = new ComputeBuffer(1, sizeof(uint));
-		cmd.CopyCounterValue(buffer, tmpCount, 0);
-		Graphics.ExecuteCommandBuffer(cmd);
-		uint[] counterValue = new uint[1];
-		tmpCount.GetData(counterValue);
-		tmpCount.Dispose();
-		return counterValue[0];
+	void OnDestroy() {
+		ClearResources();
+	}
+
+	void Awake() {
+		ClearResources();
+
+		m_videoCube = CreateCubeTex(ResX, ResY, ResZ);
+		m_mappedCube = CreateCubeTex(ResX, ResY, ResZ);
+
+		m_videoPlayTexture = new RenderTexture(m_videoCube.width, m_videoCube.height, 0);
+		m_videoPlayTexture.Create();
+
+		m_indices = new ComputeBuffer(ResX * ResY * ResZ, sizeof(uint) * 3);
+		m_count = new ComputeBuffer(1, sizeof(uint));
+		m_count.SetData(new uint[] { 0 });
+
+		m_videoDone = false;
+		m_running = false;
+		m_system = GetComponent<TCParticleSystem>();
+
+		ProcessImageGaussian(Image);
 	}
 
 	void SetStep(string step) {
@@ -57,27 +79,25 @@ public class ParticleSpawn : MonoBehaviour {
 		return tex;
 	}
 
-	IEnumerator ProcessVideoAsyncRoutine(VideoClip clip, int width, int height, int depth) {
+	void CopyTextureIntoVideoCube(Texture tex, int slice) {
+		int kernel = VoxelCompute.FindKernel("CopyVideoFrame");
+
+		VoxelCompute.SetTexture(kernel, "_VideoFrame", tex);
+		VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
+		VoxelCompute.SetInt("_Slice", slice);
+		
+		int dx = Mathf.CeilToInt(ResX / 8.0f);
+		int dy = Mathf.CeilToInt(ResY / 8.0f);
+		
+		VoxelCompute.Dispatch(kernel, dx, dy, 1);
+
+		VoxelCompute.SetTexture(kernel, "_VideoFrame", Texture2D.whiteTexture);
+	}
+
+	IEnumerator ProcessVideoAsyncRoutine(VideoClip clip) {
+		m_videoDone = false;
+
 		SetStep("Creating resources");
-		m_system = GetComponent<TCParticleSystem>();
-
-		DestroyImmediate(m_videoCube);
-		DestroyImmediate(m_mappedCube);
-		DestroyImmediate(m_videoPlayTexture);
-
-		if (m_indices != null) {
-			m_indices.Dispose();
-		}
-		
-		m_videoCube = CreateCubeTex(width, height, depth);
-		m_mappedCube = CreateCubeTex(width, height, depth);
-		
-		m_videoPlayTexture = new RenderTexture(m_videoCube.width, m_videoCube.height, 0);
-		m_videoPlayTexture.Create();
-		
-		m_indices = new ComputeBuffer(width * height * depth, sizeof(uint) * 3);
-		m_count = new ComputeBuffer(1, sizeof(uint));
-		m_count.SetData(new uint[] {1});
 		
 		var go = new GameObject();
 		var player = go.AddComponent<VideoPlayer>();
@@ -99,17 +119,11 @@ public class ParticleSpawn : MonoBehaviour {
 
 		player.frameReady += (vid, idx) => {
 			Debug.Log("Frame ready! " + idx);
-			int kernel = VoxelCompute.FindKernel("CopyVideoFrame");
-			VoxelCompute.SetTexture(kernel, "_VideoFrame", m_videoPlayTexture);
-			VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
-			VoxelCompute.SetInt("_Slice", (int)idx - 1);
-			int dx = Mathf.CeilToInt(width / 8.0f);
-			int dy = Mathf.CeilToInt(height / 8.0f);
-			VoxelCompute.Dispatch(kernel, dx, dy, 1);
+			CopyTextureIntoVideoCube(m_videoPlayTexture, (int)idx - 1);
 			frameRead = true;
 		};
 
-		for (int i = 0; i < depth; ++i) {
+		for (int i = 0; i <= ResZ; ++i) {
 			player.StepForward();
 			frameRead = false;
 			while (!frameRead) { yield return null; }
@@ -119,13 +133,14 @@ public class ParticleSpawn : MonoBehaviour {
 		m_videoDone = true;
 	}
 
-	IEnumerator GenerateParticles(int width, int height, int depth, string mapKernel) {
+	IEnumerator GenerateParticles() {
 		m_running = true;
+		m_lastRefresh = Time.time;
 
 		try {
-			int dx = Mathf.CeilToInt(width / 8.0f);
-			int dy = Mathf.CeilToInt(height / 8.0f);
-			int dz = Mathf.CeilToInt(depth / 8.0f);
+			int dx = Mathf.CeilToInt(ResX / 8.0f);
+			int dy = Mathf.CeilToInt(ResY / 8.0f);
+			int dz = Mathf.CeilToInt(ResZ / 8.0f);
 
 			SetStep("Clear map");
 
@@ -142,8 +157,7 @@ public class ParticleSpawn : MonoBehaviour {
 
 			// DoMapping
 			{
-				int kernel = VoxelCompute.FindKernel(mapKernel);
-
+				int kernel = VoxelCompute.FindKernel(MapFunc);
 				VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
 				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
 				VoxelCompute.Dispatch(kernel, dx, dy, dz);
@@ -174,7 +188,7 @@ public class ParticleSpawn : MonoBehaviour {
 
 			// EmitParticles
 			{
-				transform.localScale = new Vector3(VideoCubeSize.x / width, VideoCubeSize.y / height, VideoCubeSize.z / depth);
+				transform.localScale = new Vector3(VideoCubeSize.x / ResX, VideoCubeSize.y / ResY, VideoCubeSize.z / ResZ);
 				m_system.Emitter.Size = MinMaxRandom.Constant(1.0f);
 
 				uint[] counterValue = new uint[1];
@@ -201,7 +215,6 @@ public class ParticleSpawn : MonoBehaviour {
 
 				VoxelCompute.SetTexture(kernel, "_VideoTexture", m_videoCube);
 				VoxelCompute.SetTexture(kernel, "_MappedTexture", m_mappedCube);
-
 				VoxelCompute.SetBuffer(kernel, "_FrameIndices", m_indices);
 
 				// Now for each particle fire off a kernel that copies the right position
@@ -214,14 +227,68 @@ public class ParticleSpawn : MonoBehaviour {
 
 	void Update() {
 		if (m_videoDone && !m_running && Time.time - m_lastRefresh > 2.0f) {
-			StartCoroutine(GenerateParticles(ResX, ResY, ResZ, MapFunc));
-			m_lastRefresh = Time.time;
+			StartCoroutine(GenerateParticles());
 		}
 	}
 
-	void ProcessVideoAsync(VideoClip clip, int width, int height, int depth, string mapKernel) {
+	void ProcessVideo(VideoClip clip) {
+		StartCoroutine(ProcessVideoAsyncRoutine(clip));
+	}
+
+	IEnumerator ProcessImageGaussianAsyncRoutine(Texture2D image) {
 		m_videoDone = false;
-		
-		StartCoroutine(ProcessVideoAsyncRoutine(clip, width, height, depth));
+
+		var ping = new RenderTexture(ResX, ResY, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+		ping.Create();
+
+		var pong = new RenderTexture(ResX, ResY, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+		pong.enableRandomWrite = true;
+		pong.Create();
+
+		// Copy & downsize image
+		Graphics.Blit(image, ping);
+		RenderTexture.active = null;
+
+		int kernel = VoxelCompute.FindKernel("GaussianBlur");
+
+		int dx = Mathf.CeilToInt(ResX / 8);
+		int dy = Mathf.CeilToInt(ResY / 8);
+
+		for (int i = 0; i < ResZ; ++i) {
+			CopyTextureIntoVideoCube(ping, i);
+
+			VoxelCompute.SetTexture(kernel, "_GaussianTextureIn", ping);
+			VoxelCompute.SetTexture(kernel, "_GaussianTextureOut", pong);
+			VoxelCompute.SetFloat("_GaussianSigma", 4.0f);
+			VoxelCompute.Dispatch(kernel, dx, dy, 1);
+			Graphics.Blit(pong, ping);
+
+
+			if (i % 100 == 0) {
+				yield return null;
+			}
+		}
+
+		m_videoDone = true;
+		StartCoroutine(GenerateParticles());
+	}
+
+	// Experiment
+	void ProcessImageGaussian(Texture2D image) {
+		StartCoroutine(ProcessImageGaussianAsyncRoutine(image));
+	}
+
+	void OnGUI() {
+		if (GUILayout.Button("Process video")) {
+			ProcessVideo(Clip);
+		}
+
+		if (GUILayout.Button("Process Gaussian")) {
+			ProcessImageGaussian(Image);
+		}
+
+		if (GUILayout.Button("Update mapping")) {
+			m_lastRefresh = 0.0f;
+		}
 	}
 }

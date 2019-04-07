@@ -224,6 +224,11 @@ void TCDefaultProc(){}
 		float3 realVelocity = tc_Particle.velocity + lifeTex.xyz;
 		float velLength = length(realVelocity);
 
+		float4 partColor = UnpackColor(tc_Particle.color);
+
+		// TODO: Remove before publishing on Asset store
+		tc_Particle.baseSize *= partColor.a;
+
 		float totalSize = (tc_Particle.baseSize * lifeTex.a);
 		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;
 		
@@ -253,24 +258,24 @@ void TCDefaultProc(){}
             input.vertex.xyz = vertStretch.x * vRight * stretchFac + vertStretch.y * vUp;
         #elif TC_MESH
             #if defined(TC_CUSTOM_NORMAL_ORIENT)
-            
                 float3 localZ = _CustomNormalsBuffer[GetId(unity_InstanceID)];
                 float3 localX, localY;
                 OrthonormalBasis(localZ, localX, localY);
                 
                 input.vertex.xyz = input.vertex.x * localX + input.vertex.y * localY + input.vertex.z * localZ;
                 input.normal.xyz = input.normal.x * localX + input.normal.y * localY + input.vertex.z * localZ;
-                
             #endif
             
             input.vertex.xyz += tc_Particle.pos;
-            float3 camFwd = _WorldSpaceCameraPos - tc_Particle.pos;
-            input.normal.xyz *= dot(input.normal, camFwd) < 0 ? -1 : 1;
+            
+			// TODO: This is wrong?
+			// float3 camFwd = _WorldSpaceCameraPos - tc_Particle.pos;
+            // input.normal.xyz *= dot(input.normal, camFwd) < 0 ? -1 : 1;
         #endif
-		
-		float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
-		float4 partColor = UnpackColor(tc_Particle.color);
-		input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;
+
+			float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
+			input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;
+
 
         if (_UvSpriteAnimation > 0) {
             float2 uv = input.texcoord.xy;
