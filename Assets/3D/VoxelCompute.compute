@@ -7,9 +7,11 @@
 #pragma kernel SliceMap
 #pragma kernel ColDifMap
 #pragma kernel SobelMap
+#pragma kernel ThresholdMap
 
 #pragma kernel GatherIndices
 #pragma kernel SetPositions
+
 
 #pragma kernel GaussianBlur
 
@@ -125,7 +127,29 @@ void ColDifMap(uint3 id : SV_DispatchThreadID) {
 	// Figure out dif alpha
     float3 col = _VideoTexture[id].rgb;
     float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
+    
+    // TODO: Config str
 	float alpha = length(col - prev) * 75.0f;
+
+	// Write to map
+    _MappedTexture[id] = float4(col.rgb, alpha);
+}
+
+// Col dif: Alpha == magnitude of difference with previous frame
+[numthreads(8, 8, 8)]
+void ThresholdMap(uint3 id : SV_DispatchThreadID) {
+	// Don't read out of range
+    if (id.z <= 2 || !InVideoRange(id)) {
+        return;
+    }
+    
+	// Figure out dif alpha
+    float3 col = _VideoTexture[id].rgb;
+    float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
+	float alpha = length(col - prev) * 10.0f;
+    alpha = 1;
+    
+    alpha *= dot(col, 0.3333f) > 0.7 ? 1 : 0;
 
 	// Write to map
     _MappedTexture[id] = float4(col.rgb, alpha);

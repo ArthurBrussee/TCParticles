@@ -63,7 +63,9 @@ public class ParticleSpawn : MonoBehaviour {
 		m_running = false;
 		m_system = GetComponent<TCParticleSystem>();
 
-		ProcessImageGaussian(Image);
+
+		ProcessVideo(Clip);
+		// ProcessImageGaussian(Image);
 	}
 
 	void SetStep(string step) {
