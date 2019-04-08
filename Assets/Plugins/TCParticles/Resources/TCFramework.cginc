@@ -227,7 +227,7 @@ void TCDefaultProc(){}
 		float4 partColor = UnpackColor(tc_Particle.color);
 
 		// TODO: Remove before publishing on Asset store
-		tc_Particle.baseSize *= partColor.a;
+		tc_Particle.baseSize *= saturate(saturate(partColor.a - 0.2f) / 0.8f + 0.4f);
 
 		float totalSize = (tc_Particle.baseSize * lifeTex.a);
 		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;

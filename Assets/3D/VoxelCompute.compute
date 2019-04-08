@@ -7,7 +7,9 @@
 #pragma kernel SliceMap
 #pragma kernel ColDifMap
 #pragma kernel SobelMap
-#pragma kernel ThresholdMap
+#pragma kernel LuminanceMap
+
+#pragma kernel GaussianConv3
 
 #pragma kernel GatherIndices
 #pragma kernel SetPositions
@@ -17,7 +19,6 @@
 
 //Include tc particles frammework code
 #include "Assets/Plugins/TCParticles/Resources/TCFramework.cginc"
-
 
 // Main video buffer
 RWTexture3D<float4> _VideoTexture;
@@ -34,10 +35,12 @@ RWStructuredBuffer<uint3> _FrameIndices;
 uint _Slice;
 Texture2D<float4> _VideoFrame;
 
+float _AlphaThreshold;
+
 // Variables for gaussian blur
 Texture2D<float4> _GaussianTextureIn;
 RWTexture2D<float4> _GaussianTextureOut;
-float _GaussianSigma;
+float _GaussIterSigma;
 
 // Copy over 1 frame to the video buffer
 [numthreads(8, 8, 1)]
@@ -52,10 +55,9 @@ void GatherIndices(uint3 id : SV_DispatchThreadID) {
 	// To a big buffer
 	float4 col = _MappedTexture[id];
     
-	const float threshold = 0.4f;
     
     // Invisible, don't add
-    if (col.a < threshold) {
+    if (col.a < _AlphaThreshold) {
         return;
     }
 
@@ -65,7 +67,8 @@ void GatherIndices(uint3 id : SV_DispatchThreadID) {
             for(int z = -1; z <= 1; ++z) {
                 float alpha = _MappedTexture[id + int3(x, y, z)].a;
              
-                if (alpha < 0.9f) {
+				// Neighbour is (more or less) totally opaque
+                if (alpha < 0.95f) {
 					// Count up particles
 					uint orig;
                     InterlockedAdd(_Count[0], 1, orig);
@@ -114,6 +117,7 @@ bool InVideoRange(uint3 id) {
 }
 
 // Define some mapping functions
+float _ColDifEnhance;
 
 
 // Col dif: Alpha == magnitude of difference with previous frame
@@ -129,15 +133,15 @@ void ColDifMap(uint3 id : SV_DispatchThreadID) {
     float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
     
     // TODO: Config str
-	float alpha = length(col - prev) * 75.0f;
+	float alpha = length(col - prev) * _ColDifEnhance;
 
 	// Write to map
     _MappedTexture[id] = float4(col.rgb, alpha);
 }
 
-// Col dif: Alpha == magnitude of difference with previous frame
+// Luminance: Alpha == luminance of frame
 [numthreads(8, 8, 8)]
-void ThresholdMap(uint3 id : SV_DispatchThreadID) {
+void LuminanceMap(uint3 id : SV_DispatchThreadID) {
 	// Don't read out of range
     if (id.z <= 2 || !InVideoRange(id)) {
         return;
@@ -145,11 +149,8 @@ void ThresholdMap(uint3 id : SV_DispatchThreadID) {
     
 	// Figure out dif alpha
     float3 col = _VideoTexture[id].rgb;
-    float3 prev = _VideoTexture[id - int3(0, 0, 1)].rgb;
-	float alpha = length(col - prev) * 10.0f;
-    alpha = 1;
-    
-    alpha *= dot(col, 0.3333f) > 0.7 ? 1 : 0;
+    float alpha = Luminance(col);
+
 
 	// Write to map
     _MappedTexture[id] = float4(col.rgb, alpha);
@@ -162,19 +163,24 @@ void FullMap(uint3 id : SV_DispatchThreadID) {
 	_MappedTexture[id] = _VideoTexture[id];
 }
 
+float _SlicePeriod;
+float _SlicePhase;
+
+float4 _SliceNormal;
+
+
 [numthreads(8, 8, 8)]
 void SliceMap(uint3 id : SV_DispatchThreadID) {
     if (id.z <= 2 || !InVideoRange(id)) {
         return;
     }
     
-	float3 normal = normalize(float3(0, 0, 1));
-	float period = 50.0f;
-	float phase = 20.0f;
+	float3 normal = normalize(_SliceNormal.xyz);
+	float period = _SlicePeriod;
+	float phase = _SlicePhase;
 
     float3 col = _VideoTexture[id].rgb;
-	float alpha = saturate(1.0f - fmod(dot(id, normal) + phase, period));
-    
+	float alpha = saturate(1.0f - fmod(abs(dot(id, normal) + phase), period)) * 10.0f;
     _MappedTexture[id] = float4(col, alpha);
 }
 
@@ -210,12 +216,41 @@ void SobelMap(uint3 id : SV_DispatchThreadID) {
 	_MappedTexture[id] = float4(col, saturate(alpha - 7.5f));
 }
 
+
 #define PI 3.14156
+
+float _GaussConvMapSigma;
 
 // Simple gaussian blur routine
 float GetGaussWeight(float dist, float sigma) {
 	return 1.0f / (sigma * sqrt(2 * PI)) * exp(-dist * dist / (sigma * sigma));
 }
+
+
+[numthreads(8, 8, 8)]
+void GaussianConv3(uint3 id : SV_DispatchThreadID) {
+	const int size = 4;
+
+	float4 totalCol = 0.0f;
+	float totalWeight = 0.0f;
+
+	for (int dz = -size; dz <= size; dz++) {
+		for (int dy = -size; dy <= size; dy++) {
+			for (int dx = -size; dx <= size; dx++) {
+				int3 sampPixel = int3(id) + int3(dx, dy, dz);
+
+				float4 col = _VideoTexture[sampPixel];
+				float weight = GetGaussWeight(length(int3(dx, dy, dz)), _GaussConvMapSigma);
+
+				totalCol += col * weight;
+				totalWeight += weight;
+			}
+		}
+	}
+
+	_MappedTexture[id] = totalCol / totalWeight;
+}	
+
 
 float3 GammaToSRGB(float3 gamma) {
 	float3 S1 = sqrt(gamma);
@@ -243,7 +278,7 @@ void GaussianBlur(uint3 id : SV_DispatchThreadID) {
 		for (int x = -range; x <= range; ++x) {
 			int2 sampPos = int2(id.xy) + int2(x, y);
 
-			float weight = GetGaussWeight(length(float2(x, y)), _GaussianSigma);
+			float weight = GetGaussWeight(length(float2(x, y)), _GaussIterSigma);
 			
 			totalWeight += weight;
 			blur += _GaussianTextureIn[clamp(sampPos, 0, maxSize - 1)].rgb * weight;
