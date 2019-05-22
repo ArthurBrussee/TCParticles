@@ -479,7 +479,7 @@ public static class PointCloudNormals {
 			PointCloudData pointCloudData;
 
 			using (s_saveCloudMarker.Auto()) {
-				string path = "Assets/PointCloudCNN/Data/TCClouds/" + name + ".asset";
+				string path = "Assets/PointCloudCNN/Data/" + name + "/tcCloud.asset";
 
 				if (!File.Exists(path)) {
 					pointCloudData = ScriptableObject.CreateInstance<PointCloudData>();
@@ -507,6 +507,8 @@ public static class PointCloudNormals {
 						colors[index] = testTex.Tex[index] / 64.0f * Color.white;
 					}
 				}
+				
+				// What we 
 
 				saveTex.SetPixels(colors);
 				File.WriteAllBytes("Assets/PointCloudCNN/Data/testTexture.png", saveTex.EncodeToPNG());
