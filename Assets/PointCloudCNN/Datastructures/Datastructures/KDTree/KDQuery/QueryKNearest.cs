@@ -23,11 +23,8 @@ SOFTWARE.
 
 using System;
 using DataStructures.ViliWonka.Heap;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Profiling;
 
 namespace DataStructures.ViliWonka.KDTree {
 	public static class KnnQuery {
