@@ -47,7 +47,7 @@ public class ParticleSpawn : MonoBehaviour {
 	public string MapFunc;
 
 	// Current threshold to cull voxels
-	float m_alphaThreshold = 0.5f;
+	float m_alphaThreshold = 0.2f;
 
 	// Blur mapping as a second step?
 	bool m_postProcessMapGaussian;
@@ -79,7 +79,7 @@ public class ParticleSpawn : MonoBehaviour {
 	// Settings for some maps
 	class SliceSettings {
 		public float Period = 80.0f;
-		public float Phase = 0.0f;
+		public float Phase;
 		public Vector3 Normal = new Vector3(0, 0, 1);
 	}
 
@@ -222,8 +222,8 @@ public class ParticleSpawn : MonoBehaviour {
 
 		int kernel = VoxelCompute.FindKernel("GaussianBlur");
 
-		int dx = Mathf.CeilToInt(ResX / 8);
-		int dy = Mathf.CeilToInt(ResY / 8);
+		int dx = Mathf.CeilToInt(ResX / 8.0f);
+		int dy = Mathf.CeilToInt(ResY / 8.0f);
 
 		for (int i = 0; i < ResZ; ++i) {
 			CopyTextureIntoVideoCube(ping, i);
@@ -448,7 +448,7 @@ public class ParticleSpawn : MonoBehaviour {
 					MapFunc = MapsName[Map.ColDif];
 				}
 
-				if (GUILayout.Button("Threshold Map")) {
+				if (GUILayout.Button("Luminance Map")) {
 					MapFunc = MapsName[Map.Luminance];
 				}
 			}
@@ -456,7 +456,7 @@ public class ParticleSpawn : MonoBehaviour {
 			using (new GUILayout.VerticalScope("Box")) {
 				GUILayout.Label("Map settings");
 
-				m_postProcessMapGaussian = GUILayout.Toggle(m_postProcessMapGaussian, new GUIContent("Gaussian Blur Map"));
+				m_postProcessMapGaussian = GUILayout.Toggle(m_postProcessMapGaussian, new GUIContent("Blur Map"));
 
 				m_alphaThreshold = Slider("Threshold", m_alphaThreshold, 0.0f, 1.0f);
 
@@ -481,7 +481,7 @@ public class ParticleSpawn : MonoBehaviour {
 			GUILayout.Label("Press RMB or CTRL to rotate camera.   Working on: " + m_curStep);
 
 			if (GUI.changed) {
-				m_refreshCountdown = 0.1f;
+				m_refreshCountdown = 0.025f;
 			}
 		}
 	}
