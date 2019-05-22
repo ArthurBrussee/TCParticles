@@ -8,13 +8,26 @@ using TC.Internal;
 using UnityEngine.Rendering;
 
 namespace TC {
+	public struct Particle {
+		public Vector3 Position;
+		public float Rotation;
+
+		public Vector3 Velocity;
+		public float BaseSize;
+
+		public float Life;
+		public uint Color;
+
+		public float Random;
+		public float Pad;
+	}
+
+	
 	/// <summary>
 	/// Class containing main settings for the TC Particle system
 	/// </summary>
 	[Serializable]
 	public class ParticleManager : ParticleComponent {
-		#region Implementation
-
 		/// <summary>
 		/// Get the number of thread groups that should be dispatched in a TC Particles compute shader
 		/// </summary>
@@ -40,6 +53,7 @@ namespace TC {
 
 		ComputeBuffer particles;
 
+		
 		/// <summary>
 		/// Get the buffer containing the current particles data
 		/// </summary>
@@ -52,12 +66,14 @@ namespace TC {
 			return particles;
 		}
 
+		public Particle[] GetParticleData() {
+			Particle[] ret = new Particle[ParticleCount];
+			particles.GetData(ret);
+			return ret;
+		}
+
 		[SerializeField] Space _simulationSpace = Space.Local;
 		[SerializeField] bool m_noSimulation;
-
-		#endregion
-
-		#region PublicApi
 
 		[SerializeField] int _maxParticles = 10000;
 
@@ -83,8 +99,6 @@ namespace TC {
 			get { return m_noSimulation; }
 			set { m_noSimulation = value; }
 		}
-
-
 
 		/// <summary>
 		/// The space the simulation takes place in.
@@ -215,9 +229,6 @@ namespace TC {
 			set { Emitter.ConstantForce = value; }
 		}
 
-
-		#endregion
-
 		struct SystemParameters {
 			public Vector3 ConstantForce;
 			public float AngularVelocity;
@@ -227,7 +238,6 @@ namespace TC {
 		}
 		readonly SystemParameters[] m_systArray = new SystemParameters[1];
 		ComputeBuffer m_systemBuffer;
-		
 
 		List<TCParticleSystem> m_children;
 		List<TCParticleSystem> Children {

@@ -49,7 +49,7 @@ namespace TC.EditorIntegration {
 			arrowMat.SetBuffer("vertices", arrowBuffer);
 
 			arrowMat.SetPass(1);
-			Graphics.DrawProcedural(MeshTopology.Triangles, arrowBuffer.count, m_target.resolution * m_target.resolution);
+			Graphics.DrawProceduralNow(MeshTopology.Triangles, arrowBuffer.count, m_target.resolution * m_target.resolution);
 		}
 	}
 }

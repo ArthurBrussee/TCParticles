@@ -1,5 +1,4 @@
-﻿
-Shader "TCParticles/Standard (lit)" {
+﻿Shader "TCParticles/Standard (lit)" {
     Properties {
         _MainTex("Albedo", 2D) = "white" {}
         _Color("Color", Color) = (1,1,1,1)
@@ -48,14 +47,12 @@ Shader "TCParticles/Standard (lit)" {
         BlendOp [_BlendOp]
         Blend [_SrcBlend] [_DstBlend]
         ZWrite [_ZWrite]
-        Cull Off
+        Cull [_Cull]
 
         Pass {
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
 
-            BlendOp Add
-            ZWrite On 
             Cull Off
 
             CGPROGRAM

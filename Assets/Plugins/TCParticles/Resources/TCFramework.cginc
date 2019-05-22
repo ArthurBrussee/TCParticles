@@ -258,12 +258,13 @@ void TCDefaultProc(){}
             input.vertex.xyz = vertStretch.x * vRight * stretchFac + vertStretch.y * vUp;
         #elif TC_MESH
             #if defined(TC_CUSTOM_NORMAL_ORIENT)
-                float3 localZ = _CustomNormalsBuffer[GetId(unity_InstanceID)];
+                input.normal = _CustomNormalsBuffer[GetId(unity_InstanceID)];;
+
+                float3 localZ = -input.normal;
                 float3 localX, localY;
                 OrthonormalBasis(localZ, localX, localY);
                 
                 input.vertex.xyz = input.vertex.x * localX + input.vertex.y * localY + input.vertex.z * localZ;
-                input.normal.xyz = input.normal.x * localX + input.normal.y * localY + input.vertex.z * localZ;
             #endif
             
             input.vertex.xyz += tc_Particle.pos;
