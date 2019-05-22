@@ -36,10 +36,6 @@ Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll
 *.db
 *.lock
 *.ide
-Assets/3D/Shibuya.mp4.meta
-Assets/3D/Shibuya.mp4
-Assets/3D/BigBen.mp4.meta
-Assets/3D/BigBen.mp4
 .vs/TCParticles/config/applicationhost.config
 .vs/TCParticles/v16/Browse.VC.opendb
 .vs/TCParticles/v16/Server/sqlite3/storage.ide-shm
