@@ -2,7 +2,6 @@
     Properties {
         _MainTex("Albedo", 2D) = "white" {}
         _Color("Color", Color) = (1,1,1,1)
-
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 
         _MetallicGlossMap("Metallic", 2D) = "white" {}
@@ -14,7 +13,6 @@
 
         _EmissionColor("Color", Color) = (0,0,0)
         _EmissionMap("Emission", 2D) = "white" {}
-
         _DistortionStrength("Strength", Float) = 1.0
         _DistortionBlend("Blend", Range(0.0, 1.0)) = 0.5
 

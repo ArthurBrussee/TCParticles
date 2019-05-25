@@ -118,6 +118,8 @@
 				half4 fragParticleUnlit (VertexOutput IN) : SV_Target {
 					half4 albedo = readTexture (_MainTex, IN) * _Color;
 					albedo *= _Color;
+					
+
 
 					fragColorMode(IN);
 
@@ -143,7 +145,7 @@
 						clip (albedo.a - _Cutoff + 0.0001);
 					#endif
 
-					UNITY_APPLY_FOG_COLOR(IN.fogCoord, result, float4(0,0,0,0));
+					UNITY_APPLY_FOG_COLOR(IN.fogCoord, result, float4(0,0,0,0));					
 					return result;
 				}
 

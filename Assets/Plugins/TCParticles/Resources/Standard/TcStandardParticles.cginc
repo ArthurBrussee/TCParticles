@@ -146,10 +146,12 @@ void surf (Input IN, inout SurfaceOutputStandard o)
     #if defined(_NORMALMAP)
 		o.Normal = normal;
     #endif
-
     o.Emission = emission * _EmissionColor;
     o.Metallic = metallicGloss.r;
     o.Smoothness = metallicGloss.g;
+    					
+    // TODO: Remove when shipping TC Particles!!
+    o.Smoothness = IN.color.a;
 
     #if defined(_ALPHABLEND_ON) || defined(_ALPHAPREMULTIPLY_ON) || defined(_ALPHAOVERLAY_ON)
 		o.Alpha = albedo.a;

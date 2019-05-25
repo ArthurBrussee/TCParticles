@@ -40,3 +40,5 @@ Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll
 .vs/TCParticles/v16/Browse.VC.opendb
 .vs/TCParticles/v16/Server/sqlite3/storage.ide-shm
 .vs/TCParticles/v16/Server/sqlite3/storage.ide-wal
+PointCloudCNN/TrainingData/
+PointCloudCNN/models/
