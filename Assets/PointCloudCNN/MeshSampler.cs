@@ -58,7 +58,7 @@ public static class MeshSampler {
 		[ReadOnly] public NativeArray<int> Triangles;
 		[ReadOnly] public NativeArray<float> CumSizes;
 
-		[ReadOnly] public NormalTex? Tex;
+		[ReadOnly] public NormalTex Tex;
 		
 		public NativeArray<MeshPoint> MeshPoints;
 
@@ -108,15 +108,19 @@ public static class MeshSampler {
 				}
 
 				//and then turn them back to a Vector3
+				float3 normalSample;
+
 				float3 posSample = posA + r * (posB - posA) + s * (posC - posA);
-				float3 normalSample = normalA + r * (normalB - normalA) + s * (normalC - normalA);
 				float2 uvSample = uvA + r * (uvB - uvA) + s * (uvC - uvA);
 
 				// Use normal map instead hurray
-				if (Tex != null) {
-					normalSample = Tex.Value.Get(uvSample);
+				if (math.all(Tex.Size > 0)) {
+					normalSample = Tex.Get(uvSample);
 				}
-				
+				else {
+					normalSample = normalA + r * (normalB - normalA) + s * (normalC - normalA);
+				}
+
 				posSample += normalSample * Rand.NextGaussian(NoiseLevel * 4.0f);
 				posSample += Rand.NextGaussianSphere(NoiseLevel);
 
@@ -133,7 +137,7 @@ public static class MeshSampler {
 	public static NativeArray<MeshPoint> SampleRandomPointsOnMesh(Mesh mesh, Texture2D tangentNormalMap, int pointCount, float noiseLevel) {
 		using (s_sampleMeshMarker.Auto()) {
 
-			NormalTex? normalMapTex = null;
+			NormalTex normalMapTex;
 
 			if (tangentNormalMap != null) {
 				var tex = new RenderTexture(tangentNormalMap.width, tangentNormalMap.height, 0, RenderTextureFormat.ARGBFloat);
@@ -156,6 +160,9 @@ public static class MeshSampler {
 
 				var normalMapTexData = readbackTex.GetRawTextureData<float4>();
 				normalMapTex = new NormalTex {Values = normalMapTexData, Size = math.int2(readbackTex.width, readbackTex.height)};
+			}
+			else {
+				normalMapTex = new NormalTex {Values = new NativeArray<float4>(0, Allocator.TempJob), Size = math.int2(0, 0)};
 			}
 
 			var triangles = new NativeArray<int>(mesh.triangles, Allocator.TempJob);

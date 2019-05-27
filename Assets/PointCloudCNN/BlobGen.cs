@@ -19,7 +19,9 @@ public class BlobGen : MonoBehaviour
 		
 		for (int i = 0; i < verts.Length; ++i) {
 			var worldSpace = localToWorld.MultiplyPoint(verts[i]);
-			verts[i] += noise.pnoise(worldSpace, math.float3(0.2f, 0.2f, 0.2f)) * 0.2f * normals[i];
+			verts[i] += noise.pnoise(worldSpace * 5.0f, math.float3(0.2f, 0.2f, 0.2f)) * 0.2f * normals[i];
+
+			verts[i] *= 5.0f; // make blob a bit bigger so we can see it better
 		}
 
 		var newMesh = new Mesh();

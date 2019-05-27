@@ -19,7 +19,7 @@ public static class PointCloudNormals {
 	// Hyper parameters
 	const int M = 33;
 
-	const int BaseK = 100;
+	const int BaseK = 40;
 	const int KDens = 5;
 
 	// const float Alpha = 0.95f;
@@ -89,9 +89,10 @@ public static class PointCloudNormals {
 				}
 			}
 
-			float2 normalXy = math.float2(maxBin) * 2.0f / M - 1.0f;
+			float2 normalXy = (math.float2(maxBin) + math.float2(0.5f, 0.5f)) * 2.0f / M - 1.0f;
 			float normalZ = 1.0f - math.lengthsq(normalXy);
-			float3 normal = math.float3(normalXy, normalZ);
+			
+			float3 normal = math.normalize(math.float3(normalXy, normalZ));
 
 			// Normally the sign ambiguity in the normal is resolved by facing towards the 
 			// eg. Lidar scanner. In this case, since these point clouds do not come from scans
@@ -225,18 +226,14 @@ public static class PointCloudNormals {
 			
 			var tex = mat.GetTexture("_MainTex") as Texture2D;
 			var normalTex = mat.GetTexture("_BumpMap") as Texture2D;
-			var roughnessTex = mat.GetTexture("_MetallicGlossMap") as Texture2D;
+			var smoothnessTex = mat.GetTexture("_MetallicGlossMap") as Texture2D;
 
 			if (tex == null) {
 				tex = Texture2D.whiteTexture;
 			}
 
-			if (normalTex == null) {
-				normalTex = Texture2D.whiteTexture;
-			}
-
-			if (roughnessTex == null) {
-				roughnessTex = Texture2D.blackTexture;
+			if (smoothnessTex == null) {
+				smoothnessTex = Texture2D.whiteTexture;
 			}
 			
 			// Get points on the mesh
@@ -330,8 +327,7 @@ public static class PointCloudNormals {
 				createHoughTexJob.Schedule(sampleIndices.Length, 64).Complete();
 			}
 
-
-			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => roughnessTex.GetPixelBilinear(p.Uv.x, p.Uv.y).a).ToArray(), Allocator.TempJob);
+			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => smoothnessTex.GetPixelBilinear(p.Uv.x, p.Uv.y).a).ToArray(), Allocator.TempJob);
 			float2 trueRoughnessRange = math.float2(mathext.min(trueRoughness), mathext.max(trueRoughness));
 			NativeArray<float> reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
 			
@@ -350,16 +346,26 @@ public static class PointCloudNormals {
 			}
 			
 			NativeArray<float3> reconstructedNormals = EstimateNormals(houghTextures, kLevels.Length, trueNormalsSample);
+			NativeArray<float> reconstructionError = new NativeArray<float>(reconstructedNormals.Length, Allocator.TempJob);
 			
-			// TODO: More metrics here!
 			float rms = 0.0f;
+			float pgp = 0;
+			
 			for (int i = 0; i < reconstructedNormals.Length; ++i) {
-				float angle = math.acos(math.dot(reconstructedNormals[i], trueNormalsSample[i]));
+				float angle = math.degrees(math.acos(math.dot(reconstructedNormals[i], trueNormalsSample[i])));
+				reconstructionError[i] = angle;
+				
 				rms += angle * angle;
-			}			
+
+				if (angle < 5) {
+					pgp += 1.0f;
+				}
+			}
+
+			pgp = pgp / reconstructedNormals.Length;
 			rms = math.sqrt(rms / reconstructedNormals.Length);
 
-			Debug.Log("Finished analyzing normals with max hough bin. Total RMS: " + rms);
+			Debug.Log($"Finished analyzing normals with max hough bin. Total RMS: {rms}, PGP: {pgp}");
 
 			PointCloudData pointCloudData;
 			using (s_saveCloudMarker.Auto()) {
@@ -374,9 +380,31 @@ public static class PointCloudNormals {
 					pointCloudData = AssetDatabase.LoadAssetAtPath<PointCloudData>(path);
 				}
 
-				var cloudAlbedoValues = trueUvSample.Select(p => ToCol32(tex.GetPixelBilinear(p.x, p.y).linear)).ToArray();
+				Color32[] cloudAlbedoValues;
+				var errorGradient = new Gradient();
+
+				// Populate the color keys at the relative time 0 and 1 (0 and 100%)
+				var colorKey = new GradientColorKey[2];
+				colorKey[0].color = Color.green;
+				colorKey[0].time = 0.0f;
+				colorKey[1].color = Color.red;
+				colorKey[1].time = 1.0f;
+				errorGradient.colorKeys = colorKey;
+				
+				// Show either albedo color, or reconstruction error
+				if (false) {
+					cloudAlbedoValues = trueUvSample.Select(p => ToCol32(tex.GetPixelBilinear(p.x, p.y).linear)).ToArray();
+				}
+				else {
+					cloudAlbedoValues = reconstructionError.Select(p => {
+						float val = math.saturate(math.abs(p) / 90.0f);
+						Color col = errorGradient.Evaluate(val);
+						return (Color32) col;
+					}).ToArray();
+				}
+
 				var cloudPoints = truePositionsSample.Select(p => new Vector3(p.x, p.y, p.z)).ToArray();
-				var cloudNormals = trueNormalsSample.Select(v => new Vector3(v.x, v.y, v.z)).ToArray();
+				var cloudNormals = reconstructedNormals.Select(v => new Vector3(v.x, v.y, v.z)).ToArray();
 				
 				// Encode roughness in color alpha to use in the shader
 				for (int i = 0; i < cloudAlbedoValues.Length; ++i) {
@@ -460,7 +488,8 @@ public static class PointCloudNormals {
 			kLevels.Dispose();
 			trueRoughness.Dispose();
 			reconstructedRoughness.Dispose();
-
+			reconstructionError.Dispose();
+			
 			sw.Stop();
 			Debug.Log("Done generating point cloud! Took: " + sw.ElapsedMilliseconds + "ms");
 
