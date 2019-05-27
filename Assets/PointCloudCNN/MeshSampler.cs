@@ -58,7 +58,7 @@ public static class MeshSampler {
 		[ReadOnly] public NativeArray<int> Triangles;
 		[ReadOnly] public NativeArray<float> CumSizes;
 
-		[ReadOnly] public NormalTex Tex;
+		[ReadOnly] public NormalTex? Tex;
 		
 		public NativeArray<MeshPoint> MeshPoints;
 
@@ -113,8 +113,11 @@ public static class MeshSampler {
 				float2 uvSample = uvA + r * (uvB - uvA) + s * (uvC - uvA);
 
 				// Use normal map instead hurray
-				normalSample = Tex.Get(uvSample);
-				posSample += normalSample * Rand.NextFloat(-0.02f, 0.02f);
+				if (Tex != null) {
+					normalSample = Tex.Value.Get(uvSample);
+				}
+				
+				posSample += normalSample * Rand.NextGaussian(NoiseLevel * 4.0f);
 				posSample += Rand.NextGaussianSphere(NoiseLevel);
 
 				MeshPoint point;
@@ -129,27 +132,32 @@ public static class MeshSampler {
 	
 	public static NativeArray<MeshPoint> SampleRandomPointsOnMesh(Mesh mesh, Texture2D tangentNormalMap, int pointCount, float noiseLevel) {
 		using (s_sampleMeshMarker.Auto()) {
-			var tex = new RenderTexture(tangentNormalMap.width, tangentNormalMap.height, 0, RenderTextureFormat.ARGBFloat);
-			tex.Create();
-			
-			var getNormalMapMaterial = new Material(Shader.Find("Hidden/NormalExtract"));
 
-			Graphics.SetRenderTarget(tex);
-			GL.Viewport(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height));
-			GL.LoadOrtho(); // build ortho camera
-			getNormalMapMaterial.SetTexture("_BumpMap", tangentNormalMap);
-			getNormalMapMaterial.SetPass(0);
-			Graphics.DrawMeshNow(mesh, Matrix4x4.identity, 0);
-			
-			var readbackTex = new Texture2D(tangentNormalMap.width, tangentNormalMap.height, TextureFormat.RGBAFloat, false);
-			Graphics.SetRenderTarget(tex);
-			readbackTex.ReadPixels(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height), 0, 0);
-			Graphics.SetRenderTarget(null);
-			tex.Release();
+			NormalTex? normalMapTex = null;
 
-			var normalMapTexData = readbackTex.GetRawTextureData<float4>();
-			var normalMapTex = new NormalTex {Values = normalMapTexData, Size = math.int2(readbackTex.width, readbackTex.height)};
-			
+			if (tangentNormalMap != null) {
+				var tex = new RenderTexture(tangentNormalMap.width, tangentNormalMap.height, 0, RenderTextureFormat.ARGBFloat);
+				tex.Create();
+
+				var getNormalMapMaterial = new Material(Shader.Find("Hidden/NormalExtract"));
+
+				Graphics.SetRenderTarget(tex);
+				GL.Viewport(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height));
+				GL.LoadOrtho(); // build ortho camera
+				getNormalMapMaterial.SetTexture("_BumpMap", tangentNormalMap);
+				getNormalMapMaterial.SetPass(0);
+				Graphics.DrawMeshNow(mesh, Matrix4x4.identity, 0);
+
+				var readbackTex = new Texture2D(tangentNormalMap.width, tangentNormalMap.height, TextureFormat.RGBAFloat, false);
+				Graphics.SetRenderTarget(tex);
+				readbackTex.ReadPixels(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height), 0, 0);
+				Graphics.SetRenderTarget(null);
+				tex.Release();
+
+				var normalMapTexData = readbackTex.GetRawTextureData<float4>();
+				normalMapTex = new NormalTex {Values = normalMapTexData, Size = math.int2(readbackTex.width, readbackTex.height)};
+			}
+
 			var triangles = new NativeArray<int>(mesh.triangles, Allocator.TempJob);
 			var vertices = new NativeArray<float3>(ToNative(mesh.vertices), Allocator.TempJob);
 			var normals = new NativeArray<float3>(ToNative(mesh.normals), Allocator.TempJob);

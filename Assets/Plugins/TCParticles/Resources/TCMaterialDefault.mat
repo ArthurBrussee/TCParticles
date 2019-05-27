@@ -9,13 +9,12 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: TCMaterialDefault
   m_Shader: {fileID: 4800000, guid: 5736ce42a3d97e44eb31dc7690141f8a, type: 3}
-  m_ShaderKeywords: TC_BILLBOARD TC_COLOUR_LIFETIME TC_UV_NORMAL _ALPHATEST_ON _EMISSION
+  m_ShaderKeywords: TC_BILLBOARD TC_COLOUR_LIFETIME TC_UV_NORMAL _EMISSION
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2450
-  stringTagMap:
-    RenderType: TransparentCutout
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
   disabledShaderPasses:
   - ALWAYS
   m_SavedProperties:
@@ -57,7 +56,7 @@ Material:
     - _InvFade: 1000
     - _LightingEnabled: 1
     - _Metallic: 0
-    - _Mode: 1
+    - _Mode: 0
     - _SoftParticlesEnabled: 0
     - _SoftParticlesFarFadeDistance: 1
     - _SoftParticlesNearFadeDistance: 0

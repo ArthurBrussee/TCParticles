@@ -3,7 +3,7 @@
 using Unity.Mathematics;
 
 public static class RandomExt {
-	public static float NextGaussian(this ref Random rand) {
+	public static float NextGaussian(this ref Random rand, float sigma) {
 		float2 v;
 		float s;
 		do {
@@ -12,14 +12,14 @@ public static class RandomExt {
 		} while (s >= 1.0f || s == 0.0f);
 
 		s = math.sqrt(-2.0f * math.log(s) / s);
-		return v.x * s;
+		return v.x * s * sigma;
 	}
 
 	public static float3 NextGaussianSphere(this ref Random rand, float sigma) {
 		var ret = new float3(
-			rand.NextGaussian() * sigma,
-			rand.NextGaussian() * sigma,
-			rand.NextGaussian() * sigma
+			rand.NextGaussian(sigma),
+			rand.NextGaussian(sigma),
+			rand.NextGaussian(sigma)
 		);
 
 		return ret;

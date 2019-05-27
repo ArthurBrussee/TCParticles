@@ -18,5 +18,7 @@ public class PointCloudGenerate : MonoBehaviour {
 		var system = GetComponent<TCParticleSystem>();
 		system.Emitter.PointCloud = pointCloudData;
 		system.Emitter.Emit(pointCloudData.PointCount);
+
+		GetComponent<MeshRenderer>().enabled = false;
 	}
 }

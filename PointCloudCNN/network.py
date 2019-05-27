@@ -27,7 +27,6 @@ parser.add_argument('--M', default=33, type=int, help='noise level')
 parser.add_argument('--epoch', default=50, type=int, help='number of train epochs')
 parser.add_argument('--epoch_steps', default=100, type=int, help='steps per epoch')
 parser.add_argument('--lr', default=1e-3, type=float, help='initial learning rate for Adam')
-parser.add_argument('--dir_name', default="RockCloud", type=str, help='initial learning rate for Adam')
 
 # #reshape data to fit model
 # X_train = X_train.reshape(60000, M, M, 1)
@@ -80,7 +79,7 @@ def lr_schedule(epoch):
 # Return one batch of data at a time for Keras
 def train_datagen():
     index = 0
-    dir = './TrainingData/' + args.dir_name + '/'
+    dir = './TrainingData/'
     files = os.listdir(dir)
     files.sort()
 
@@ -89,32 +88,25 @@ def train_datagen():
         batch_y = np.empty(shape=(args.batch_size, 3))
 
         for i in range(args.batch_size):
-            for k in range(args.scale_levels):
-                f = files[index]
+            f = files[index]
 
-                k_index = f.index('_k_')
-                x_index = f.index('_x_')
-                y_index = f.index('_y_')
-                r_index = f.index('_r_')
+            x_index = f.index('_x_')
+            y_index = f.index('_y_')
+            r_index = f.index('_r_')
 
-                ext_index = f.index('.png')
+            ext_index = f.index('.png')
 
-                k_test = int(f[k_index + 3:x_index])
+            normalX = float(f[x_index + 3:y_index])
+            normalY = float(f[y_index + 3:r_index])
 
-                if k != k_test:
-                    print("Something went wrong when generating batches! Are your files in the right order?" + k + ", " + k_test)
+            roughness = float(f[r_index + 3:ext_index])
 
-                normalX = float(f[x_index + 3:y_index])
-                normalY = float(f[y_index + 3:r_index])
+            image = imread(dir + f)
 
-                roughness = float(f[r_index + 3:ext_index])
+            batch_x[i, :, :, :] = np.reshape(image[:, :, 0], (args.M, args.M, args.scale_levels))
+            batch_y[i, :] = np.array([normalX, normalY, roughness])
 
-                image = imread(dir + f)
-
-                batch_x[i, :, :, k] = np.reshape(image[:, :, 0], (args.M, args.M))
-                batch_y[i, :] = np.array([normalX, normalY, roughness])
-
-                index += 1
+            index += 1
 
             index = index % len(files)
 
@@ -164,7 +156,7 @@ def load_last_model(save_dir, load_epoch=-1):
 # Main training routine
 def train_model():
     # Setup checkpoint folder
-    save_dir = os.path.join('./models/', args.dir_name)
+    save_dir = './models/'
     os.makedirs(save_dir, mode=0o777, exist_ok=True)
 
     initial_epoch = get_last_epoch(save_dir)

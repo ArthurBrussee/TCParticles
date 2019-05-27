@@ -26,9 +26,12 @@ public static class PointCloudNormals {
 	// const float Epsilon = 0.073f;
 	// Could be calculated from Alpha & Epsilon above but better to just fix it here
 	const int Hypotheses = 1000;
-
-	static readonly int[] KScales1 = {BaseK};
-	static readonly int[] KScales3 = {BaseK / 2, BaseK, BaseK * 2};
+	
+	// K levels to use at different scales
+	// Since all the scale maps for 1 & 3 are also generated when generating 5 scales
+	// It is easier to just read out those than to re-generate data
+	// static readonly int[] KScales1 = {BaseK};
+	// static readonly int[] KScales3 = {BaseK / 2, BaseK, BaseK * 2};
 	static readonly int[] KScales5 = {BaseK / 4, BaseK / 2, BaseK, BaseK * 2, BaseK * 4};
 
 	static ProfilerMarker s_generateDataMarker = new ProfilerMarker("GenerateDataMarker");
@@ -42,33 +45,10 @@ public static class PointCloudNormals {
 	public unsafe struct HoughTex {
 		public fixed byte Tex[M * M];
 	}
-	
+
 	/// <summary>
-	/// Estimate normal by selecting the max bin in a hough texture
+	/// Job to estimate an array of normals using the max bin method
 	/// </summary>
-	static float3 EstimateNormal(HoughTex tex) {
-		int2 maxBin = math.int2(-1, -1);
-		int maxBinCount = 0;
-
-		for (int y = 0; y < M; ++y) {
-			for (int x = 0; x < M; ++x) {
-				unsafe {
-					int count = tex.Tex[x + y * M];
-
-					if (count > maxBinCount) {
-						maxBinCount = count;
-						maxBin =  math.int2(x, y);
-					}
-				}
-			}
-		}
-
-		float2 normalXy = math.float2(maxBin) * 2.0f / M - 1.0f;
-		float normalZ = 1.0f - math.lengthsq(normalXy);
-		return math.normalize(math.float3(normalXy, normalZ));
-	}
-	
-	// Job to estimate an array of normals
 	[BurstCompile(CompileSynchronously = true)]
 	struct EstimateNormalsJob : IJobParallelFor {
 		[ReadOnly] public NativeArray<HoughTex> Textures;
@@ -78,25 +58,50 @@ public static class PointCloudNormals {
 		public int ScaleLevels;
 
 		public void Execute(int index) {
-			float3 normalSum = float3.zero;
 			float3 trueNormal = TrueNormals[index];
+			
+			int2 maxBin = math.int2(-1, -1);
+			int maxBinCount = 0;
 
-			for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
-				int texIndex = index * ScaleLevels + kIndex;
-				float3 normal = EstimateNormal(Textures[texIndex]);
+			unsafe {
+				// Count up total hough histogram
+				// Use int here as byte very likely overflows
+				int* totalCounts = stackalloc int[M * M];
 
-				// Normally the sign ambiguity in the normal is resolved by facing towards the 
-				// eg. Lidar scanner. In this case, since these point clouds do not come from scans
-				// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
-				if (math.dot(normal, trueNormal) < 0) {
-					normal *= -1;
+				for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
+					int texIndex = index * ScaleLevels + kIndex;
+					var tex = Textures[texIndex];
+					
+					for (int i = 0; i < M * M; ++i) {
+						totalCounts[i] += tex.Tex[i];
+					}
 				}
+									
+				for (int y = 0; y < M; ++y) {
+					for (int x = 0; x < M; ++x) {
+						int count = totalCounts[x + y * M];
+						
+						if (count > maxBinCount) {
+							maxBinCount = count;
+							maxBin = math.int2(x, y);
+						}
+					}
+				}
+			}
 
-				normalSum += normal;
+			float2 normalXy = math.float2(maxBin) * 2.0f / M - 1.0f;
+			float normalZ = 1.0f - math.lengthsq(normalXy);
+			float3 normal = math.float3(normalXy, normalZ);
+
+			// Normally the sign ambiguity in the normal is resolved by facing towards the 
+			// eg. Lidar scanner. In this case, since these point clouds do not come from scans
+			// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
+			if (math.dot(normal, trueNormal) < 0) {
+				normal *= -1;
 			}
 
 			// Write final normalized normal
-			Normals[index] = math.normalize(normalSum);
+			Normals[index] = normal;
 		}
 	}
 	
@@ -113,6 +118,7 @@ public static class PointCloudNormals {
 			ScaleLevels = scaleLevels,
 			TrueNormals = trueNormals
 		};
+		
 		job.Schedule(count, 128).Complete();
 		return normals;
 	}
@@ -221,6 +227,18 @@ public static class PointCloudNormals {
 			var normalTex = mat.GetTexture("_BumpMap") as Texture2D;
 			var roughnessTex = mat.GetTexture("_MetallicGlossMap") as Texture2D;
 
+			if (tex == null) {
+				tex = Texture2D.whiteTexture;
+			}
+
+			if (normalTex == null) {
+				normalTex = Texture2D.whiteTexture;
+			}
+
+			if (roughnessTex == null) {
+				roughnessTex = Texture2D.blackTexture;
+			}
+			
 			// Get points on the mesh
 			NativeArray<MeshSampler.MeshPoint> meshPoints = MeshSampler.SampleRandomPointsOnMesh(mesh, normalTex, pointCloudCount, noiseLevel);
 
@@ -312,6 +330,7 @@ public static class PointCloudNormals {
 				createHoughTexJob.Schedule(sampleIndices.Length, 64).Complete();
 			}
 
+
 			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => roughnessTex.GetPixelBilinear(p.Uv.x, p.Uv.y).a).ToArray(), Allocator.TempJob);
 			float2 trueRoughnessRange = math.float2(mathext.min(trueRoughness), mathext.max(trueRoughness));
 			NativeArray<float> reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
@@ -361,7 +380,7 @@ public static class PointCloudNormals {
 				
 				// Encode roughness in color alpha to use in the shader
 				for (int i = 0; i < cloudAlbedoValues.Length; ++i) {
-					cloudAlbedoValues[i].a = (byte) (trueRoughness[i] * 255);
+					cloudAlbedoValues[i].a = (byte) (reconstructedRoughness[i] * 255);
 				}
 
 				pointCloudData.Initialize(
@@ -374,20 +393,19 @@ public static class PointCloudNormals {
 				);
 
 				if (writeData) {
-					string imagesPath = "PointCloudCNN/TrainingData/" + name + kLevels.Length + "/";
-					Directory.CreateDirectory("PointCloudCNN/TrainingData/");
+					string imagesPath = "PointCloudCNN/TrainingData/";
 					Directory.CreateDirectory(imagesPath);
 					
 					StringBuilder fileName = new StringBuilder();
 					
-					var saveTex = new Texture2D(M, M);
-					var colors = new Color32[M * M];
+					// Lay out K channels next to each other in the channel
+					var saveTex = new Texture2D(M, M * kLevels.Length);
+					var colors = new Color32[M * M * kLevels.Length];
 					
 					// Write training data to disk
 					for (int i = 0; i < sampleIndices.Length; ++i) {
 						for (int scaleIndex = 0; scaleIndex < kLevels.Length; ++scaleIndex) {
 							HoughTex testTex = houghTextures[i * kLevels.Length + scaleIndex];
-
 
 							int maxValue = 0;
 							for (int index = 0; index < M * M; ++index) {
@@ -396,32 +414,32 @@ public static class PointCloudNormals {
 								}
 							}
 
+							int texSetOffset = M * M * scaleIndex;
 
 							for (int index = 0; index < M * M; ++index) {
 								unsafe {
 									byte level = (byte)math.clamp((int)math.round(255 * testTex.Tex[index] / (float)maxValue), 0, 255);
-									colors[index] = new Color32(level, level, level, 255);
+									colors[texSetOffset + index] = new Color32(level, level, level, 255);
 								}
 							}
-
-							saveTex.SetPixels32(colors);
-
-							fileName.Clear();
-
-							fileName.Append(imagesPath);
-							fileName.Append(i);
-							fileName.Append("_k_");
-							fileName.Append(scaleIndex);
-							fileName.Append("_x_");
-							float2 setNorm = trueNormalsSample[i].xy;
-							fileName.Append(setNorm.x.ToString("0.000"));
-							fileName.Append("_y_");
-							fileName.Append(setNorm.y.ToString("0.000"));
-							fileName.Append("_r_");
-							fileName.Append(trueRoughness[i].ToString("0.000"));
-							fileName.Append(".png");
-							File.WriteAllBytes(fileName.ToString(), saveTex.EncodeToPNG());
 						}
+							
+						saveTex.SetPixels32(colors);
+						
+						fileName.Clear();
+
+						fileName.Append(imagesPath);
+						fileName.Append(name);
+						fileName.Append(i);
+						fileName.Append("_x_");
+						float2 setNorm = trueNormalsSample[i].xy;
+						fileName.Append(setNorm.x.ToString("0.000"));
+						fileName.Append("_y_");
+						fileName.Append(setNorm.y.ToString("0.000"));
+						fileName.Append("_r_");
+						fileName.Append(trueRoughness[i].ToString("0.000"));
+						fileName.Append(".png");
+						File.WriteAllBytes(fileName.ToString(), saveTex.EncodeToPNG());
 					}
 				}
 			}
