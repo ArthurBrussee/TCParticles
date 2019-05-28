@@ -15,24 +15,28 @@ using UnityEngine.Windows;
 using Debug = UnityEngine.Debug;
 using Random = Unity.Mathematics.Random;
 
+/// <summary>
+/// Main class to handle generation of the point cloud normals / training data
+/// </summary>
 public static class PointCloudNormals {
-	// Hyper parameters
-	const int M = 33;
-
-	const int BaseK = 100;
-	const int KDens = 5;
+	// Hyper parameters, see report for more details
+	const int c_m = 33;
+	const int c_kDens = 5;
 
 	// const float Alpha = 0.95f;
 	// const float Epsilon = 0.073f;
 	// Could be calculated from Alpha & Epsilon above but better to just fix it here
-	const int Hypotheses = 1000;
-	
+	const int c_hypotheses = 1000;
+
+	// Base number of k-neighbourhood to consider
+	const int c_baseK = 100;
+
 	// K levels to use at different scales
 	// Since all the scale maps for 1 & 3 are also generated when generating 5 scales
 	// It is easier to just read out those than to re-generate data
-	// static readonly int[] KScales1 = {BaseK};
-	// static readonly int[] KScales3 = {BaseK / 2, BaseK, BaseK * 2};
-	static readonly int[] KScales5 = {BaseK / 4, BaseK / 2, BaseK, BaseK * 2, BaseK * 4};
+	// static readonly int[] KScales1 = {c_baseK};
+	// static readonly int[] KScales3 = {c_baseK / 2, c_baseK, c_baseK * 2};
+	static readonly int[] KScales5 = {c_baseK / 4, c_baseK / 2, c_baseK, c_baseK * 2, c_baseK * 4};
 
 	static ProfilerMarker s_generateDataMarker = new ProfilerMarker("GenerateDataMarker");
 	static ProfilerMarker s_queryNeighboursMarker = new ProfilerMarker("QueryNeighbours");
@@ -40,112 +44,22 @@ public static class PointCloudNormals {
 	static ProfilerMarker s_saveCloudMarker = new ProfilerMarker("SaveCloud");
 
 	/// <summary>
-	/// Hough histogram data. Uses a byte to hold accumulation value. This is fine for a low number of Hypotheses (H << M * M *255)
-	/// </summary>
-	public unsafe struct HoughTex {
-		public fixed byte Tex[M * M];
-	}
-
-	/// <summary>
-	/// Job to estimate an array of normals using the max bin method
-	/// </summary>
-	[BurstCompile(CompileSynchronously = true)]
-	struct EstimateNormalsJob : IJobParallelFor {
-		[ReadOnly] public NativeArray<HoughTex> Textures;
-		[ReadOnly] public NativeArray<float3> TrueNormals;
-		
-		public NativeArray<float3> Normals;
-		public int ScaleLevels;
-
-		public void Execute(int index) {
-			float3 trueNormal = TrueNormals[index];
-			
-			int2 maxBin = math.int2(-1, -1);
-			int maxBinCount = 0;
-
-			unsafe {
-				// Count up total hough histogram
-				// Use int here as byte very likely overflows
-				int* totalCounts = stackalloc int[M * M];
-
-				for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
-					
-					kIndex = 2;
-					
-					int texIndex = index * ScaleLevels + kIndex;
-					var tex = Textures[texIndex];
-					
-					for (int i = 0; i < M * M; ++i) {
-						totalCounts[i] += tex.Tex[i];
-					}
-
-					break;
-				}
-									
-				for (int y = 0; y < M; ++y) {
-					for (int x = 0; x < M; ++x) {
-						int count = totalCounts[x + y * M];
-						
-						if (count > maxBinCount) {
-							maxBinCount = count;
-							maxBin = math.int2(x, y);
-						}
-					}
-				}
-			}
-
-			float2 normalXy = (math.float2(maxBin) + math.float2(0.5f, 0.5f)) * 2.0f / M - 1.0f;
-			float normalZ = 1.0f - math.lengthsq(normalXy);
-			
-			float3 normal = math.normalize(math.float3(normalXy, normalZ));
-
-			// Normally the sign ambiguity in the normal is resolved by facing towards the 
-			// eg. Lidar scanner. In this case, since these point clouds do not come from scans
-			// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
-			if (math.dot(normal, trueNormal) < 0) {
-				normal *= -1;
-			}
-
-			// Write final normalized normal
-			Normals[index] = normal;
-		}
-	}
-	
-	/// <summary>
-	/// Estimate normals for array of hough tex.
-	/// </summary>
-	static NativeArray<float3> EstimateNormals(NativeArray<HoughTex> textures, int scaleLevels, NativeArray<float3> trueNormals) {
-		// First calculate normals for every bin
-		int count = textures.Length / scaleLevels;
-		var normals = new NativeArray<float3>(count, Allocator.Persistent);
-		var job = new EstimateNormalsJob {
-			Textures = textures,
-			Normals = normals,
-			ScaleLevels = scaleLevels,
-			TrueNormals = trueNormals
-		};
-		
-		job.Schedule(count, 128).Complete();
-		return normals;
-	}
-	
-	/// <summary>
 	/// Estimate roughness as the determinant of the covariance matrix in the hough texture
 	/// This is roughly equal to fitting a normal to the hough texture
 	/// </summary>
-	static float EstimateRoughness(HoughTex tex) {
+	static float EstimateRoughness(HoughHistogram histogram) {
 		float2 meanPos = float2.zero;
 		int totalPoints = 0;
 
 		// Count up total tex weights
 		unsafe {
-			for (int y = 0; y < M; ++y) {
-				for (int x = 0; x < M; ++x) {
-					float2 pos = math.float2(x, y) / M;
+			for (int y = 0; y < c_m; ++y) {
+				for (int x = 0; x < c_m; ++x) {
+					float2 pos = math.float2(x, y) / c_m;
 
-					int index = x + y * M;
-					totalPoints += tex.Tex[index];
-					meanPos += tex.Tex[index] * pos;
+					int index = x + y * c_m;
+					totalPoints += histogram.Counts[index];
+					meanPos += histogram.Counts[index] * pos;
 				}
 			}
 		}
@@ -157,11 +71,11 @@ public static class PointCloudNormals {
 				for (int dimj = 0; dimj < 2; ++dimj) {
 					float cov = 0;
 
-					for (int y = 0; y < M; ++y) {
-						for (int x = 0; x < M; ++x) {
-							int index = x + y * M;
-							float2 pos = math.float2(x, y) / M;
-							cov += tex.Tex[index] * (pos[dimi] - meanPos[dimi]) * (pos[dimj] - meanPos[dimj]);
+					for (int y = 0; y < c_m; ++y) {
+						for (int x = 0; x < c_m; ++x) {
+							int index = x + y * c_m;
+							float2 pos = math.float2(x, y) / c_m;
+							cov += histogram.Counts[index] * (pos[dimi] - meanPos[dimi]) * (pos[dimj] - meanPos[dimj]);
 						}
 					}
 
@@ -172,194 +86,344 @@ public static class PointCloudNormals {
 
 		return math.determinant(covariance);
 	}
-	
+
 	/// <summary>
-	/// Estimate roughness for a list of hough textures
+	/// Main job for generating the hough histograms
 	/// </summary>
 	[BurstCompile(CompileSynchronously = true)]
-	struct EstimateRoughnessJob : IJobParallelFor {
-		[ReadOnly] public NativeArray<HoughTex> Textures;
-		
-		public NativeArray<float> Roughness;
-		public int ScaleLevels;
+	unsafe struct HoughHistogramsJob : IJobParallelFor {
+		[ReadOnly] public NativeArray<float3> Positions;
+		[ReadOnly] public NativeArray<float> PointDensities;
+
+		[ReadOnly] public NativeArray<int> Neighbours;
+		[ReadOnly] public NativeArray<int> KLevels;
+
+		[ReadOnly] public NativeArray<float3> TrueNormals;
+
+		[NativeDisableParallelForRestriction]
+		public NativeArray<HoughHistogram> HoughHistograms;
+
+		public Random Rand;
+
+		int PickWeightedRandomIndex(float* a, int kVal) {
+			float maxVal = a[kVal - 1];
+			float value = Rand.NextFloat(maxVal);
+
+			for (int i = 0; i < kVal; i++) {
+				if (value <= a[i]) {
+					return i;
+				}
+			}
+
+			// Should never get here...
+			return -1;
+		}
 
 		public void Execute(int index) {
-			float roughnessSum = 0.0f;
-			for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
-				int texIndex = index * ScaleLevels + kIndex;
-				roughnessSum += EstimateRoughness(Textures[texIndex]);
+			int kMax = KLevels[KLevels.Length - 1];
+			int neighbourBaseOffset = index * kMax;
+
+			float totalDensity = 0.0f;
+
+			float* cumProb = stackalloc float[kMax];
+			for (int i = 0; i < kMax; ++i) {
+				int neighbourIndex = Neighbours[neighbourBaseOffset + i];
+				totalDensity += PointDensities[neighbourIndex];
+				cumProb[i] = totalDensity;
 			}
-			// Return final averaged roughness
-			Roughness[index] = roughnessSum / ScaleLevels;
+
+			for (int kIndex = 0; kIndex < KLevels.Length; ++kIndex) {
+				// Pick neighbours up to kVal
+				int kVal = KLevels[kIndex];
+
+				// Create a texture and zero initialize it
+				HoughHistogram histogram;
+				for (int i = 0; i < c_m * c_m; ++i) {
+					histogram.Counts[i] = 0;
+				}
+
+				// Construct covariance matrix
+				float3x3 posCovariance = float3x3.identity;
+
+				// Calculate average position
+				float3 meanPos = float3.zero;
+				for (int i = 0; i < kVal; ++i) {
+					meanPos += Positions[Neighbours[neighbourBaseOffset + i]];
+				}
+
+				meanPos /= kVal;
+
+				for (int dimi = 0; dimi < 3; ++dimi) {
+					for (int dimj = 0; dimj < 3; ++dimj) {
+						float cov = 0.0f;
+
+						for (int i = 0; i < kVal; ++i) {
+							float3 testPos = Positions[Neighbours[neighbourBaseOffset + i]];
+							cov += (testPos[dimi] - meanPos[dimi]) * (testPos[dimj] - meanPos[dimj]);
+						}
+
+						cov /= kVal;
+						posCovariance[dimi][dimj] = cov;
+					}
+				}
+
+				// Diagonalize the covariance matrix. This gives 3 eigen values in D
+				// And axis in Q.
+				// Way faster than a full blown PCA solver
+				mathext.diagonalize(posCovariance, out float3x3 qBasis, out float3x3 dBasis);
+				int minPosDir = mathext.argmin(dBasis[0][0], dBasis[1][1], dBasis[2][2]);
+
+				float3 pcaZ = qBasis[minPosDir];
+				float3 pcaY = qBasis[(minPosDir + 1) % 3];
+				float3 pcaX = qBasis[(minPosDir + 2) % 3];
+
+				// Store all 2D hypothesized normals in hough space
+				float2* houghNormals = stackalloc float2[c_hypotheses];
+
+				int hypothesesCompleted = 0;
+				while (hypothesesCompleted < c_hypotheses) {
+					// Pick 3 points, weighted by the local density
+					int n0 = PickWeightedRandomIndex(cumProb, kVal);
+					int n1 = PickWeightedRandomIndex(cumProb, kVal);
+					int n2 = PickWeightedRandomIndex(cumProb, kVal);
+
+					int pi0 = Neighbours[neighbourBaseOffset + n0];
+					int pi1 = Neighbours[neighbourBaseOffset + n1];
+					int pi2 = Neighbours[neighbourBaseOffset + n2];
+
+					float3 hypNormal = math.cross(Positions[pi2] - Positions[pi0], Positions[pi1] - Positions[pi0]);
+
+					// If we pick bad points or co-tangent points, we end up with a bad 
+					// 0 length normal... can't use this, discard this hypothesis and try again
+					if (math.lengthsq(hypNormal) < math.FLT_MIN_NORMAL) {
+						continue;
+					}
+
+					hypNormal = math.normalize(hypNormal);
+
+					// Normally the sign ambiguity in the normal is resolved by facing towards the 
+					// eg. Lidar scanner. In this case, since these point clouds do not come from scans
+					// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
+					float3 trueNormal = TrueNormals[index];
+
+					if (math.dot(trueNormal, hypNormal) < 0) {
+						hypNormal = -hypNormal;
+					}
+
+					float3 pcaNormal = math.dot(hypNormal, pcaX) * pcaX + math.dot(hypNormal, pcaY) * pcaY + math.dot(hypNormal, pcaZ) * pcaZ;
+					houghNormals[hypothesesCompleted] = pcaNormal.xy;
+					hypothesesCompleted++;
+				}
+
+				// Now do 2D PCA for the hough spaced normals
+				float2x2 texCov = float2x2.identity;
+				float2 meanTex = float2.zero;
+				for (int i = 0; i < c_hypotheses; ++i) {
+					meanTex += houghNormals[i];
+				}
+
+				meanTex /= c_hypotheses;
+
+				for (int dimi = 0; dimi < 2; ++dimi) {
+					for (int dimj = 0; dimj < 2; ++dimj) {
+						float cov = 0.0f;
+						for (int i = 0; i < c_hypotheses; ++i) {
+							float2 testPos = houghNormals[i];
+							cov += (testPos[dimi] - meanTex[dimi]) * (testPos[dimj] - meanTex[dimj]);
+						}
+
+						cov /= c_hypotheses;
+						texCov[dimi][dimj] = cov;
+					}
+				}
+
+				float3x3 texCov3 = float3x3.identity;
+				texCov3[0] = math.float3(texCov[0], 0);
+				texCov3[1] = math.float3(texCov[1], 0);
+
+				mathext.diagonalize(texCov3, out float3x3 qTex, out float3x3 dTex);
+				int maxDim = mathext.argmax(dTex[0][0], dTex[1][1]);
+
+				float2 houghSpaceX = qTex[maxDim].xy;
+				float2 houghSpaceY = qTex[(maxDim + 1) % 2].xy;
+
+				// Finally accumulate into hough textures
+				for (int i = 0; i < c_hypotheses; ++i) {
+					float2 localHough = math.dot(houghNormals[i], houghSpaceX) * houghSpaceX +
+					                    math.dot(houghNormals[i], houghSpaceY) * houghSpaceY;
+
+					float2 uv = (localHough + 1.0f) / 2.0f;
+					int2 histogramPos = math.int2(math.floor(uv * c_m));
+
+					// When either x or y is exactly 1 the floor returns M which is out of bounds 
+					// So clamp tex coordinates
+					histogramPos = math.clamp(histogramPos, 0, c_m - 1);
+
+					int houghIndex = histogramPos.x + histogramPos.y * c_m;
+
+					if (histogram.Counts[houghIndex] < byte.MaxValue) {
+						histogram.Counts[houghIndex]++;
+					}
+				}
+
+				// And write to buffer
+				HoughHistograms[index * KLevels.Length + kIndex] = histogram;
+			}
 		}
 	}
-	
-	static NativeArray<float> EstimateRoughness(NativeArray<HoughTex> textures, int scaleLevels, float2 roughnessScale) {
-		// First calculate normals for every bin
-		int count = textures.Length / scaleLevels;
-		
-		var roughness = new NativeArray<float>(count, Allocator.Persistent);
-		var job = new EstimateRoughnessJob {
-			Textures = textures,
-			Roughness = roughness,
-			ScaleLevels = scaleLevels,
-		};
-		job.Schedule(count, 128).Complete();
 
-		// Remap to specified roughness range
-		float2 estimationScale = math.float2(mathext.min(roughness), mathext.max(roughness));
-		
-		for (int i = 0; i < roughness.Length; ++i) {
-			float t = (roughness[i] - estimationScale.x) / (estimationScale.y - estimationScale.x);
-			roughness[i] = math.lerp(roughnessScale.x, roughnessScale.y, t);
-		}
-		
-		return roughness;
-	}
-
-	static Color32 ToCol32(Color col) {
-		return new Color32((byte) (col.r * 255.0f), (byte) (col.g * 255.0f), (byte) (col.b * 255.0f), (byte) (col.a * 255.0f));
-	}
-
-	public static PointCloudData GenerateTrainingData(GameObject go, int pointCloudCount, float noiseLevel, float sampleRate, string name, bool writeData) {
-		Stopwatch sw = new Stopwatch();
+	public static PointCloudData GenerateTrainingData(NativeArray<MeshPoint> meshPoints, float sampleRate, string folder, string name, bool writeData) {
+		var sw = new Stopwatch();
 		sw.Start();
-		
+
 		using (s_generateDataMarker.Auto()) {
-			Mesh mesh = go.GetComponent<MeshFilter>().sharedMesh;
-			Material mat = go.GetComponent<MeshRenderer>().sharedMaterial;
-			
-			var tex = mat.GetTexture("_MainTex") as Texture2D;
-			var normalTex = mat.GetTexture("_BumpMap") as Texture2D;
-			var smoothnessTex = mat.GetTexture("_MetallicGlossMap") as Texture2D;
-
-			if (tex == null) {
-				tex = Texture2D.whiteTexture;
-			}
-
-			if (smoothnessTex == null) {
-				smoothnessTex = Texture2D.whiteTexture;
-			}
-			
-			// Get points on the mesh
-			NativeArray<MeshSampler.MeshPoint> meshPoints = MeshSampler.SampleRandomPointsOnMesh(mesh, normalTex, pointCloudCount, noiseLevel);
-
-			var truePositions = new NativeArray<float3>(meshPoints.Select(p => p.Position).ToArray(), Allocator.TempJob);
-			var trueNormals = new NativeArray<float3>(meshPoints.Select(p => p.Normal).ToArray(), Allocator.Persistent);
-
-			
 			var kLevels = new NativeArray<int>(KScales5, Allocator.TempJob);
 			int maxK = kLevels[kLevels.Length - 1];
 
-			var pointDensities = new NativeArray<float>(truePositions.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-			var neighbours = new NativeArray<int>(truePositions.Length * maxK, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-			using (s_queryNeighboursMarker.Auto()) {
-				var tree = new KDTree(truePositions, 512);
-
-				// Schedule 8 jobs to query all neighbourhoods
-				const int jobCount = 8;
-				int scheduleRange = truePositions.Length / jobCount;
-
-				var handles = new NativeArray<JobHandle>(jobCount, Allocator.TempJob);
-				var caches = new KnnQuery.QueryCache[jobCount];
-
-				var results = new NativeArray<int>[jobCount];
-				var densityResults = new NativeArray<float>[jobCount];
-
-				for (int t = 0; t < jobCount; ++t) {
-					int start = scheduleRange * t;
-					int end = t == jobCount - 1 ? truePositions.Length : scheduleRange * (t + 1);
-
-					results[t] = new NativeArray<int>((end - start) * maxK, Allocator.TempJob);
-					densityResults[t] = new NativeArray<float>(end - start, Allocator.TempJob);
-
-					var job = new QueryNeighboursJob {
-						Neighbours = results[t],
-						PointDensities = densityResults[t],
-						MaxK = maxK,
-						Tree = tree,
-						Start = start,
-						Count = end - start,
-						Cache = KnnQuery.GetQueryCache(tree, maxK)
-					};
-
-					handles[t] = job.Schedule();
-					caches[t] = job.Cache;
-				}
-
-				// Wait for all jobs to be done
-				JobHandle.CompleteAll(handles);
-
-				// Write back results to final array
-				for (int t = 0; t < jobCount; ++t) {
-					NativeArray<int>.Copy(results[t], 0, neighbours, t * scheduleRange * maxK, results[t].Length);
-					NativeArray<float>.Copy(densityResults[t], 0, pointDensities, t * scheduleRange, densityResults[t].Length);
-
-					densityResults[t].Dispose();
-					results[t].Dispose();
-					caches[t].Dispose();
-				}
-
-				handles.Dispose();
-				tree.Release();
-			}
-
 			var sampleIndices = new NativeList<int>(Allocator.TempJob);
 			var rand = new Random(8976543);
-			for (int i = 0; i < truePositions.Length; ++i) {
+
+			for (int i = 0; i < meshPoints.Length; ++i) {
 				if (rand.NextFloat() <= sampleRate) {
 					sampleIndices.Add(i);
 				}
 			}
 
-			var houghTextures = new NativeArray<HoughTex>(sampleIndices.Length * kLevels.Length, Allocator.TempJob);
+			var truePositionsSample = new NativeArray<float3>(sampleIndices.Length, Allocator.TempJob);
+			var trueNormalsSample = new NativeArray<float3>(sampleIndices.Length, Allocator.TempJob);
+			var trueRoughnessSample = new NativeArray<float>(sampleIndices.Length, Allocator.TempJob);
+			var trueAlbedoSample = new NativeArray<Color32>(sampleIndices.Length, Allocator.TempJob);
+
+			for (int i = 0; i < sampleIndices.Length; ++i) {
+				int index = sampleIndices[i];
+				truePositionsSample[i] = meshPoints[index].Position;
+				trueNormalsSample[i] = meshPoints[index].Normal;
+				trueRoughnessSample[i] = meshPoints[index].Smoothness;
+				trueAlbedoSample[i] = meshPoints[index].Albedo;
+			}
+			
+			s_queryNeighboursMarker.Begin();
+
+			// Schedule 8 jobs to query all neighbourhoods
+			const int jobCount = 8;
+
+			var neighbours = new NativeArray<int>(sampleIndices.Length * maxK, Allocator.TempJob);
+			var neighbourResults = new NativeArray<int>[jobCount];
+
+			var truePositions = new NativeArray<float3>(meshPoints.Select(p => p.Position).ToArray(), Allocator.TempJob);
+			
+			var tree = new KDTree(truePositions, 512);
+			var handles = new NativeArray<JobHandle>(jobCount, Allocator.TempJob);
+			var caches = new KnnQuery.QueryCache[jobCount];
+
+			int scheduleRange = sampleIndices.Length / jobCount;
+
+			for (int t = 0; t < jobCount; ++t) {
+				int start = scheduleRange * t;
+				int end = t == jobCount - 1 ? sampleIndices.Length : scheduleRange * (t + 1);
+
+				neighbourResults[t] = new NativeArray<int>((end - start) * maxK, Allocator.TempJob);
+
+				var job = new QueryNeighboursJob {
+					NeighbourResult = neighbourResults[t],
+					PositionsSample = truePositionsSample,
+					MaxK = maxK,
+					Tree = tree,
+					Start = start,
+					Count = end - start,
+					Cache = KnnQuery.GetQueryCache(tree, maxK)
+				};
+
+				handles[t] = job.Schedule();
+				caches[t] = job.Cache;
+			}
+
+			// Wait for all jobs to be done
+			JobHandle.CompleteAll(handles);
+
+			// Write back results to final results array
+			for (int t = 0; t < jobCount; ++t) {
+				NativeArray<int>.Copy(neighbourResults[t], 0, neighbours, t * scheduleRange * maxK, neighbourResults[t].Length);
+				neighbourResults[t].Dispose();
+			}
+
+			var pointDensities = new NativeArray<float>(meshPoints.Length, Allocator.TempJob);
+			var densityResults = new NativeArray<float>[jobCount];
+
+			scheduleRange = pointDensities.Length / jobCount;
+
+			for (int t = 0; t < jobCount; ++t) {
+				int start = scheduleRange * t;
+				int end = t == jobCount - 1 ? pointDensities.Length : scheduleRange * (t + 1);
+				
+				densityResults[t] = new NativeArray<float>(end - start, Allocator.TempJob);
+
+				var job = new QueryDensityJob {
+					PointDensitiesResult = densityResults[t],
+					Positions = truePositions,
+					Tree = tree,
+					Start = start,
+					Count = end - start,
+					Cache = KnnQuery.GetQueryCache(tree, maxK)
+				};
+
+				handles[t] = job.Schedule();
+				caches[t] = job.Cache;
+			}
+
+			JobHandle.CompleteAll(handles);
+
+			// Write back results to final results array
+			for (int t = 0; t < jobCount; ++t) {
+				NativeArray<float>.Copy(densityResults[t], 0, pointDensities, t * scheduleRange, densityResults[t].Length);
+				densityResults[t].Dispose();
+			}
+
+			
+			// All done, dispose memory used for temp results
+			tree.Dispose();
+			handles.Dispose();
+			s_queryNeighboursMarker.End();
+
+			for (int t = 0; t < jobCount; ++t) {
+				// Also dispose cache now
+				caches[t].Dispose();
+			}
+			
+			var houghTextures = new NativeArray<HoughHistogram>(sampleIndices.Length * kLevels.Length, Allocator.TempJob);
 
 			using (s_houghTexMarker.Auto()) {
 				var random = new Random(23454575);
 
-				var createHoughTexJob = new HoughTexturesJob {
+				var createHoughTexJob = new HoughHistogramsJob {
 					Positions = truePositions,
-					TrueNormals = trueNormals,
-					SampleIndices = sampleIndices,
 					PointDensities = pointDensities,
+					
+					TrueNormals = trueNormalsSample,
 					Neighbours = neighbours,
 					Rand = random,
-					HoughTextures = houghTextures,
+					HoughHistograms = houghTextures,
 					KLevels = kLevels
 				};
 
-				createHoughTexJob.Schedule(sampleIndices.Length, 64).Complete();
+				createHoughTexJob.Schedule(sampleIndices.Length, 1024).Complete();
 			}
 
-			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => smoothnessTex.GetPixelBilinear(p.Uv.x, p.Uv.y).a).ToArray(), Allocator.TempJob);
+			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => p.Smoothness).ToArray(), Allocator.TempJob);
 			float2 trueRoughnessRange = math.float2(mathext.min(trueRoughness), mathext.max(trueRoughness));
-			NativeArray<float> reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
-			
-			var truePositionsSample = new NativeArray<float3>(sampleIndices.Length, Allocator.TempJob);
-			var trueNormalsSample = new NativeArray<float3>(sampleIndices.Length, Allocator.TempJob);
-			var trueRoughnessSample = new NativeArray<float>(sampleIndices.Length, Allocator.TempJob);
-			var trueUvSample = new NativeArray<float2>(sampleIndices.Length, Allocator.TempJob);
-			
-			for (int i = 0; i < sampleIndices.Length; ++i) {
-				int index = sampleIndices[i];
 
-				trueUvSample[i] = meshPoints[index].Uv;
-				truePositionsSample[i] = truePositions[index];
-				trueNormalsSample[i] = trueNormals[index];
-				trueRoughnessSample[i] = trueRoughness[index];
-			}
-			
+			NativeArray<float> reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
 			NativeArray<float3> reconstructedNormals = EstimateNormals(houghTextures, kLevels.Length, trueNormalsSample);
-			NativeArray<float> reconstructionError = new NativeArray<float>(reconstructedNormals.Length, Allocator.TempJob);
-			
+
+			var reconstructionError = new NativeArray<float>(reconstructedNormals.Length, Allocator.TempJob);
+
 			float rms = 0.0f;
 			float pgp = 0;
-			
+
 			for (int i = 0; i < reconstructedNormals.Length; ++i) {
 				float angle = math.degrees(math.acos(math.dot(reconstructedNormals[i], trueNormalsSample[i])));
 				reconstructionError[i] = angle;
-				
+
 				rms += angle * angle;
 
 				if (angle < 5) {
@@ -367,16 +431,16 @@ public static class PointCloudNormals {
 				}
 			}
 
-			pgp = pgp / reconstructedNormals.Length;
+			pgp /= reconstructedNormals.Length;
 			rms = math.sqrt(rms / reconstructedNormals.Length);
 
-			Debug.Log($"Finished analyzing normals with max hough bin. Total RMS: {rms}, PGP: {pgp}");
+			Debug.Log($"Finished analyzing normals with max hough bin. Total RMS: {rms}, PGP: {pgp}. Time: {sw.ElapsedMilliseconds}ms");
 
 			PointCloudData pointCloudData;
 			using (s_saveCloudMarker.Auto()) {
 				// Save to TC Point cloud we can render
 				Directory.CreateDirectory("Assets/PointCloudCNN/Clouds/");
-				string path = "Assets/PointCloudCNN/Clouds/"  + name + ".asset";
+				string path = "Assets/PointCloudCNN/Clouds/" + name + ".asset";
 
 				if (!File.Exists(path)) {
 					pointCloudData = ScriptableObject.CreateInstance<PointCloudData>();
@@ -385,7 +449,7 @@ public static class PointCloudNormals {
 					pointCloudData = AssetDatabase.LoadAssetAtPath<PointCloudData>(path);
 				}
 
-				Color32[] cloudAlbedoValues;
+				Color32[] cloudAlbedoValues = new Color32[0];
 				var errorGradient = new Gradient();
 
 				// Populate the color keys at the relative time 0 and 1 (0 and 100%)
@@ -395,22 +459,21 @@ public static class PointCloudNormals {
 				colorKey[1].color = Color.red;
 				colorKey[1].time = 1.0f;
 				errorGradient.colorKeys = colorKey;
-				
+
+				bool showError = true;
+
 				// Show either albedo color, or reconstruction error
-				if (false) {
-					cloudAlbedoValues = trueUvSample.Select(p => ToCol32(tex.GetPixelBilinear(p.x, p.y).linear)).ToArray();
-				}
-				else {
+				if (showError) {
 					cloudAlbedoValues = reconstructionError.Select(p => {
-						float val = math.saturate(math.abs(p) / 90.0f);
+						float val = math.saturate(math.abs(p) / 60.0f);
 						Color col = errorGradient.Evaluate(val);
 						return (Color32) col;
 					}).ToArray();
 				}
 
-				var cloudPoints = truePositionsSample.Select(p => new Vector3(p.x, p.y, p.z)).ToArray();
-				var cloudNormals = reconstructedNormals.Select(v => new Vector3(v.x, v.y, v.z)).ToArray();
-				
+				Vector3[] cloudPoints = truePositionsSample.Select(p => new Vector3(p.x, p.y, p.z)).ToArray();
+				Vector3[] cloudNormals = reconstructedNormals.Select(v => new Vector3(v.x, v.y, v.z)).ToArray();
+
 				// Encode roughness in color alpha to use in the shader
 				for (int i = 0; i < cloudAlbedoValues.Length; ++i) {
 					cloudAlbedoValues[i].a = (byte) (reconstructedRoughness[i] * 255);
@@ -426,39 +489,39 @@ public static class PointCloudNormals {
 				);
 
 				if (writeData) {
-					string imagesPath = "PointCloudCNN/TrainingData/";
+					string imagesPath = "PointCloudCNN/" + folder + "/";
 					Directory.CreateDirectory(imagesPath);
-					
-					StringBuilder fileName = new StringBuilder();
-					
+
+					var fileName = new StringBuilder();
+
 					// Lay out K channels next to each other in the channel
-					var saveTex = new Texture2D(M, M * kLevels.Length);
-					var colors = new Color32[M * M * kLevels.Length];
-					
+					var saveTex = new Texture2D(c_m, c_m * kLevels.Length);
+					var colors = new Color32[c_m * c_m * kLevels.Length];
+
 					// Write training data to disk
 					for (int i = 0; i < sampleIndices.Length; ++i) {
 						for (int scaleIndex = 0; scaleIndex < kLevels.Length; ++scaleIndex) {
-							HoughTex testTex = houghTextures[i * kLevels.Length + scaleIndex];
+							HoughHistogram testHistogram = houghTextures[i * kLevels.Length + scaleIndex];
 
 							int maxValue = 0;
-							for (int index = 0; index < M * M; ++index) {
+							for (int index = 0; index < c_m * c_m; ++index) {
 								unsafe {
-									maxValue = math.max(maxValue, testTex.Tex[index]);
+									maxValue = math.max(maxValue, testHistogram.Counts[index]);
 								}
 							}
 
-							int texSetOffset = M * M * scaleIndex;
+							int texSetOffset = c_m * c_m * scaleIndex;
 
-							for (int index = 0; index < M * M; ++index) {
+							for (int index = 0; index < c_m * c_m; ++index) {
 								unsafe {
-									byte level = (byte)math.clamp((int)math.round(255 * testTex.Tex[index] / (float)maxValue), 0, 255);
+									byte level = (byte) math.clamp((int) math.round(255 * testHistogram.Counts[index] / (float) maxValue), 0, 255);
 									colors[texSetOffset + index] = new Color32(level, level, level, 255);
 								}
 							}
 						}
-							
+
 						saveTex.SetPixels32(colors);
-						
+
 						fileName.Clear();
 
 						fileName.Append(imagesPath);
@@ -470,7 +533,7 @@ public static class PointCloudNormals {
 						fileName.Append("_y_");
 						fileName.Append(setNorm.y.ToString("0.000"));
 						fileName.Append("_r_");
-						fileName.Append(trueRoughness[i].ToString("0.000"));
+						fileName.Append(trueRoughnessSample[i].ToString("0.000"));
 						fileName.Append(".png");
 						File.WriteAllBytes(fileName.ToString(), saveTex.EncodeToPNG());
 					}
@@ -479,13 +542,10 @@ public static class PointCloudNormals {
 
 			// Release all buffers
 			truePositionsSample.Dispose();
-			trueUvSample.Dispose();
 			trueNormalsSample.Dispose();
 			trueRoughnessSample.Dispose();
 			sampleIndices.Dispose();
-			truePositions.Dispose();
 			neighbours.Dispose();
-			trueNormals.Dispose();
 			houghTextures.Dispose();
 			reconstructedNormals.Dispose();
 			pointDensities.Dispose();
@@ -494,7 +554,8 @@ public static class PointCloudNormals {
 			trueRoughness.Dispose();
 			reconstructedRoughness.Dispose();
 			reconstructionError.Dispose();
-			
+			truePositions.Dispose();
+
 			sw.Stop();
 			Debug.Log("Done generating point cloud! Took: " + sw.ElapsedMilliseconds + "ms");
 
@@ -505,15 +566,175 @@ public static class PointCloudNormals {
 		// Now we have a cube of hough textures, and a normal for each particle!
 	}
 
+	/// <summary>
+	/// Hough histogram data. Uses a byte to hold accumulation value. This is fine for a low number of Hypotheses (H much smaller than M * M *255)
+	/// </summary>
+	public unsafe struct HoughHistogram {
+		// ReSharper disable once UnassignedField.Global
+		public fixed byte Counts[c_m * c_m];
+	}
 
+	/// <summary>
+	/// Job to estimate an array of normals using the max bin method
+	/// </summary>
+	[BurstCompile(CompileSynchronously = true)]
+	struct EstimateNormalsJob : IJobParallelFor {
+		[ReadOnly] public NativeArray<HoughHistogram> Textures;
+		[ReadOnly] public NativeArray<float3> TrueNormals;
 
+		public NativeArray<float3> Normals;
+		public int ScaleLevels;
+
+		public void Execute(int index) {
+			float3 trueNormal = TrueNormals[index];
+
+			int2 maxBin = math.int2(-1, -1);
+			int maxBinCount = 0;
+
+			unsafe {
+				// Count up total hough histogram
+				// Use int here as byte very likely overflows
+				int* totalCounts = stackalloc int[c_m * c_m];
+
+				for (int i = 0; i < c_m * c_m; ++i) {
+					totalCounts[i] = 0;
+				}
+
+				for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
+					int texIndex = index * ScaleLevels + kIndex;
+					HoughHistogram histogram = Textures[texIndex];
+
+					for (int i = 0; i < c_m * c_m; ++i) {
+						totalCounts[i] += histogram.Counts[i];
+					}
+				}
+
+				for (int y = 0; y < c_m; ++y) {
+					for (int x = 0; x < c_m; ++x) {
+						int count = totalCounts[x + y * c_m];
+
+						if (count > maxBinCount) {
+							maxBinCount = count;
+							maxBin = math.int2(x, y);
+						}
+					}
+				}
+			}
+
+			// M - 1 to compensate for floor() in encoding
+			// This way with M=33 we encode cardinal directions exactly!
+			float2 normalUv = math.float2(maxBin) / (c_m - 1.0f);
+			float2 normalXy = 2.0f * normalUv - 1.0f;
+
+			float normalZ = math.sqrt(math.saturate(1.0f - math.lengthsq(normalXy)));
+
+			float3 normal = math.normalize(math.float3(normalXy, normalZ));
+
+			// Normally the sign ambiguity in the normal is resolved by facing towards the 
+			// eg. Lidar scanner. In this case, since these point clouds do not come from scans
+			// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
+			if (math.dot(normal, trueNormal) < 0) {
+				normal *= -1;
+			}
+
+			// Write final normalized normal
+			Normals[index] = normal;
+		}
+	}
+
+	/// <summary>
+	/// Estimate normals for array of hough tex.
+	/// </summary>
+	static NativeArray<float3> EstimateNormals(NativeArray<HoughHistogram> textures, int scaleLevels, NativeArray<float3> trueNormals) {
+		// First calculate normals for every bin
+		int count = textures.Length / scaleLevels;
+		var normals = new NativeArray<float3>(count, Allocator.Persistent);
+		var job = new EstimateNormalsJob {
+			Textures = textures,
+			Normals = normals,
+			ScaleLevels = scaleLevels,
+			TrueNormals = trueNormals
+		};
+
+		job.Schedule(count, 256).Complete();
+		return normals;
+	}
+
+	/// <summary>
+	/// Estimate roughness for a list of hough textures
+	/// </summary>
+	[BurstCompile(CompileSynchronously = true)]
+	struct EstimateRoughnessJob : IJobParallelFor {
+		[ReadOnly] public NativeArray<HoughHistogram> Textures;
+
+		public NativeArray<float> Roughness;
+		public int ScaleLevels;
+
+		public void Execute(int index) {
+			float roughnessSum = 0.0f;
+			for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
+				int texIndex = index * ScaleLevels + kIndex;
+				roughnessSum += EstimateRoughness(Textures[texIndex]);
+			}
+
+			// Return final averaged roughness
+			Roughness[index] = roughnessSum / ScaleLevels;
+		}
+	}
+
+	static NativeArray<float> EstimateRoughness(NativeArray<HoughHistogram> textures, int scaleLevels, float2 roughnessScale) {
+		// First calculate normals for every bin
+		int count = textures.Length / scaleLevels;
+
+		var roughness = new NativeArray<float>(count, Allocator.Persistent);
+		var job = new EstimateRoughnessJob {
+			Textures = textures,
+			Roughness = roughness,
+			ScaleLevels = scaleLevels
+		};
+		job.Schedule(count, 256).Complete();
+
+		// Remap to specified roughness range
+		float2 estimationScale = math.float2(mathext.min(roughness), mathext.max(roughness));
+
+		for (int i = 0; i < roughness.Length; ++i) {
+			float t = (roughness[i] - estimationScale.x) / (estimationScale.y - estimationScale.x);
+			roughness[i] = math.lerp(roughnessScale.x, roughnessScale.y, t);
+		}
+
+		return roughness;
+	}
 
 	[BurstCompile(CompileSynchronously = true)]
-	struct QueryNeighboursJob : IJob {
-		public NativeArray<int> Neighbours;
-		public NativeArray<float> PointDensities;
+	struct QueryDensityJob : IJob {
+		public NativeArray<float> PointDensitiesResult;
 
 		[ReadOnly] public KDTree Tree;
+		[ReadOnly] public NativeArray<float3> Positions;
+
+		public KnnQuery.QueryCache Cache;
+		public int Start;
+		public int Count;
+
+		public void Execute() {
+			for (int i = 0; i < Count; ++i) {
+				int index = Start + i;
+				float3 pos = Positions[index];
+
+				// Save local density weighting as squared distance to k_dens nearest neighbour
+				int kdensIndex = KnnQuery.KNearestLast(Tree, c_kDens, pos, Cache);
+				PointDensitiesResult[i] = math.distancesq(pos, Tree.Points[kdensIndex]);
+			}
+		}
+	}
+	
+	[BurstCompile(CompileSynchronously = true)]
+	struct QueryNeighboursJob : IJob {
+		public NativeArray<int> NeighbourResult;
+
+		[ReadOnly] public KDTree Tree;
+		[ReadOnly] public NativeArray<float3> PositionsSample;
+
 		public int MaxK;
 
 		public KnnQuery.QueryCache Cache;
@@ -524,194 +745,9 @@ public static class PointCloudNormals {
 		public void Execute() {
 			for (int i = 0; i < Count; ++i) {
 				int index = Start + i;
-
-				float3 pos = Tree.Points[index];
-				KnnQuery.KNearest(Tree, MaxK, pos, Neighbours.Slice(i * MaxK, MaxK), Cache);
-
-				// Save local density weighting as squared distance to k_dens nearest neighbour
-				int kdensIndex = KnnQuery.KNearestLast(Tree, KDens, pos, Cache);
-				PointDensities[i] = math.distancesq(pos, Tree.Points[kdensIndex]);
+				float3 pos = PositionsSample[index];
+				KnnQuery.KNearest(Tree, MaxK, pos, NeighbourResult.Slice(i * MaxK, MaxK), Cache);
 			}
 		}
 	}
-
-	[BurstCompile(CompileSynchronously = true)]
-	unsafe struct HoughTexturesJob : IJobParallelFor {
-		[ReadOnly] public NativeArray<float3> Positions;
-		[ReadOnly] public NativeArray<int> SampleIndices;
-		[ReadOnly] public NativeArray<float> PointDensities;
-		[ReadOnly] public NativeArray<int> Neighbours;
-		[ReadOnly] public NativeArray<int> KLevels;
-
-		[ReadOnly] public NativeArray<float3> TrueNormals;
-
-		[NativeDisableParallelForRestriction]
-		public NativeArray<HoughTex> HoughTextures;
-
-		public Random Rand;
-
-		int PickWeightedRandomIndex(float* cumProb, int kVal) {
-			float maxVal = cumProb[kVal - 1];
-			float randomSample = Rand.NextFloat(maxVal);
-
-			for (int i = 0; i < kVal; i++) {
-				if (randomSample <= cumProb[i]) {
-					return i;
-				}
-			}
-
-			throw new Exception();
-		}
-		
-		public void Execute(int rawIndex) {
-			int pointIndex = SampleIndices[rawIndex];
-			int kMax = KLevels[KLevels.Length - 1];
-
-			int neighbourBaseOffset = pointIndex * kMax;
-			float* cumProb = stackalloc float[kMax];
-
-			float totalDensity = 0.0f;
-			for (int i = 0; i < kMax; ++i) {
-				int neighbourIndex = Neighbours[neighbourBaseOffset + i];
-				totalDensity += PointDensities[neighbourIndex];
-				cumProb[i] = totalDensity;
-			}
-			
-			float3 trueNormal = TrueNormals[pointIndex];
-
-			for (int kIndex = 0; kIndex < KLevels.Length; ++kIndex) {
-				// Pick neighbours up to kVal
-				int kVal = KLevels[kIndex];
-
-				// Create a texture and zero initialize it
-				HoughTex tex;
-				for (int i = 0; i < M * M; ++i) {
-					tex.Tex[i] = 0;
-				}
-
-				// Construct covariance matrix
-				float3x3 posCovariance = float3x3.identity;
-				
-				// Calculate average position
-				float3 meanPos = float3.zero;
-				for (int i = 0; i < kVal; ++i) {
-					meanPos += Positions[Neighbours[neighbourBaseOffset + i]];
-				}
-				meanPos /= kVal;
-
-				for (int dimi = 0; dimi < 3; ++dimi) {
-					for (int dimj = 0; dimj < 3; ++dimj) {
-						float cov = 0.0f;
-						
-						for (int i = 0; i < kVal; ++i) {
-							int ni = Neighbours[neighbourBaseOffset + i];
-							
-							float3 testPos = Positions[ni];
-							cov += (testPos[dimi] - meanPos[dimi]) * (testPos[dimj] - meanPos[dimj]);
-						}
-						cov /= kVal;
-						posCovariance[dimi][dimj] = cov;
-					}
-				}
-
-				// Diagonalize the covariance matrix. This gives 3 eigen values in D
-				// And axis in Q.
-				// Way faster than a full blown PCA solver
-				mathext.diagonalize(posCovariance, out float3x3 Q, out float3x3 D);
-				int minPosDir = mathext.argmin(D[0][0], D[1][1], D[2][2]);
-
-				float3 pcaZ = Q[minPosDir];
-				float3 pcaY = Q[(minPosDir + 1) % 3];
-				float3 pcaX = Q[(minPosDir + 2) % 3];
-
-				// Store all 2D hypothesized normals in hough space
-				float2* houghNormals = stackalloc float2[Hypotheses];
-				
-				for (int i = 0; i < Hypotheses; ++i) {
-					// Pick 3 unique points, weighted by the local density
-					int n0, n1, n2;
-					do {
-						// TODO: This freaks out for some reason :/
-						n0 = PickWeightedRandomIndex(cumProb, kVal);
-						n1 = PickWeightedRandomIndex(cumProb, kVal);
-						n2 = PickWeightedRandomIndex(cumProb, kVal);
-					} while (n0 == n1 || n0 == n2 || n1 == n2);
-
-					int pi0 = Neighbours[neighbourBaseOffset + n0];
-					int pi1 = Neighbours[neighbourBaseOffset + n1];
-					int pi2 = Neighbours[neighbourBaseOffset + n2];
-
-					float3 hypNormal = math.normalizesafe(math.cross(Positions[pi2] - Positions[pi0], Positions[pi1] - Positions[pi0]));
-					float3 pcaNormal = math.dot(hypNormal, pcaX) * pcaX + math.dot(hypNormal, pcaY) * pcaY + math.dot(hypNormal, pcaZ) * pcaZ;
-
-					// Normally the sign ambiguity in the normal is resolved by facing towards the 
-					// eg. Lidar scanner. In this case, since these point clouds do not come from scans
-					// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
-					if (math.dot(trueNormal, pcaNormal) < 0) {
-						pcaNormal *= -1;
-					}
-
-					houghNormals[i] = pcaNormal.xy;
-					
-					
-					houghNormals[i] = hypNormal.xy;
-				}
-				
-				// Now do 2D PCA for the hough spaced normals
-				float2x2 texCov = float2x2.identity;
-				float2 meanTex = float2.zero;
-				for (int i = 0; i < Hypotheses; ++i) {
-					meanTex += houghNormals[i];
-				}
-				meanTex /= Hypotheses;
-				
-				for (int dimi = 0; dimi < 2; ++dimi) {
-					for (int dimj = 0; dimj < 2; ++dimj) {
-						float cov = 0.0f;
-						for (int i = 0; i < Hypotheses; ++i) {
-							float2 testPos = houghNormals[i];
-							cov += (testPos[dimi] - meanTex[dimi]) * (testPos[dimj] - meanTex[dimj]);
-						}
-						cov /= Hypotheses;
-						texCov[dimi][dimj] = cov;
-					}
-				}
-
-				float3x3 texCov3 = float3x3.identity;
-				texCov3[0] = math.float3(texCov[0], 0);
-				texCov3[1] = math.float3(texCov[1], 0);
-
-				mathext.diagonalize(texCov3, out float3x3 QTex, out float3x3 DTex);
-				int maxDim = mathext.argmax(DTex[0][0], DTex[1][1]);
-
-				float2 houghSpaceX = QTex[maxDim].xy;
-				float2 houghSpaceY = QTex[(maxDim + 1) % 2].xy;
-				
-				// Finally accumulate into hough textures
-				for (int i = 0; i < Hypotheses; ++i) {
-					float2 localHough = math.dot(houghNormals[i], houghSpaceX) * houghSpaceX + 
-										math.dot(houghNormals[i], houghSpaceY) * houghSpaceY;
-
-
-					localHough = houghNormals[i];
-					
-					int2 texPos = math.int2(math.floor(M * (localHough + 1.0f) / 2.0f));
-					
-					// When either x or y is exactly 1 the floor returns M which is out of bounds 
-					// So clamp tex coordinates
-					texPos = math.clamp(texPos, 0, M - 1);
-
-					int houghIndex = texPos.x + texPos.y * M;
-					
-					if (tex.Tex[houghIndex] < byte.MaxValue) {
-						tex.Tex[houghIndex]++;
-					}
-				}
-
-				// And write to buffer
-				HoughTextures[rawIndex * KLevels.Length + kIndex] = tex;
-			}
-		}
-	}
-
 }

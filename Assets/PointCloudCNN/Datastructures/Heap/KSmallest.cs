@@ -26,7 +26,7 @@ using Unity.Collections;
 namespace DataStructures.ViliWonka.Heap {
 	// array start at index 1
 	// generic version
-	public struct KSmallestHeap{
+	public struct KSmallestHeap {
 		NativeArray<int> objs; //objects
 		NativeArray<float> heap;
 

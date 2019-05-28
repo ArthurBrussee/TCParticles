@@ -8,55 +8,51 @@ namespace DataStructures.ViliWonka.KDTree {
 		[ReadOnly] public NativeArray<KDNode> Nodes;
 		[ReadOnly] public NativeArray<int> Permutation;
 
-		public int Count;
-
 		int kdNodesCount;
 		int maxPointsPerLeafNode;
 		int m_rootNodeIndex;
 
 		public KDNode RootNode => Nodes[m_rootNodeIndex];
-		
+
 		public KDTree(NativeArray<float3> points, int maxPointsPerLeafNode = 16) {
-			int nodeCountEstimate = 5 * (int)math.ceil(points.Length / (float) maxPointsPerLeafNode) + 1;
+			int nodeCountEstimate = 10 * (int) math.ceil(points.Length / (float) maxPointsPerLeafNode) + 1;
 			Nodes = new NativeArray<KDNode>(nodeCountEstimate, Allocator.Persistent);
-			
 			Permutation = new NativeArray<int>(points.Length, Allocator.Persistent);
 			Points = points;
-			Count = points.Length;
 			kdNodesCount = 0;
 			m_rootNodeIndex = -1;
 
 			this.maxPointsPerLeafNode = maxPointsPerLeafNode;
 
-			for (int i = 0; i < Count; i++) {
+			for (int i = 0; i < Points.Length; i++) {
 				Permutation[i] = i;
 			}
 
 			kdNodesCount = 0;
-			m_rootNodeIndex = GetKdNode(MakeBounds(), 0, Count);
+			m_rootNodeIndex = GetKdNode(MakeBounds(), 0, Points.Length);
+			
+			
 			SplitNode(m_rootNodeIndex);
 		}
-	
-		public void Release() {
+
+		public void Dispose() {
 			Permutation.Dispose();
 			Nodes.Dispose();
 		}
 
 		public void SetCount(int newSize) {
-			Count = newSize;
-
 			// upsize internal arrays
-			if (Count > Points.Length) {
+			if (newSize > Points.Length) {
 				var newPoints = new NativeArray<float3>(newSize, Allocator.Persistent);
 				NativeArray<float3>.Copy(Points, newPoints, Points.Length);
 				Points = newPoints;
-				
+
 				var newPerm = new NativeArray<int>(newSize, Allocator.Persistent);
 				NativeArray<int>.Copy(Permutation, newPerm, newPerm.Length);
 				Permutation = newPerm;
 			}
 		}
-		
+
 		int GetKdNode(KDBounds bounds, int start, int end) {
 			KDNode node;
 			node.bounds = bounds;
@@ -78,8 +74,7 @@ namespace DataStructures.ViliWonka.KDTree {
 		KDBounds MakeBounds() {
 			var max = new float3(float.MinValue, float.MinValue, float.MinValue);
 			var min = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
-
-			int even = Count & ~1; // calculate even Length
+			int even = Points.Length & ~1; // calculate even Length
 
 			// min, max calculations
 			// 3n/2 calculations instead of 2n
@@ -151,7 +146,7 @@ namespace DataStructures.ViliWonka.KDTree {
 			}
 
 			// if array was odd, calculate also min/max for the last element
-			if (even != Count) {
+			if (even != Points.Length) {
 				// X
 				if (min.x > Points[even].x) {
 					min.x = Points[even].x;
@@ -189,9 +184,6 @@ namespace DataStructures.ViliWonka.KDTree {
 		/// <summary>
 		/// Recursive splitting procedure
 		/// </summary>
-		/// <param name="parent">This is where root node goes</param>
-		/// <param name="depth"></param>
-		///
 		void SplitNode(int parentIndex) {
 			var parent = Nodes[parentIndex];
 

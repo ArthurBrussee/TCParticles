@@ -1,16 +1,14 @@
 import argparse
 import re
-import cv2
 import os, glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
-import odl.contrib.tensorflow
 import random
 import keras.backend as K
 import keras.losses
-from keras.layers import Input, Conv2D, BatchNormalization, Activation, Concatenate, MaxPool2D, Flatten, Dense
-from keras.models import Model, Sequential, load_model
+from keras.layers import Conv2D, MaxPool2D, Flatten, Dense
+from keras.models import Sequential, load_model
 from keras.callbacks import CSVLogger, ModelCheckpoint, LearningRateScheduler, History
 from keras.optimizers import Adam
 from keras.utils import plot_model
@@ -28,24 +26,10 @@ parser.add_argument('--epoch', default=50, type=int, help='number of train epoch
 parser.add_argument('--epoch_steps', default=100, type=int, help='steps per epoch')
 parser.add_argument('--lr', default=1e-3, type=float, help='initial learning rate for Adam')
 
-# #reshape data to fit model
-# X_train = X_train.reshape(60000, M, M, 1)
-# X_test = X_test.reshape(10000, M, M, 1)
-#
-# #one-hot encode target column
-# y_train = to_categorical(y_train)
-# y_test = to_categorical(y_test)
-
-
-#create model
-
-
-# model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-# model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=50)
 args = parser.parse_args()
 
 
-# Create our ResNet model with all layers using current hyperparameters
+# Create sequential CNN model as described in the paper
 def cnn_model():
     model = Sequential()
 
@@ -90,6 +74,7 @@ def train_datagen():
         for i in range(args.batch_size):
             f = files[index]
 
+            # Read of property of image from filename, bit of a hack
             x_index = f.index('_x_')
             y_index = f.index('_y_')
             r_index = f.index('_r_')
@@ -98,17 +83,20 @@ def train_datagen():
 
             normalX = float(f[x_index + 3:y_index])
             normalY = float(f[y_index + 3:r_index])
-
             roughness = float(f[r_index + 3:ext_index])
 
+            # Read of image
             image = imread(dir + f)
 
+            # Write to current abtch data
             batch_x[i, :, :, :] = np.reshape(image[:, :, 0], (args.M, args.M, args.scale_levels))
             batch_y[i, :] = np.array([normalX, normalY, roughness])
 
             index += 1
-
             index = index % len(files)
+
+        # Jump to a random point in the training data
+        index = random.randrange(len(files) - args.batch_size)
 
         yield batch_x, batch_y
 
@@ -155,6 +143,9 @@ def load_last_model(save_dir, load_epoch=-1):
 
 # Main training routine
 def train_model():
+
+    # TODO: Validation losses!!
+
     # Setup checkpoint folder
     save_dir = './models/'
     os.makedirs(save_dir, mode=0o777, exist_ok=True)
@@ -205,41 +196,26 @@ def train_model():
 
 
 
-# ###################################
-# # Some visualizations for the report
-# def model_loss_validation_curve():
-#     save_dir = "./models/cnn_post_depth12_sigma100"
-#
-#     # Read training losses with pandas
-#     train = pd.read_csv(os.path.join(save_dir, 'log.csv')).values
-#
-#     # Manually calculate validation losses by loading all models
-#     validation_loss = []
-#     file_list = glob.glob(os.path.join(save_dir, 'model_*.hdf5'))  # get name list of all .hdf5 files
-#
-#     if file_list:
-#         for file in file_list:
-#             model = load_model(file, custom_objects=cnn_model_config(), compile=False)
-#
-#             l1 = 0
-#             # Generate L1 loss for entire batch
-#             for i in range(args.batch_size):
-#                 f_true, g, noisy = create_training_data(1.0)
-#                 f_rec = radon_reconstruct_model(g, train_projector, model)
-#                 l1 += np.sum(np.abs(f_true - f_rec))
-#
-#             validation_loss.append(l1)
-#             print(file + " l1 loss: " + str(l1))
-#
-#     # Plot
-#     train_losses = train[:, 1]
-#     plt.plot(train_losses)
-#
-#     plt.plot(validation_loss)
-#     plt.legend(["Training", "Validation"])
-#     plt.ylabel("Loss")
-#     plt.xlabel("Epoch")
-#     plt.show()
+###################################
+# Some visualizations for the report
+def model_loss_validation_curve():
+    save_dir = "./models/cnn_post_depth12_sigma100"
+
+    # Read training losses with pandas
+    train = pd.read_csv(os.path.join(save_dir, 'log.csv')).values
+
+    # Manually calculate validation losses by loading all models
+    validation_loss = []
+
+    # Plot
+    train_losses = train[:, 1]
+    plt.plot(train_losses)
+
+    plt.plot(validation_loss)
+    plt.legend(["Training", "Validation"])
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.show()
 
 
 

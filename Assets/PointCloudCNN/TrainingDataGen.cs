@@ -6,7 +6,6 @@ public class TrainingDataGen : MonoBehaviour {
 	List<int> indices = new List<int>();
 	List<Vector2> uvs = new List<Vector2>();
 
-	
 	void PushQuadVert(Vector3 basePos, float x, float y, float z) {
 		indices.Add(vertices.Count);
 		vertices.Add(basePos + new Vector3(x, y, z));

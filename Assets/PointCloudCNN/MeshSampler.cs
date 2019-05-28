@@ -7,6 +7,13 @@ using Unity.Profiling;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
+public struct MeshPoint {
+	public float3 Position;
+	public float3 Normal;
+	public Color32 Albedo;
+	public float Smoothness;
+}
+
 public static class MeshSampler {
 	static ProfilerMarker s_sampleMeshMarker = new ProfilerMarker("SampleMeshPoints");
 
@@ -16,11 +23,6 @@ public static class MeshSampler {
 
 	static float3[] ToNative(Vector3[] array) {
 		return array.Select(v => math.float3(v)).ToArray();
-	}
-	public struct MeshPoint {
-		public float3 Position;
-		public float3 Normal;
-		public float2 Uv;
 	}
 
 	[BurstCompile(CompileSynchronously = true)]
@@ -39,13 +41,24 @@ public static class MeshSampler {
 	}
 
 	struct NormalTex {
-		[ReadOnly] public NativeArray<float4> Values;
+		[ReadOnly] public NativeArray<float4> Data;
 		public int2 Size;
 
 		public float3 Get(float2 uv) {
 			int2 xy = math.int2(uv * Size);
 			xy = math.clamp(xy, 0, Size - 1);
-			return Values[xy.x + xy.y * Size.x].xyz;
+			return Data[xy.x + xy.y * Size.x].xyz;
+		}
+	}
+
+	struct ColorTex {
+		[ReadOnly] public NativeArray<Color32> Data;
+		public int2 Size;
+		
+		public Color32 Get(float2 uv) {
+			int2 xy = math.int2(uv * Size);
+			xy = math.clamp(xy, 0, Size - 1);
+			return Data[xy.x + xy.y * Size.x];
 		}
 	}
 
@@ -58,7 +71,9 @@ public static class MeshSampler {
 		[ReadOnly] public NativeArray<int> Triangles;
 		[ReadOnly] public NativeArray<float> CumSizes;
 
-		[ReadOnly] public NormalTex Tex;
+		[ReadOnly] public NormalTex NormalTex;
+		[ReadOnly] public ColorTex Albedo;
+		[ReadOnly] public ColorTex Smoothness;
 		
 		public NativeArray<MeshPoint> MeshPoints;
 
@@ -114,8 +129,8 @@ public static class MeshSampler {
 				float2 uvSample = uvA + r * (uvB - uvA) + s * (uvC - uvA);
 
 				// Use normal map instead hurray
-				if (math.all(Tex.Size > 0)) {
-					normalSample = Tex.Get(uvSample);
+				if (math.all(NormalTex.Size > 0)) {
+					normalSample = NormalTex.Get(uvSample);
 				}
 				else {
 					normalSample = normalA + r * (normalB - normalA) + s * (normalC - normalA);
@@ -127,43 +142,49 @@ public static class MeshSampler {
 				MeshPoint point;
 				point.Position = posSample;
 				point.Normal = normalSample;
-				point.Uv = uvSample;
+
+				point.Albedo = Albedo.Get(uvSample);
+				point.Smoothness = Smoothness.Get(uvSample).r / 255.0f;
 
 				MeshPoints[index] = point;
 			}
 		}
 	}
 	
-	public static NativeArray<MeshPoint> SampleRandomPointsOnMesh(Mesh mesh, Texture2D tangentNormalMap, int pointCount, float noiseLevel) {
+	public static NativeArray<MeshPoint> SampleRandomPointsOnMesh(Mesh mesh, Texture2D albedo, Texture2D smoothness, Texture2D normalMap, int pointCount, float noiseLevel) {
 		using (s_sampleMeshMarker.Auto()) {
 
 			NormalTex normalMapTex;
 
-			if (tangentNormalMap != null) {
-				var tex = new RenderTexture(tangentNormalMap.width, tangentNormalMap.height, 0, RenderTextureFormat.ARGBFloat);
+			if (normalMap != null) {
+				// Create object space normal map
+				var tex = new RenderTexture(normalMap.width, normalMap.height, 0, RenderTextureFormat.ARGBFloat);
 				tex.Create();
 
 				var getNormalMapMaterial = new Material(Shader.Find("Hidden/NormalExtract"));
 
 				Graphics.SetRenderTarget(tex);
-				GL.Viewport(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height));
+				GL.Viewport(new Rect(0, 0, normalMap.width, normalMap.height));
 				GL.LoadOrtho(); // build ortho camera
-				getNormalMapMaterial.SetTexture("_BumpMap", tangentNormalMap);
+				getNormalMapMaterial.SetTexture("_BumpMap", normalMap);
 				getNormalMapMaterial.SetPass(0);
 				Graphics.DrawMeshNow(mesh, Matrix4x4.identity, 0);
 
-				var readbackTex = new Texture2D(tangentNormalMap.width, tangentNormalMap.height, TextureFormat.RGBAFloat, false);
+				var readbackTex = new Texture2D(normalMap.width, normalMap.height, TextureFormat.RGBAFloat, false);
 				Graphics.SetRenderTarget(tex);
-				readbackTex.ReadPixels(new Rect(0, 0, tangentNormalMap.width, tangentNormalMap.height), 0, 0);
+				readbackTex.ReadPixels(new Rect(0, 0, normalMap.width, normalMap.height), 0, 0);
 				Graphics.SetRenderTarget(null);
 				tex.Release();
 
 				var normalMapTexData = readbackTex.GetRawTextureData<float4>();
-				normalMapTex = new NormalTex {Values = normalMapTexData, Size = math.int2(readbackTex.width, readbackTex.height)};
+				normalMapTex = new NormalTex {Data = normalMapTexData, Size = math.int2(readbackTex.width, readbackTex.height)};
 			}
 			else {
-				normalMapTex = new NormalTex {Values = new NativeArray<float4>(0, Allocator.TempJob), Size = math.int2(0, 0)};
+				normalMapTex = new NormalTex {Data = new NativeArray<float4>(0, Allocator.TempJob), Size = math.int2(0, 0)};
 			}
+
+			var albedoTex = new ColorTex {Data = albedo.GetRawTextureData<Color32>(), Size = math.int2(albedo.width, albedo.height)};
+			var smoothnessTex = new ColorTex {Data = smoothness.GetRawTextureData<Color32>(), Size = math.int2(smoothness.width, smoothness.height)};
 
 			var triangles = new NativeArray<int>(mesh.triangles, Allocator.TempJob);
 			var vertices = new NativeArray<float3>(ToNative(mesh.vertices), Allocator.TempJob);
@@ -195,7 +216,9 @@ public static class MeshSampler {
 				Rand = rand,
 				TotalAccum = totalAccum,
 				NoiseLevel = noiseLevel,
-				Tex = normalMapTex,
+				NormalTex = normalMapTex,
+				Albedo = albedoTex,
+				Smoothness = smoothnessTex,
 				MeshPoints = meshPoints,
 				PointCount = pointCount
 			};
@@ -209,9 +232,11 @@ public static class MeshSampler {
 			normals.Dispose();
 			uvs.Dispose();
 
+			if (normalMap == null) {
+				normalMapTex.Data.Dispose();
+			}
+
 			return meshPoints;
 		}
 	}
-
-
 }
