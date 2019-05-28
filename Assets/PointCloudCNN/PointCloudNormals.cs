@@ -19,7 +19,7 @@ public static class PointCloudNormals {
 	// Hyper parameters
 	const int M = 33;
 
-	const int BaseK = 40;
+	const int BaseK = 100;
 	const int KDens = 5;
 
 	// const float Alpha = 0.95f;
@@ -69,12 +69,17 @@ public static class PointCloudNormals {
 				int* totalCounts = stackalloc int[M * M];
 
 				for (int kIndex = 0; kIndex < ScaleLevels; ++kIndex) {
+					
+					kIndex = 2;
+					
 					int texIndex = index * ScaleLevels + kIndex;
 					var tex = Textures[texIndex];
 					
 					for (int i = 0; i < M * M; ++i) {
 						totalCounts[i] += tex.Tex[i];
 					}
+
+					break;
 				}
 									
 				for (int y = 0; y < M; ++y) {
@@ -647,6 +652,9 @@ public static class PointCloudNormals {
 					}
 
 					houghNormals[i] = pcaNormal.xy;
+					
+					
+					houghNormals[i] = hypNormal.xy;
 				}
 				
 				// Now do 2D PCA for the hough spaced normals
@@ -683,6 +691,9 @@ public static class PointCloudNormals {
 				for (int i = 0; i < Hypotheses; ++i) {
 					float2 localHough = math.dot(houghNormals[i], houghSpaceX) * houghSpaceX + 
 										math.dot(houghNormals[i], houghSpaceY) * houghSpaceY;
+
+
+					localHough = houghNormals[i];
 					
 					int2 texPos = math.int2(math.floor(M * (localHough + 1.0f) / 2.0f));
 					
