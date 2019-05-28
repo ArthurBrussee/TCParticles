@@ -10,6 +10,8 @@ public class PointCloudGenerate : MonoBehaviour {
 	public string Folder = "TrainingData";
 	public bool WriteData;
 
+	public bool UseCNN;
+	
 	public float NoiseLevel = 0.01f;
 	public float SampleRate = 1.0f;
 
@@ -32,7 +34,7 @@ public class PointCloudGenerate : MonoBehaviour {
 
 		// Get points on the mesh
 		var meshPoints = MeshSampler.SampleRandomPointsOnMesh(mesh, tex, smoothnessTex, normalTex, PointCount, NoiseLevel);
-		var pointCloudData = PointCloudNormals.GenerateTrainingData(meshPoints, SampleRate, Folder, CloudName, WriteData);
+		var pointCloudData = PointCloudNormals.GenerateTrainingData(meshPoints, SampleRate, Folder, CloudName, WriteData, UseCNN);
 		
 		var system = GetComponent<TCParticleSystem>();
 		system.Emitter.PointCloud = pointCloudData;

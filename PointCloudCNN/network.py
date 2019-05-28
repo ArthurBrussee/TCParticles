@@ -1,19 +1,17 @@
 import argparse
 import re
 import os, glob
-import pandas as pd
-import matplotlib.pyplot as plt
 import math
 import random
-import keras.backend as K
 import keras.losses
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense
 from keras.models import Sequential, load_model
-from keras.callbacks import CSVLogger, ModelCheckpoint, LearningRateScheduler, History
+from keras.callbacks import CSVLogger, ModelCheckpoint, LearningRateScheduler
 from keras.optimizers import Adam
-from keras.utils import plot_model
+from tensorflow.python.keras.callbacks import TensorBoard
 from skimage.io import imread
 import numpy as np
+from time import time
 
 # Hyper parameter args
 parser = argparse.ArgumentParser()
@@ -34,7 +32,8 @@ def cnn_model():
     model = Sequential()
 
     # add model layers
-    model.add(Conv2D(50, kernel_size=3, activation='relu', input_shape=(args.M, args.M, args.scale_levels)))
+    model.add(
+        Conv2D(50, kernel_size=3, activation='relu', input_shape=(args.M, args.M, args.scale_levels), name='input'))
     model.add(Conv2D(50, kernel_size=3, activation='relu'))
 
     model.add(MaxPool2D(pool_size=(2, 2)))
@@ -48,7 +47,7 @@ def cnn_model():
     model.add(Dense(512, activation='relu'))
 
     # Predict normal XY, roughness
-    model.add(Dense(3))
+    model.add(Dense(3, name='output'))
 
     return model
 
@@ -63,8 +62,8 @@ def lr_schedule(epoch):
 # Return one batch of data at a time for Keras
 def train_datagen():
     index = 0
-    dir = './TrainingData/'
-    files = os.listdir(dir)
+    train_data = './TrainingData/'
+    files = os.listdir(train_data)
     files.sort()
 
     while True:
@@ -81,16 +80,21 @@ def train_datagen():
 
             ext_index = f.index('.png')
 
-            normalX = float(f[x_index + 3:y_index])
-            normalY = float(f[y_index + 3:r_index])
+            normal_x = float(f[x_index + 3:y_index])
+            normal_y = float(f[y_index + 3:r_index])
             roughness = float(f[r_index + 3:ext_index])
 
             # Read of image
-            image = imread(dir + f)
+            image = imread(train_data + f, as_gray=True)
 
             # Write to current abtch data
-            batch_x[i, :, :, :] = np.reshape(image[:, :, 0], (args.M, args.M, args.scale_levels))
-            batch_y[i, :] = np.array([normalX, normalY, roughness])
+            for k in range(args.scale_levels):
+                offset = k * args.M
+                offset2 = (k + 1) * args.M
+
+                batch_x[i, :, :, k] = image[offset:offset2, :]
+
+            batch_y[i, :] = np.array([normal_x, normal_y, roughness])
 
             index += 1
             index = index % len(files)
@@ -99,22 +103,6 @@ def train_datagen():
         index = random.randrange(len(files) - args.batch_size)
 
         yield batch_x, batch_y
-
-
-        # batch_y = np.empty(shape=(args.batch_size, image_size, image_size, 1))
-        # batch_y_bf = np.empty(shape=(args.batch_size, radon_size[0], radon_size[1], 1))
-        # batch_x = np.empty(shape=(args.batch_size, image_size, image_size, 1))
-
-        # for i in range(args.batch_size):
-        #     gt, bf, noisy = create_training_data(args.sigma)
-        #
-        #     # Remap to [-1, 1] for better FP accuracy
-        #     batch_y[i, :, :, 0] = noisy
-        #     batch_y_bf[i, :, :, 0] = bf
-        #
-        #     batch_x[i, :, :, 0] = gt
-        # yield [batch_y, batch_y_bf], batch_x
-
 
 
 # FInd last epoch saved in a folder
@@ -143,7 +131,6 @@ def load_last_model(save_dir, load_epoch=-1):
 
 # Main training routine
 def train_model():
-
     # TODO: Validation losses!!
 
     # Setup checkpoint folder
@@ -156,34 +143,24 @@ def train_model():
     if initial_epoch > 0:
         print('resuming by loading epoch %03d' % initial_epoch)
         model = load_last_model(save_dir)
-
-        # Get some data
-        x_batch, y_batch = train_datagen().__next__()
-
-        plt.imshow(x_batch[0, :, :, 0])
-        plt.show()
-
-        # And see the prediction!
-        pred_norm = model.predict(x_batch[:, :, :, :])
-
-        print(y_batch)
-        print(pred_norm)
-
     else:
         # Create fresh model
         model = cnn_model()
 
     model.compile(
         optimizer=Adam(lr=args.lr, decay=0.0),  # Optimize with Adam. Learning rate is set by schedule
-        loss=lambda y_true, y_pred: keras.losses.mean_squared_error(y_true, y_pred)  # L2 loss
+        loss=keras.losses.mean_squared_error
     )
 
     # Save out model occasionally
-    checkpointer = ModelCheckpoint(os.path.join(save_dir, 'model_{epoch:03d}.hdf5'), verbose=1, save_weights_only=False, period=1)
+    checkpointer = ModelCheckpoint(os.path.join(save_dir, 'model_{epoch:03d}.hdf5'), verbose=1, save_weights_only=False,
+                                   period=1)
 
     # Keep loss log
     csv_logger = CSVLogger(os.path.join(save_dir, 'log.csv'), append=True, separator=',')
     lr_scheduler = LearningRateScheduler(lr_schedule)
+
+    tensorboard = TensorBoard(log_dir="board_logs/{}".format(time()))
 
     # Train model
     model.fit_generator(train_datagen(),
@@ -191,32 +168,8 @@ def train_model():
                         epochs=args.epoch,
                         verbose=1,
                         initial_epoch=initial_epoch,
-                        callbacks=[checkpointer, csv_logger, lr_scheduler]
+                        callbacks=[checkpointer, csv_logger, lr_scheduler, tensorboard]
                         )
-
-
-
-###################################
-# Some visualizations for the report
-def model_loss_validation_curve():
-    save_dir = "./models/cnn_post_depth12_sigma100"
-
-    # Read training losses with pandas
-    train = pd.read_csv(os.path.join(save_dir, 'log.csv')).values
-
-    # Manually calculate validation losses by loading all models
-    validation_loss = []
-
-    # Plot
-    train_losses = train[:, 1]
-    plt.plot(train_losses)
-
-    plt.plot(validation_loss)
-    plt.legend(["Training", "Validation"])
-    plt.ylabel("Loss")
-    plt.xlabel("Epoch")
-    plt.show()
-
 
 
 if __name__ == '__main__':

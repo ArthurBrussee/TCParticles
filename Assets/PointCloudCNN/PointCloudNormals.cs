@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using DataStructures.ViliWonka.KDTree;
 using TC;
+using TensorFlow;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -43,6 +44,14 @@ public static class PointCloudNormals {
 	static ProfilerMarker s_houghTexMarker = new ProfilerMarker("HoughTexture");
 	static ProfilerMarker s_saveCloudMarker = new ProfilerMarker("SaveCloud");
 
+	/// <summary>
+	/// Hough histogram data. Uses a byte to hold accumulation value. This is fine for a low number of Hypotheses (H much smaller than M * M *255)
+	/// </summary>
+	public unsafe struct HoughHistogram {
+		// ReSharper disable once UnassignedField.Global
+		public fixed byte Counts[c_m * c_m];
+	}
+	
 	/// <summary>
 	/// Estimate roughness as the determinant of the covariance matrix in the hough texture
 	/// This is roughly equal to fitting a normal to the hough texture
@@ -272,10 +281,12 @@ public static class PointCloudNormals {
 		}
 	}
 
-	public static PointCloudData GenerateTrainingData(NativeArray<MeshPoint> meshPoints, float sampleRate, string folder, string name, bool writeData) {
+
+
+	public static PointCloudData GenerateTrainingData(NativeArray<MeshPoint> meshPoints, float sampleRate, string folder, string name, bool writeData, bool UseNeuralNet) {
 		var sw = new Stopwatch();
 		sw.Start();
-
+		
 		using (s_generateDataMarker.Auto()) {
 			var kLevels = new NativeArray<int>(KScales5, Allocator.TempJob);
 			int maxK = kLevels[kLevels.Length - 1];
@@ -364,11 +375,10 @@ public static class PointCloudNormals {
 					Tree = tree,
 					Start = start,
 					Count = end - start,
-					Cache = KnnQuery.GetQueryCache(tree, maxK)
+					Cache = caches[t]
 				};
 
 				handles[t] = job.Schedule();
-				caches[t] = job.Cache;
 			}
 
 			JobHandle.CompleteAll(handles);
@@ -378,7 +388,6 @@ public static class PointCloudNormals {
 				NativeArray<float>.Copy(densityResults[t], 0, pointDensities, t * scheduleRange, densityResults[t].Length);
 				densityResults[t].Dispose();
 			}
-
 			
 			// All done, dispose memory used for temp results
 			tree.Dispose();
@@ -411,22 +420,27 @@ public static class PointCloudNormals {
 
 			var trueRoughness = new NativeArray<float>(meshPoints.Select(p => p.Smoothness).ToArray(), Allocator.TempJob);
 			float2 trueRoughnessRange = math.float2(mathext.min(trueRoughness), mathext.max(trueRoughness));
+			NativeArray<float3> reconstructedNormals;
+			NativeArray<float> reconstructedRoughness; 
 
-			NativeArray<float> reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
-			NativeArray<float3> reconstructedNormals = EstimateNormals(houghTextures, kLevels.Length, trueNormalsSample);
+			if (!UseNeuralNet) {		
+				reconstructedNormals = EstimateNormals(houghTextures, kLevels.Length, trueNormalsSample);
+				reconstructedRoughness = EstimateRoughness(houghTextures, kLevels.Length, trueRoughnessRange);
+			}
+			else {
+				EstimatePropertiesCNN(houghTextures, trueNormalsSample, out reconstructedNormals, out reconstructedRoughness);
+			}
 
 			var reconstructionError = new NativeArray<float>(reconstructedNormals.Length, Allocator.TempJob);
-
 			float rms = 0.0f;
 			float pgp = 0;
 
 			for (int i = 0; i < reconstructedNormals.Length; ++i) {
 				float angle = math.degrees(math.acos(math.dot(reconstructedNormals[i], trueNormalsSample[i])));
 				reconstructionError[i] = angle;
-
 				rms += angle * angle;
 
-				if (angle < 5) {
+				if (angle < 8) {
 					pgp += 1.0f;
 				}
 			}
@@ -434,7 +448,7 @@ public static class PointCloudNormals {
 			pgp /= reconstructedNormals.Length;
 			rms = math.sqrt(rms / reconstructedNormals.Length);
 
-			Debug.Log($"Finished analyzing normals with max hough bin. Total RMS: {rms}, PGP: {pgp}. Time: {sw.ElapsedMilliseconds}ms");
+			Debug.Log($"Finished analyzing normals using {(UseNeuralNet ? "CNN" : "Max bin")}. Total RMS: {rms}, PGP: {pgp}. Time: {sw.ElapsedMilliseconds}ms");
 
 			PointCloudData pointCloudData;
 			using (s_saveCloudMarker.Auto()) {
@@ -565,13 +579,66 @@ public static class PointCloudNormals {
 		// Now save out true normals & hough cube in some format that is sensible.
 		// Now we have a cube of hough textures, and a normal for each particle!
 	}
+	
+	[BurstCompile(CompileSynchronously = true)]
+	struct QueryDensityJob : IJob {
+		public NativeArray<float> PointDensitiesResult;
 
-	/// <summary>
-	/// Hough histogram data. Uses a byte to hold accumulation value. This is fine for a low number of Hypotheses (H much smaller than M * M *255)
-	/// </summary>
-	public unsafe struct HoughHistogram {
-		// ReSharper disable once UnassignedField.Global
-		public fixed byte Counts[c_m * c_m];
+		[ReadOnly] public KDTree Tree;
+		[ReadOnly] public NativeArray<float3> Positions;
+
+		public KnnQuery.QueryCache Cache;
+		public int Start;
+		public int Count;
+
+		public void Execute() {
+			for (int i = 0; i < Count; ++i) {
+				int index = Start + i;
+				float3 pos = Positions[index];
+
+				// Save local density weighting as squared distance to k_dens nearest neighbour
+				int kDensIndex = KnnQuery.KNearestLast(Tree, c_kDens, pos, Cache);
+				PointDensitiesResult[i] = math.distancesq(pos, Tree.Points[kDensIndex]);
+			}
+		}
+	}
+	
+	[BurstCompile(CompileSynchronously = true)]
+	struct QueryNeighboursJob : IJob {
+		public NativeArray<int> NeighbourResult;
+
+		[ReadOnly] public KDTree Tree;
+		[ReadOnly] public NativeArray<float3> PositionsSample;
+
+		public int MaxK;
+
+		public KnnQuery.QueryCache Cache;
+
+		public int Start;
+		public int Count;
+
+		public void Execute() {
+			for (int i = 0; i < Count; ++i) {
+				int index = Start + i;
+				float3 pos = PositionsSample[index];
+				KnnQuery.KNearest(Tree, MaxK, pos, NeighbourResult.Slice(i * MaxK, MaxK), Cache);
+			}
+		}
+	}
+
+
+	static float3 GetNormalFromPrediction(float2 prediction, float3 trueNormal) {
+		float normalZ = math.sqrt(math.saturate(1.0f - math.lengthsq(prediction)));
+		float3 normal = math.normalize(math.float3(prediction, normalZ));
+
+		// Normally the sign ambiguity in the normal is resolved by facing towards the 
+		// eg. Lidar scanner. In this case, since these point clouds do not come from scans
+		// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
+		if (math.dot(normal, trueNormal) < 0) {
+			normal.z *= -1;
+		}
+
+		return normal;
 	}
 
 	/// <summary>
@@ -626,19 +693,8 @@ public static class PointCloudNormals {
 			float2 normalUv = math.float2(maxBin) / (c_m - 1.0f);
 			float2 normalXy = 2.0f * normalUv - 1.0f;
 
-			float normalZ = math.sqrt(math.saturate(1.0f - math.lengthsq(normalXy)));
-
-			float3 normal = math.normalize(math.float3(normalXy, normalZ));
-
-			// Normally the sign ambiguity in the normal is resolved by facing towards the 
-			// eg. Lidar scanner. In this case, since these point clouds do not come from scans
-			// We cheat a little and resolve the ambiguity by instead just comparing to ground-truth
-			if (math.dot(normal, trueNormal) < 0) {
-				normal *= -1;
-			}
-
-			// Write final normalized normal
-			Normals[index] = normal;
+			// Write final predicted normal
+			Normals[index] = GetNormalFromPrediction(normalXy, trueNormal);
 		}
 	}
 
@@ -655,11 +711,69 @@ public static class PointCloudNormals {
 			ScaleLevels = scaleLevels,
 			TrueNormals = trueNormals
 		};
-
+		
 		job.Schedule(count, 256).Complete();
 		return normals;
 	}
+	
+	static void EstimatePropertiesCNN(NativeArray<HoughHistogram> histograms, NativeArray<float3> trueNormals, out NativeArray<float3> normals, out NativeArray<float> roughness) {
+		var graphData = File.ReadAllBytes("PointCloudCNN/saved_models/tf_model.pb");
 
+		float[,,,] imageTensor = new float[histograms.Length, c_m, c_m, KScales5.Length];
+
+		int normalsCount = histograms.Length / KScales5.Length;
+		
+		for (int i = 0; i < normalsCount; ++i) {
+			for (int k = 0; k < KScales5.Length; ++k) {
+				var tex = histograms[i * KScales5.Length + k];
+
+				float maxVal = 0;
+
+				for (int index = 0; index < c_m * c_m; ++index) {
+					unsafe {
+						maxVal = math.max(maxVal, (float)tex.Counts[index]);
+					}
+				}
+
+				for (int y = 0; y < c_m; ++y) {
+					for (int x = 0; x < c_m; ++x) {
+						int texIndex = x + y * c_m;
+						
+						unsafe {
+							imageTensor[i, c_m - y - 1, x, k] = tex.Counts[texIndex] / maxVal;
+						}
+					}
+				}
+			}
+		}
+
+		using (var graph = new TFGraph()) {
+			graph.Import(graphData);
+
+			var session = new TFSession(graph);
+			var runner = session.GetRunner();
+
+			var input = graph["input_input"][0];
+			runner.AddInput(input, imageTensor);
+			runner.Fetch(graph["output/BiasAdd"][0]);
+
+			var output = runner.Run();
+
+			// Fetch the results from output:
+			TFTensor result = output[0];
+			
+			float[,] predictions = (float[,]) result.GetValue();
+
+			normals = new NativeArray<float3>(normalsCount, Allocator.Persistent);
+			roughness = new NativeArray<float>(normalsCount, Allocator.Persistent);
+			
+			for (int i = 0; i < normalsCount; ++i) {
+				normals[i] = GetNormalFromPrediction(math.float2(predictions[i, 0], predictions[i, 1]), trueNormals[i]);
+				roughness[i] = predictions[i, 2];
+			}
+		}
+	}
+	
 	/// <summary>
 	/// Estimate roughness for a list of hough textures
 	/// </summary>
@@ -705,49 +819,5 @@ public static class PointCloudNormals {
 		return roughness;
 	}
 
-	[BurstCompile(CompileSynchronously = true)]
-	struct QueryDensityJob : IJob {
-		public NativeArray<float> PointDensitiesResult;
 
-		[ReadOnly] public KDTree Tree;
-		[ReadOnly] public NativeArray<float3> Positions;
-
-		public KnnQuery.QueryCache Cache;
-		public int Start;
-		public int Count;
-
-		public void Execute() {
-			for (int i = 0; i < Count; ++i) {
-				int index = Start + i;
-				float3 pos = Positions[index];
-
-				// Save local density weighting as squared distance to k_dens nearest neighbour
-				int kdensIndex = KnnQuery.KNearestLast(Tree, c_kDens, pos, Cache);
-				PointDensitiesResult[i] = math.distancesq(pos, Tree.Points[kdensIndex]);
-			}
-		}
-	}
-	
-	[BurstCompile(CompileSynchronously = true)]
-	struct QueryNeighboursJob : IJob {
-		public NativeArray<int> NeighbourResult;
-
-		[ReadOnly] public KDTree Tree;
-		[ReadOnly] public NativeArray<float3> PositionsSample;
-
-		public int MaxK;
-
-		public KnnQuery.QueryCache Cache;
-
-		public int Start;
-		public int Count;
-
-		public void Execute() {
-			for (int i = 0; i < Count; ++i) {
-				int index = Start + i;
-				float3 pos = PositionsSample[index];
-				KnnQuery.KNearest(Tree, MaxK, pos, NeighbourResult.Slice(i * MaxK, MaxK), Cache);
-			}
-		}
-	}
 }
