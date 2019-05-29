@@ -147,10 +147,7 @@ def train_model():
         # Create fresh model
         model = cnn_model()
 
-    model.compile(
-        optimizer=Adam(lr=args.lr, decay=0.0),  # Optimize with Adam. Learning rate is set by schedule
-        loss=keras.losses.mean_squared_error
-    )
+    model.compile(optimizer=Adam(lr=args.lr, decay=0.0), loss=keras.losses.mean_squared_error)
 
     # Save out model occasionally
     checkpointer = ModelCheckpoint(os.path.join(save_dir, 'model_{epoch:03d}.hdf5'), verbose=1, save_weights_only=False,

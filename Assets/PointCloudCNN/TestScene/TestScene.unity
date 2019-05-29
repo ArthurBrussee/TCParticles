@@ -3091,8 +3091,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba7be266a1eddb746bf27e04aaf35eea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Tester: {fileID: 591368695}
-  PointCount: 4000
+  Tester: {fileID: 196745190}
+  PointCount: 10000
   CloudName: Blob
   Folder: TrainingData
   WriteData: 0
@@ -3993,7 +3993,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1434263472
 Transform:
   m_ObjectHideFlags: 0
