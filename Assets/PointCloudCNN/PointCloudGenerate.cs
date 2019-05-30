@@ -1,6 +1,9 @@
 ﻿using TC;
 using UnityEngine;
 
+/// <summary>
+/// Interface for point cloud mesh
+/// </summary>
 public class PointCloudGenerate : MonoBehaviour {
 	public GameObject Tester;
 
@@ -10,6 +13,8 @@ public class PointCloudGenerate : MonoBehaviour {
 	public string Folder = "TrainingData";
 	public bool WriteData;
 
+	public bool ShowErrors;
+	
 	public bool UseCNN;
 	
 	public float NoiseLevel = 0.01f;
@@ -34,7 +39,7 @@ public class PointCloudGenerate : MonoBehaviour {
 
 		// Get points on the mesh
 		var meshPoints = MeshSampler.SampleRandomPointsOnMesh(mesh, tex, smoothnessTex, normalTex, PointCount, NoiseLevel);
-		var pointCloudData = PointCloudNormals.GenerateTrainingData(meshPoints, SampleRate, Folder, CloudName, WriteData, UseCNN);
+		var pointCloudData = PointCloudNormals.GenerateTrainingData(meshPoints, SampleRate, Folder, CloudName, WriteData, UseCNN, ShowErrors);
 		
 		var system = GetComponent<TCParticleSystem>();
 		system.Emitter.PointCloud = pointCloudData;

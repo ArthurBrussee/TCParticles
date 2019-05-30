@@ -23,7 +23,6 @@ parser.add_argument('--M', default=33, type=int, help='noise level')
 parser.add_argument('--epoch', default=50, type=int, help='number of train epochs')
 parser.add_argument('--epoch_steps', default=100, type=int, help='steps per epoch')
 parser.add_argument('--lr', default=1e-3, type=float, help='initial learning rate for Adam')
-
 args = parser.parse_args()
 
 
@@ -60,9 +59,9 @@ def lr_schedule(epoch):
 
 
 # Return one batch of data at a time for Keras
-def train_datagen():
+def train_main(folder):
     index = 0
-    train_data = './TrainingData/'
+    train_data = folder
     files = os.listdir(train_data)
     files.sort()
 
@@ -70,7 +69,9 @@ def train_datagen():
         batch_x = np.empty(shape=(args.batch_size, args.M, args.M, args.scale_levels))
         batch_y = np.empty(shape=(args.batch_size, 3))
 
-        for i in range(args.batch_size):
+        i = 0
+
+        while i < args.batch_size:
             f = files[index]
 
             # Read of property of image from filename, bit of a hack
@@ -91,21 +92,29 @@ def train_datagen():
             for k in range(args.scale_levels):
                 offset = k * args.M
                 offset2 = (k + 1) * args.M
-
                 batch_x[i, :, :, k] = image[offset:offset2, :]
 
             batch_y[i, :] = np.array([normal_x, normal_y, roughness])
-
             index += 1
             index = index % len(files)
+            i += 1
 
         # Jump to a random point in the training data
         index = random.randrange(len(files) - args.batch_size)
-
         yield batch_x, batch_y
 
 
-# FInd last epoch saved in a folder
+def train_datagen():
+    for bx, by in train_main('./TrainingData/'):
+        yield bx, by
+
+
+def train_validation_gen():
+    for bx, by in train_main('./ValidationData/'):
+        yield bx, by
+
+
+# Find last epoch saved in a folder
 def get_last_epoch(save_dir: str):
     # load the last model if it exists
     file_list = glob.glob(os.path.join(save_dir, 'model_*.hdf5'))  # get name list of all .hdf5 files
@@ -161,6 +170,8 @@ def train_model():
 
     # Train model
     model.fit_generator(train_datagen(),
+                        validation_data=train_validation_gen(),
+                        validation_steps=16,
                         steps_per_epoch=args.epoch_steps,
                         epochs=args.epoch,
                         verbose=1,

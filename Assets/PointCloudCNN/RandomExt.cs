@@ -1,8 +1,11 @@
-﻿// Based on: https://www.alanzucconi.com/2015/09/16/how-to-sample-from-a-gaussian-distribution/
-// Adapted to work with Unity random classes
-using Unity.Mathematics;
+﻿using Unity.Mathematics;
 
+/// <summary>
+/// Extensions for unitys random class
+/// </summary>
 public static class RandomExt {
+	// Based on: https://www.alanzucconi.com/2015/09/16/how-to-sample-from-a-gaussian-distribution/
+	// Adapted to work with Unity random classes
 	public static float NextGaussian(this ref Random rand, float sigma) {
 		float2 v;
 		float s;

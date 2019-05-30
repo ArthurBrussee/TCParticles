@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Generate a bumpy sharp mesh to train the CNN on
+/// </summary>
 public class TrainingDataGen : MonoBehaviour {
 	List<Vector3> vertices = new List<Vector3>();
 	List<int> indices = new List<int>();

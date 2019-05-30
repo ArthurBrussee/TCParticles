@@ -1,10 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Unity.Mathematics;
+﻿using Unity.Mathematics;
 using UnityEngine;
 
-public class BlobGen : MonoBehaviour
-{
+/// <summary>
+/// Generates a blobby sphere from a sphere mesh
+/// </summary>
+public class BlobGen : MonoBehaviour {
 	[ContextMenu("Blobify")]
 	void Blobify() {
 		var meshFilter = GetComponent<MeshFilter>();

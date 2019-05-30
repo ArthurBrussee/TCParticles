@@ -151,7 +151,7 @@ void surf (Input IN, inout SurfaceOutputStandard o)
     o.Smoothness = metallicGloss.g;
     					
     // TODO: Remove when shipping TC Particles!!
-    o.Smoothness = IN.color.a;
+    // o.Smoothness = IN.color.a;
 
     #if defined(_ALPHABLEND_ON) || defined(_ALPHAPREMULTIPLY_ON) || defined(_ALPHAOVERLAY_ON)
 		o.Alpha = albedo.a;

@@ -1,9 +1,6 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
+﻿// Shader to extract object space normals from tangent space normals
 Shader "Hidden/NormalExtract" {
     Properties {
-        // normal map texture on the material,
-        // default to dummy "flat surface" normalmap
         _BumpMap("Normal Map", 2D) = "bump" {}
     }
     
@@ -16,8 +13,6 @@ Shader "Hidden/NormalExtract" {
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
-            
-            // normal map texture from shader properties
             sampler2D _BumpMap;
             
             struct v2f {

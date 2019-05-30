@@ -144,7 +144,7 @@ public static class MeshSampler {
 				point.Normal = normalSample;
 
 				point.Albedo = Albedo.Get(uvSample);
-				point.Smoothness = Smoothness.Get(uvSample).r / 255.0f;
+				point.Smoothness = Smoothness.Get(uvSample).a / 255.0f;
 
 				MeshPoints[index] = point;
 			}

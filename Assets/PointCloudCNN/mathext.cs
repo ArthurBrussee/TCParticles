@@ -1,13 +1,13 @@
 ﻿using Unity.Collections;
 using Unity.Mathematics;
 
+/// <summary>
+/// Some extensions to Unity's math library
+/// </summary>
 public static class mathext {
-	// Eigen decomposition code for symmetric 3x3 matrices, copied from the public
-	// domain Java Matrix library JAMA
-	static float hypot2(float x, float y) {
-		return math.length(math.float2(x, y));
-	}
-
+	// Below code for eigen decomposition is taken from Conelly Barnes
+	// http://barnesc.blogspot.com/2007/02/eigenvectors-of-3x3-symmetric-matrix.html
+	// And ported to Unity's math library by Arthur Brussee
 	// Symmetric Householder reduction to tridiagonal form.
 	static void tred2(ref float3x3 V, ref float3 d, ref float3 e) {
 		//  This is derived from the Algol procedures tred2 by
@@ -171,7 +171,7 @@ public static class mathext {
 					// Compute implicit shift
 					float g = d[l];
 					float p = (d[l + 1] - g) / (2.0f * e[l]);
-					float r = hypot2(p, 1.0f);
+					float r = math.length(math.float2(p, 1.0f));
 					
 					if (p < 0) {
 						r = -r;
@@ -202,7 +202,7 @@ public static class mathext {
 						s2 = s;
 						g = c * e[i];
 						h = c * p;
-						r = hypot2(p, e[i]);
+						r = math.length(math.float2(p, e[i]));
 						e[i + 1] = s * r;
 						s = e[i] / r;
 						c = p / r;
@@ -268,108 +268,6 @@ public static class mathext {
 		
 		tred2(ref V, ref d, ref e);
 		tql2(ref V, ref d, ref e);
-	}
-
-	/*
-	// source: http://www.melax.com/diag.html?attredirects=0
-	// Adapted by Arthur Brussee to Unity Mathematics code
-	// A must be a symmetric matrix.
-	// returns Q and D such that 
-	// Diagonal matrix D = QT * A * Q;  and  A = Q*D*QT
-	public static void diagonalize(float3x3 A, out float3x3 Q, out float3x3 D) {
-		float3 o = float3.zero;
-		var q = new float4(0.0f, 0.0f, 0.0f, 1.0f);
-
-		Q = float3x3.identity;
-		D = float3x3.identity;
-
-		const int maxsteps = 24; // certainly wont need that many.
-		for (int i = 0; i < maxsteps; ++i) {
-			// quaternion to matrix
-			float sqx = q[0] * q[0];
-			float sqy = q[1] * q[1];
-			float sqz = q[2] * q[2];
-			float sqw = q[3] * q[3];
-
-			Q[0][0] = sqx - sqy - sqz + sqw;
-			Q[1][1] = -sqx + sqy - sqz + sqw;
-			Q[2][2] = -sqx - sqy + sqz + sqw;
-
-			float tmp1 = q[0] * q[1];
-			float tmp2 = q[2] * q[3];
-
-			Q[1][0] = 2.0f * (tmp1 + tmp2);
-			Q[0][1] = 2.0f * (tmp1 - tmp2);
-
-			tmp1 = q[0] * q[2];
-			tmp2 = q[1] * q[3];
-
-			Q[2][0] = 2.0f * (tmp1 - tmp2);
-			Q[0][2] = 2.0f * (tmp1 + tmp2);
-
-			tmp1 = q[1] * q[2];
-			tmp2 = q[0] * q[3];
-
-			Q[2][1] = 2.0f * (tmp1 + tmp2);
-			Q[1][2] = 2.0f * (tmp1 - tmp2);
-
-			// AQ = A * Q
-			float3x3 AQ = A * Q;
-
-			// D = Qt * AQ
-			D = math.transpose(Q) * AQ;
-
-			o.x = D[1][2];
-			o.y = D[0][2];
-			o.z = D[0][1];
-
-			float3 m = math.abs(o);
-
-			int k0 = m[0] > m[1] && m[0] > m[2] ? 0 : m[1] > m[2] ? 1 : 2;
-			int k1 = (k0 + 1) % 3;
-			int k2 = (k0 + 2) % 3;
-
-			if (o[k0] == 0.0f) {
-				break; // diagonal already
-			}
-
-			float theta = (D[k2][k2] - D[k1][k1]) / (2.0f * o[k0]);
-			float sgn = theta > 0.0f ? 1.0f : -1.0f;
-			theta *= math.sign(theta); // make it positive
-			float t = sgn / (theta + (theta < 1e6 ? math.sqrt(theta * theta + 1.0f) : theta));
-			float c = 1.0f / math.sqrt(t * t + 1.0f);
-
-			if (c == 1.0f) {
-				break; // no room for improvement - reached machine precision.
-			}
-
-			float4 jr = float4.zero;
-
-			jr[k0] = sgn * math.sqrt((1.0f - c) / 2.0f); // using 1/2 angle identity sin(a/2) = sqrt((1-cos(a))/2)  
-			jr[k0] *= -1.0f;                             // since our quat-to-matrix convention was for v*M instead of M*v
-			jr[3] = math.sqrt(1.0f - jr[k0] * jr[k0]);
-
-			if (jr[3] == 1.0f) {
-				break; // reached limits of floating point precision
-			}
-
-			q[0] = q[3] * jr[0] + q[0] * jr[3] + q[1] * jr[2] - q[2] * jr[1];
-			q[1] = q[3] * jr[1] - q[0] * jr[2] + q[1] * jr[3] + q[2] * jr[0];
-			q[2] = q[3] * jr[2] + q[0] * jr[1] - q[1] * jr[0] + q[2] * jr[3];
-			q[3] = q[3] * jr[3] - q[0] * jr[0] - q[1] * jr[1] - q[2] * jr[2];
-			q = math.normalize(q);
-		}
-	}
-*/
-	
-	public static int argmin(float a, float b, float c) {
-		float minVal = math.min(a, math.min(b, c));
-		int argMin = a == minVal ? 0 : b == minVal ? 1 : 2;
-		return argMin;
-	}
-
-	public static int argmax(float a, float b) {
-		return a >= b ? 0 : 1;
 	}
 
 	public static float min(NativeArray<float> values) {

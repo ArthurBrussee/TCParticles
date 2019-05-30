@@ -4,8 +4,8 @@ from keras.models import load_model
 
 # Based on code from Chengwei, DLology
 # https://www.dlology.com/blog/how-to-convert-trained-keras-model-to-tensorflow-and-make-prediction/
+model = load_model('./models_rough/model_050.hdf5')
 
-model = load_model('./models/model_050.hdf5')
 
 def freeze_session(session, keep_var_names=None, output_names=None, clear_devices=True):
     """
