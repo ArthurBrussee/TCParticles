@@ -38,7 +38,6 @@ namespace TC.EditorIntegration {
 					}
 				}
 
-
 				EditorGUI.BeginChangeCheck();
 				VisualizeAll = EditorGUILayout.Toggle("Visualize all systems", VisualizeAll);
 
@@ -48,11 +47,9 @@ namespace TC.EditorIntegration {
 					}
 				}
 
-
 				EditorGUILayout.BeginVertical("Box");
 
 				foreach (var syst in systems) {
-
 					if (syst == null) {
 						continue;
 					}
@@ -66,10 +63,8 @@ namespace TC.EditorIntegration {
 					EditorGUI.BeginChangeCheck();
 					syst.DoVisualize = EditorGUILayout.Toggle(syst.name, syst.DoVisualize);
 
-
 					GUILayout.Label("Time");
 					EditorGUILayout.FloatField(syst.SystemTime);
-
 
 					if (GUILayout.Button("↺", EditorStyles.toolbarButton, GUILayout.Width(45.0f))) {
 						syst.Stop();
@@ -91,7 +86,6 @@ namespace TC.EditorIntegration {
 
 				EditorGUILayout.EndVertical();
 
-
 				bool any = false;
 
 				foreach (var syst in systems) {
@@ -108,7 +102,6 @@ namespace TC.EditorIntegration {
 			} else {
 				GUILayout.Label("Create a TC Particle system to get started!");
 			}
-
 
 			GUI.enabled = true;
 		}

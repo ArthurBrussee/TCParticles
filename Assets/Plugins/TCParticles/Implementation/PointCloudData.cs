@@ -6,21 +6,11 @@ namespace TC {
 		//TODO: Can we store this in a big binary blob and LZ4 that?
 
 		// Number of points
-		public int PointCount {
-			get { return _positions.Length; }
-		}
+		public int PointCount => _positions.Length;
 
-		public Vector3[] Vertices {
-			get { return _positions; }
-		}
-
-		public Vector3[] Normals {
-			get { return _normals; }
-		}
-
-		public Color32[] Colors {
-			get { return _colors; }
-		}
+		public Vector3[] Vertices => _positions;
+		public Vector3[] Normals => _normals;
+		public Color32[] Colors => _colors;
 
 		[SerializeField] Vector3[] _positions;
 		[SerializeField] Vector3[] _normals;

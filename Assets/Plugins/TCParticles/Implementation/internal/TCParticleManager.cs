@@ -2,9 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using TC.Internal;
 using UnityEngine;
 using UnityEngine.Profiling;
-using TC.Internal;
 using UnityEngine.Rendering;
 
 namespace TC {
@@ -22,7 +22,6 @@ namespace TC {
 		public float Pad;
 	}
 
-	
 	/// <summary>
 	/// Class containing main settings for the TC Particle system
 	/// </summary>
@@ -39,7 +38,7 @@ namespace TC {
 		public int DispatchCount {
 			get {
 				const int c_groupSize = 128;
-				return Mathf.CeilToInt(Emitter.ParticleCount / (float)c_groupSize);
+				return Mathf.CeilToInt(Emitter.ParticleCount / (float) c_groupSize);
 			}
 		}
 
@@ -49,11 +48,10 @@ namespace TC {
 		/// <remarks>
 		/// This is only approximate as it is not known exactly when particles die off. All particles are assumed to live the maximum set lifetime
 		/// </remarks>
-		public int ParticleCount { get { return Emitter.ParticleCount;  } }
+		public int ParticleCount => Emitter.ParticleCount;
 
 		ComputeBuffer particles;
 
-		
 		/// <summary>
 		/// Get the buffer containing the current particles data
 		/// </summary>
@@ -81,7 +79,7 @@ namespace TC {
 		/// The maximum number of particles in the particle buffer (Read Only)
 		/// </summary>
 		public int MaxParticles {
-			get { return _maxParticles; }
+			get => _maxParticles;
 			set {
 				if (Application.isPlaying) {
 					Debug.LogError("Can't change max particles while playing!");
@@ -96,8 +94,8 @@ namespace TC {
 		/// Turn on/off no simulation. No simulation mode can be used for better performance of visualizations
 		/// </summary>
 		public bool NoSimulation {
-			get { return m_noSimulation; }
-			set { m_noSimulation = value; }
+			get => m_noSimulation;
+			set => m_noSimulation = value;
 		}
 
 		/// <summary>
@@ -107,7 +105,7 @@ namespace TC {
 		/// When setting this to a new space current particles are cleared
 		/// </remarks>
 		public Space SimulationSpace {
-			get { return _simulationSpace; }
+			get => _simulationSpace;
 			set {
 				if (value != _simulationSpace) {
 					_simulationSpace = value;
@@ -120,20 +118,18 @@ namespace TC {
 		/// <summary>
 		/// Is the current <see cref="SimulationSpace"/> set to <see cref="Space.World"/>
 		/// </summary>
-		public bool IsWorldSpace {
-			get { return _simulationSpace == Space.World; }
-		}
+		public bool IsWorldSpace => _simulationSpace == Space.World;
 
 		/// <summary>
 		/// Time particle system has been playing since it is playing
 		/// </summary>
 		public float RealTime { get; private set; }
 
-
 		/// <summary>
 		/// Current looped playback time
 		/// </summary>
 		public float SystemTime { get; private set; }
+
 		float m_prevSystemTime;
 
 		[SerializeField] float _duration = 3.0f;
@@ -142,14 +138,14 @@ namespace TC {
 		/// Total duration the system plays, before looping or stopping.
 		/// </summary>
 		public float Duration {
-			get { return _duration; }
-			set { _duration = value; }
+			get => _duration;
+			set => _duration = value;
 		}
 
 		/// <summary>
 		/// Delay in seconds before systems starts playing when <see cref="playOnAwake"/> is true
 		/// </summary>
-		public float delay = 0.0f;
+		public float delay;
 
 		/// <summary>
 		/// Should the system start playing as soon as it wakes up
@@ -164,8 +160,7 @@ namespace TC {
 		/// <summary>
 		/// Should the particles be prewarmed when starting playback
 		/// </summary>
-		public bool prewarm = false;
-
+		public bool prewarm;
 
 		[Range(0.0f, 2.0f)] public float playbackSpeed = 1.0f;
 
@@ -173,7 +168,6 @@ namespace TC {
 		/// The factor of gravity used as configured in the physics settings
 		/// </summary>
 		public float gravityMultiplier;
-
 
 		/// <summary>
 		/// Drag applied to particles. Specified in speed factor per second
@@ -184,7 +178,6 @@ namespace TC {
 
 		[SerializeField] AnimationCurve dampingCurve;
 		[SerializeField] bool dampingIsCurve;
-
 
 		/// <summary>
 		/// Delta time of particle simulation
@@ -209,24 +202,22 @@ namespace TC {
 		/// <summary>
 		/// Is the particle system playing?
 		/// </summary>
-		public bool IsPlaying {
-			get { return m_isPlaying && !IsStopped && !IsPaused && SystemTime < _duration; }
-		}
+		public bool IsPlaying => m_isPlaying && !IsStopped && !IsPaused && SystemTime < _duration;
 
 		/// <summary>
 		/// Number of particles emitted each second
 		/// </summary>
 		public float EmissionRate {
-			get { return Emitter.EmissionRate; }
-			set { Emitter.EmissionRate = value; }
+			get => Emitter.EmissionRate;
+			set => Emitter.EmissionRate = value;
 		}
 
 		/// <summary>
 		/// Gravity of the particle system in world space
 		/// </summary>
 		public Vector3Curve ConstantForce {
-			get { return Emitter.ConstantForce; }
-			set { Emitter.ConstantForce = value; }
+			get => Emitter.ConstantForce;
+			set => Emitter.ConstantForce = value;
 		}
 
 		struct SystemParameters {
@@ -236,10 +227,12 @@ namespace TC {
 			public float MaxSpeed;
 			public const int Stride = (3 + 1 + 1 + 1) * 4;
 		}
+
 		readonly SystemParameters[] m_systArray = new SystemParameters[1];
 		ComputeBuffer m_systemBuffer;
 
 		List<TCParticleSystem> m_children;
+
 		List<TCParticleSystem> Children {
 			get {
 				if (m_children == null) {
@@ -293,6 +286,7 @@ namespace TC {
 				float deltTime = !IsPaused ? Mathf.Min(SimulationDeltTime, 0.1f) * playbackSpeed : 0.0f;
 				UpdateParticles(deltTime);
 			}
+
 			Profiler.EndSample();
 		}
 
@@ -308,12 +302,10 @@ namespace TC {
 					SystemTime %= Duration;
 					m_prevSystemTime = -1.0f;
 					m_isPlaying = true;
-				}
-				else {
+				} else {
 					m_isPlaying = false;
 				}
 			}
-
 
 			Dispatch(m_isPlaying);
 
@@ -321,17 +313,18 @@ namespace TC {
 		}
 
 		public delegate void SimulationCB();
+
 		public SimulationCB OnPreSimulationCallback;
 		public SimulationCB OnPostSimulationCallback;
 
 		public delegate void GlobalSimulationCB(TCParticleSystem system);
+
 		public static GlobalSimulationCB OnGlobalSimulationCallback;
 
 		void Dispatch(bool emit) {
 			if (OnGlobalSimulationCallback != null) {
 				OnGlobalSimulationCallback(SystemComp);
 			}
-
 
 			Profiler.BeginSample("Simulation loop");
 			Emitter.UpdateForDispatch();
@@ -348,9 +341,9 @@ namespace TC {
 				if (OnPreSimulationCallback != null) {
 					OnPreSimulationCallback();
 				}
+
 				Profiler.EndSample();
 
-	
 				Profiler.BeginSample("Main update");
 				DispatchExtensionKernel(ComputeShader, UpdateAllKernel);
 				Profiler.EndSample();
@@ -359,6 +352,7 @@ namespace TC {
 				if (OnPostSimulationCallback != null) {
 					OnPostSimulationCallback();
 				}
+
 				Profiler.EndSample();
 
 				ColliderManager.Dispatch();
@@ -372,7 +366,7 @@ namespace TC {
 			Clear();
 		}
 
-		internal override void OnDestroy() {
+		internal virtual void OnDestroy() {
 			Release(ref particles);
 			Release(ref m_systemBuffer);
 		}
@@ -392,9 +386,9 @@ namespace TC {
 			}
 
 			ComputeShader.SetFloat(SID._ParticleThickness, actualThickness);
-			
+
 			syst.ConstantForce = ConstantForce.Value(Manager.SystemTime / Manager.Duration) * ParticleTimeDelta +
-			                       Physics.gravity * Manager.gravityMultiplier * ParticleTimeDelta * syst.Damping;
+			                     Physics.gravity * Manager.gravityMultiplier * ParticleTimeDelta * syst.Damping;
 
 			m_systArray[0] = syst;
 			m_systemBuffer.SetData(m_systArray);
@@ -532,8 +526,7 @@ namespace TC {
 		/// </summary>
 		/// <param name="comp"></param>
 		/// <param name="kernel"></param>
-		public void BindPariclesToKernel(CommandBuffer command, ComputeShader comp, int kernel)
-		{
+		public void BindPariclesToKernel(CommandBuffer command, ComputeShader comp, int kernel) {
 			command.SetComputeBufferParam(comp, kernel, SID._SystemParameters, m_systemBuffer);
 			command.SetComputeBufferParam(comp, kernel, SID._Particles, particles);
 
@@ -603,14 +596,13 @@ namespace TC {
 		/// 
 		/// For more information see the additional comments in the extension kernel example
 		/// </remarks>
-		public void DispatchExtensionKernel(CommandBuffer command, ComputeShader extension, int kernel)
-		{
+		public void DispatchExtensionKernel(CommandBuffer command, ComputeShader extension, int kernel) {
 			BindPariclesToKernel(command, extension, kernel);
 
 			uint x, y, z;
 			extension.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
 
-			int disp = Mathf.CeilToInt((float)Emitter.ParticleCount / x);
+			int disp = Mathf.CeilToInt((float) Emitter.ParticleCount / x);
 			command.DispatchCompute(extension, kernel, disp, 1, 1);
 		}
 	}

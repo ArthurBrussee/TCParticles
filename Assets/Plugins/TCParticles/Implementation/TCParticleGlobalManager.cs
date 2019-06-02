@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections.Generic;
-
+using System.Diagnostics.CodeAnalysis;
 #if UNITY_EDITOR
 	using UnityEditor;
 #endif
@@ -16,6 +16,7 @@ namespace TC.Internal {
 		public ComputeShader ComputeShader;
 
 #if UNITY_EDITOR
+		// ReSharper disable once ArrangeAttributes
 		[InitializeOnLoadMethod]
 #endif
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -105,6 +106,7 @@ namespace TC.Internal {
 		static List<Vector2> s_uvs = new List<Vector2>();
 		static Face[] s_faces = new Face[128];
 
+		[SuppressMessage("ReSharper", "NotAccessedField.Local"),SuppressMessage("ReSharper", "InconsistentNaming")]
 		struct Face {
 			public Vector3 a;
 			public Vector3 b;
@@ -237,10 +239,10 @@ namespace TC.Internal {
 		public static ComputeBuffer GetMeshBuffer(Mesh mesh, int uvChannel) {
 			var meshIndex = new MeshIndex(mesh, uvChannel);
 
-			ComputeBuffer buffer;
-			if (!s_meshStore.TryGetValue(meshIndex, out buffer)) {
+			if (!s_meshStore.TryGetValue(meshIndex, out ComputeBuffer buffer)) {
 				buffer = GenerateMeshData(meshIndex);
 			}
+			
 			return buffer;
 		}
 
@@ -255,11 +257,13 @@ namespace TC.Internal {
 		public static void ReleaseCacheForEmitMesh(Mesh mesh, int uvChannel) {
 			var meshIndex = new MeshIndex(mesh, uvChannel);
 
-			if (s_meshStore.ContainsKey(meshIndex)) {
-				var buffer = s_meshStore[meshIndex];
-				buffer.Dispose();
-				s_meshStore.Remove(meshIndex);
+			if (!s_meshStore.ContainsKey(meshIndex)) {
+				return;
 			}
+
+			var buffer = s_meshStore[meshIndex];
+			buffer.Dispose();
+			s_meshStore.Remove(meshIndex);
 		}
 	}
 }

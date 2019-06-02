@@ -33,7 +33,6 @@ namespace TC {
 			public float Stickiness;
 		}
 
-
 		/// <summary>
 		/// Maxinum number of colliders systems reacts to
 		/// </summary>
@@ -45,55 +44,68 @@ namespace TC {
 		/// <remarks>
 		/// If the number of colliders exceeds this amount, they are sorted by their distance size etc. to pick the most relevant ones.
 		/// </remarks>
-		public int MaxColliders { get { return _maxColliders; } set { _maxColliders = value; } }
+		public int MaxColliders {
+			get => _maxColliders;
+			set => _maxColliders = value;
+		}
 
 		/// <summary>
 		/// Current number of colliders particles collide with in this system
 		/// </summary>
-		public int NumColliders { get {return m_collidersList == null ? 0 : Mathf.Min(m_collidersList.Count, _maxColliders); } }
-	
+		public int NumColliders => m_collidersList == null ? 0 : Mathf.Min(m_collidersList.Count, _maxColliders);
 
-		[SerializeField] [Range(0.0f, 1.0f)] float _particleThickness = 0.25f;
-
+		[SerializeField, Range(0.0f, 1.0f)]  float _particleThickness = 0.25f;
 
 		/// <summary>
 		/// Global multiplier for particle size when calculating collisions. 1 means use the full quad size
 		/// </summary>
-		public float ParticleThickness { get { return _particleThickness; } set { _particleThickness = value; } }
+		public float ParticleThickness {
+			get => _particleThickness;
+			set => _particleThickness = value;
+		}
 
 		/// <summary>
 		/// Elasticity of the collision
 		/// </summary>
-		[SerializeField] [Range(0.0f, 1.0f)] float _bounciness = 0.3f;
+		[SerializeField, Range(0.0f, 1.0f)]  float _bounciness = 0.3f;
 
 		/// <summary>
 		/// Elasticity of the collision (0 means particles, 1 is full bounce)
 		/// </summary>
-		public float Bounciness { get { return _bounciness; } set { _bounciness = Mathf.Clamp(value, 0.0f, 1.0f); } }
-
+		public float Bounciness {
+			get => _bounciness;
+			set => _bounciness = Mathf.Clamp(value, 0.0f, 1.0f);
+		}
 
 		[SerializeField] bool overrideBounciness;
 
 		/// <summary>
 		/// Should this system override the colliders bounciness?
 		/// </summary>
-		public bool OverrideBounciness { get { return overrideBounciness; } set { overrideBounciness = value; } }
+		public bool OverrideBounciness {
+			get => overrideBounciness;
+			set => overrideBounciness = value;
+		}
 
-
-		[SerializeField] [Range(0.0f, 1.0f)] float _stickiness = 0.3f;
+		[SerializeField, Range(0.0f, 1.0f)]  float _stickiness = 0.3f;
 
 		/// <summary>
 		/// Stickiness of a collision when <see cref="OverrideStickiness"/> is true
 		/// </summary>
-		public float Stickiness { get { return _stickiness; } set { _stickiness = Mathf.Clamp(value, 0.0f, 1.0f); } }
-
+		public float Stickiness {
+			get => _stickiness;
+			set => _stickiness = Mathf.Clamp(value, 0.0f, 1.0f);
+		}
 
 		[SerializeField] bool overrideStickiness;
 
 		/// <summary>
 		/// Should this system override the colliders stickiness?
 		/// </summary>
-		public bool OverrideStickiness { get { return overrideStickiness; } set { overrideStickiness = value; } }
+		public bool OverrideStickiness {
+			get => overrideStickiness;
+			set => overrideStickiness = value;
+		}
 
 		Collider[] m_colliderStruct;
 		TCCollider[] m_colliderReference;
@@ -105,14 +117,17 @@ namespace TC {
 		/// <summary>
 		/// The layers in which the system looks for colliders
 		/// </summary>
-		public LayerMask ColliderLayers { get { return _colliderLayers; } set { _colliderLayers = value; } }
+		public LayerMask ColliderLayers {
+			get => _colliderLayers;
+			set => _colliderLayers = value;
+		}
 
 		[SerializeField] List<TCCollider> _baseColliders = new List<TCCollider>();
 
 		/// <summary>
 		/// A list of colliders to link irregardles of distance or layer. Does count towards MaxColliders
 		/// </summary>
-		public List<TCCollider> BaseColliders { get { return _baseColliders; } }
+		public List<TCCollider> BaseColliders => _baseColliders;
 
 		Comparison<TCCollider> m_colliderSort;
 
@@ -164,7 +179,6 @@ namespace TC {
 					m_colliderSort = (c1, c2) => GetColliderPoints(c2).CompareTo(GetColliderPoints(c1));
 				}
 
-				//TODO: Better sort that takes size into account
 				m_collidersList.Sort(m_colliderSort);
 			}
 
@@ -220,15 +234,13 @@ namespace TC {
 							rc.Radius = col.SphereCollider.radius * scale;
 							rc.BoxSize = Vector3.zero;
 							rc.Vtype = 0;
-						}
-						else if (col.CapsuleCollider != null) {
+						} else if (col.CapsuleCollider != null) {
 							rc.Radius = col.CapsuleCollider.radius * xzscale;
 							rc.BoxSize = new Vector3(0.0f,
 								Mathf.Max(0, col.CapsuleCollider.height / 2.0f * yscale - rc.Radius * 2.0f),
 								0.0f);
 							rc.Vtype = 1;
-						}
-						else if (col.BoxCollider != null) {
+						} else if (col.BoxCollider != null) {
 							rc.Radius = 0.5f;
 							rc.BoxSize = Vector3.Scale(col.BoxCollider.size * 0.5f, lscale);
 
@@ -280,12 +292,13 @@ namespace TC {
 
 						if (terrain == null) {
 							rc.BoxSize = Vector3.zero;
+						} else {
+							var terrainData = terrain.terrainData;
+							Vector3 terrainScale = terrainData.heightmapScale;
+							rc.BoxSize = new Vector3(terrainScale.x * terrainData.heightmapResolution, terrainScale.y,
+								terrainScale.z * terrainData.heightmapResolution);
 						}
-						else {
-							Vector3 terrainScale = terrain.terrainData.heightmapScale;
-							rc.BoxSize = new Vector3(terrainScale.x * terrain.terrainData.heightmapResolution, terrainScale.y,
-								terrainScale.z * terrain.terrainData.heightmapResolution);
-						}
+
 						rc.Vtype = 7;
 						break;
 
@@ -302,7 +315,7 @@ namespace TC {
 				float elasticity = 1.0f + eps + Mathf.Lerp(0.0f, 1.0f - eps * 2.0f, overrideBounciness ? Bounciness : col.Bounciness);
 
 				rc.Bounciness = elasticity;
-				rc.Velocity = col.Velocity * col.InheritVelocity * 0.5f;
+				rc.Velocity = col.InheritVelocity * 0.5f * col.Velocity;
 				rc.LifeLoss = col.ParticleLifeLoss * Emitter.Lifetime.Max * Manager.ParticleTimeDelta;
 				rc.IsInverse = (uint) (col.inverse ? 1 : 0);
 
@@ -329,7 +342,7 @@ namespace TC {
 		}
 
 		internal void Dispatch() {
-			if ( NumColliders <= 0 || m_colliderReference == null) {
+			if (NumColliders <= 0 || m_colliderReference == null) {
 				return;
 			}
 
@@ -346,8 +359,7 @@ namespace TC {
 				if (!found) {
 					ComputeShader.SetTexture(UpdateCollidersKernel, SID._TerrainTexture, m_colliderReference[i].Heightmap);
 					found = true;
-				}
-				else {
+				} else {
 					Debug.LogError("You currently Cannot have multiple terrain colliders act on a particle system!");
 					break;
 				}
@@ -382,7 +394,7 @@ namespace TC {
 			return points;
 		}
 
-		internal override void OnDestroy() {
+		internal virtual void OnDestroy() {
 			Release(ref m_colliderBuffer);
 		}
 	}

@@ -24,7 +24,6 @@ namespace TC.EditorIntegration {
 		public TCNoiseForceVisualize(TCForce target) {
 			m_target = target;
 
-
 			arrowMat = Resources.Load("Editor/ArrowMat", typeof(Material)) as Material;
 			arrowMesh = Resources.Load("Editor/Arrow1", typeof(Mesh)) as Mesh;
 

@@ -2,10 +2,8 @@
 using UnityEngine;
 
 namespace TC.EditorIntegration {
-	[CustomEditor(typeof(TCShapeEmitter), true)]
-	[CanEditMultipleObjects]
+	[CustomEditor(typeof(TCShapeEmitter), true), CanEditMultipleObjects]
 	public class TCShapeEmitterEditor : TCEdtiorBase<TCShapeEmitter> {
-		Mesh m_prevMesh;
 		TCShapeEmitter m_target;
 
 		protected override void OnTCEnable() {
@@ -25,7 +23,6 @@ namespace TC.EditorIntegration {
 				EditorGUILayout.HelpBox("Shape emitter must have a tag", MessageType.Warning);
 			}
 
-
 			EditorGUILayout.BeginHorizontal();
 			PropField("EmissionRate", new GUIContent("Emission Rate", "Amount of particles to emit per second or unit"));
 			PropField("EmissionType", new GUIContent("", "Determines whether particles are emitter per second or per unit"),
@@ -33,12 +30,6 @@ namespace TC.EditorIntegration {
 			EditorGUILayout.EndHorizontal();
 
 			PropField("Emit", new GUIContent("Do Emit", "Toggles emitting on this shape emitter"));
-
-			if (m_target.ShapeData.emitMesh == m_prevMesh) {
-				return;
-			}
-
-			m_prevMesh = m_target.ShapeData.emitMesh;
 		}
 
 		void OnSceneGUI() {

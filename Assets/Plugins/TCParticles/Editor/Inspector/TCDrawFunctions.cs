@@ -1,9 +1,9 @@
-﻿using TC.Internal;
+﻿using System;
+using TC.Internal;
 using UnityEditor;
 using UnityEngine;
 
 namespace TC.EditorIntegration {
-
 	public static class TCDrawFunctions {
 		static Material s_lineMat;
 
@@ -22,10 +22,11 @@ namespace TC.EditorIntegration {
 						if (pes.radius.Min > 0.0f) {
 							pes.radius.Min = RadiusHandle(transform, pes.radius.Min, true);
 						}
+
 						Handles.color = col;
 					}
-					break;
 
+					break;
 
 				case EmitShapes.Box:
 					pes.cubeSize = CubeHandle(transform, pes.cubeSize);
@@ -43,22 +44,18 @@ namespace TC.EditorIntegration {
 					break;
 
 				case EmitShapes.Cone:
-
 					float coneAngle = pes.coneAngle;
 					float coneHeight = pes.coneHeight;
 					float coneRadius = pes.coneRadius;
-
 
 					ConeHandle(ref coneAngle, ref coneHeight, ref coneRadius, transform);
 
 					pes.coneAngle = coneAngle;
 					pes.coneHeight = coneHeight;
 					pes.coneRadius = coneRadius;
-
 					break;
 
 				case EmitShapes.Ring:
-
 					float ringRadius = pes.ringRadius;
 					float ringOuter = pes.ringOuterRadius;
 
@@ -77,7 +74,7 @@ namespace TC.EditorIntegration {
 						break;
 					}
 
-					if (s_lineMat == null){
+					if (s_lineMat == null) {
 						s_lineMat = new Material(Shader.Find("Hidden/TCWireframeShader"));
 						s_lineMat.hideFlags = HideFlags.HideAndDontSave;
 					}
@@ -87,6 +84,7 @@ namespace TC.EditorIntegration {
 						s_lineMat.SetPass(i);
 						Graphics.DrawMeshNow(pes.emitMesh, Matrix4x4.TRS(transform.position, transform.rotation, transform.localScale));
 					}
+
 					GL.wireframe = false;
 
 					break;
@@ -96,9 +94,8 @@ namespace TC.EditorIntegration {
 		//=========================================
 		//Handle functions
 		static float ValueSlider(Vector3 offset, float val, Vector3 dir, float scale) {
-			Vector3 pos = offset + val * dir * scale;
-			Vector3 newPos = Handles.Slider(pos, dir, HandleUtility.GetHandleSize(Vector3.zero) * 0.045f, Handles.DotHandleCap,
-				0.0f);
+			Vector3 pos = offset + val * scale * dir;
+			Vector3 newPos = Handles.Slider(pos, dir, HandleUtility.GetHandleSize(Vector3.zero) * 0.045f, Handles.DotHandleCap, 0.0f);
 			return Mathf.Abs(val + Vector3.Dot(newPos - pos, dir) / scale);
 		}
 
@@ -111,7 +108,6 @@ namespace TC.EditorIntegration {
 			Handles.DrawLine(p2 + h, p2 - h);
 			Handles.DrawWireArc(p2 + hsign * h - mVec, mSign * hsign * -discNorm, p2, 90.0f, rounding);
 
-
 			if (rounding < rMin) {
 				Handles.DrawLine(p1 + rup + mVec, p2 + rup - mSign * rounding * move);
 				Handles.DrawLine(p1 + h, p1 - h);
@@ -122,16 +118,13 @@ namespace TC.EditorIntegration {
 			}
 		}
 
-
 		static void DrawDiscWiresVertical(float rMin, float rMax, float height, float rounding, float angle) {
 			Vector3 up = Vector3.up;
 			Vector3 right = Vector3.right;
 			Vector3 fw = Vector3.forward;
 
-
 			float h = height / 2.0f - rounding;
 			Vector3 hup = h * up;
-
 
 			Vector3 fw1 = fw * (rMin - rounding);
 			Vector3 fw2 = fw * (rMax + rounding);
@@ -147,7 +140,6 @@ namespace TC.EditorIntegration {
 
 			DrawDiscCap(fw1, fw2, 1.0f, hup, 1.0f, rounding, right, fw, up, rMin);
 			DrawDiscCap(fw1, fw2, 1.0f, hup, -1.0f, rounding, right, fw, up, rMin);
-
 
 			DrawDiscCap(rt1, rt2, 1.0f, hup, 1.0f, rounding, -fw, right, up, rMin);
 			DrawDiscCap(rt1, rt2, 1.0f, hup, -1.0f, rounding, -fw, right, up, rMin);
@@ -174,7 +166,7 @@ namespace TC.EditorIntegration {
 		}
 
 		static void DiscValueSlider(float rMin, float rMax, Vector3 dir, float sc, out float rMinOut, out float rMaxOut) {
-			if (rMin != 0.0f) {
+			if (Mathf.Abs(rMin) > Mathf.Epsilon) {
 				rMin = ValueSlider(Vector3.zero, rMin, dir, sc);
 			}
 
@@ -183,7 +175,6 @@ namespace TC.EditorIntegration {
 			rMinOut = rMin;
 			rMaxOut = rMax;
 		}
-
 
 		static void DrawBoxCorner(Vector3 sz, float xflip, float yflip, float zflip, float r) {
 			sz = sz * 0.5f;
@@ -210,7 +201,6 @@ namespace TC.EditorIntegration {
 			Handles.DrawLine(pph - dd, pph + dd);
 		}
 
-
 		static float RadiusDisc(Vector3 offset, Vector3 norm, Vector3 right, Vector3 forward, float r, float sc) {
 			Handles.DrawWireDisc(offset, norm, r);
 
@@ -231,34 +221,35 @@ namespace TC.EditorIntegration {
 			return newVal;
 		}
 
-
 		static void BaseHandle(Transform trans, Vector3 scale) {
 			Handles.matrix = Matrix4x4.TRS(trans.position, trans.rotation, scale);
 		}
 
 		static float ScaleXZ(Transform trans) {
-			return Mathf.Max(trans.localScale.x, trans.localScale.z);
+			var localScale = trans.localScale;
+			return Mathf.Max(localScale.x, localScale.z);
 		}
 
 		static float ScaleTrans(Transform trans) {
-			return Mathf.Max(trans.localScale.x, trans.localScale.y, trans.localScale.z);
+			var localScale = trans.localScale;
+			return Mathf.Max(localScale.x, localScale.y, localScale.z);
 		}
-
 
 		public static float LineHandle(float length, Transform trans) {
 			BaseHandle(trans, Vector3.one);
-			Handles.DrawLine(Vector3.zero, Vector3.forward * length * trans.localScale.z);
-			return ValueSlider(Vector3.zero, length, Vector3.forward, trans.localScale.z);
+			var localScale = trans.localScale;
+			Handles.DrawLine(Vector3.zero, length * localScale.z * Vector3.forward);
+			return ValueSlider(Vector3.zero, length, Vector3.forward, localScale.z);
 		}
-
 
 		public static Vector3 CubeHandle(Transform trans, Vector3 size) {
 			BaseHandle(trans, Vector3.one);
 			Vector3 orig = size;
 
-			size.x = ValueSlider(Vector3.zero, size.x * 0.5f, Vector3.right, trans.localScale.x) * 2.0f;
-			size.y = ValueSlider(Vector3.zero, size.y * 0.5f, Vector3.up, trans.localScale.y) * 2.0f;
-			size.z = ValueSlider(Vector3.zero, size.z * 0.5f, Vector3.forward, trans.localScale.z) * 2.0f;
+			var localScale = trans.localScale;
+			size.x = ValueSlider(Vector3.zero, size.x * 0.5f, Vector3.right, localScale.x) * 2.0f;
+			size.y = ValueSlider(Vector3.zero, size.y * 0.5f, Vector3.up, localScale.y) * 2.0f;
+			size.z = ValueSlider(Vector3.zero, size.z * 0.5f, Vector3.forward, localScale.z) * 2.0f;
 
 			if (size.x == orig.x) {
 				size.x = ValueSlider(Vector3.zero, size.x * 0.5f, -Vector3.right, trans.localScale.x) * 2.0f;
@@ -313,12 +304,9 @@ namespace TC.EditorIntegration {
 			return newVal;
 		}
 
-
 		public static void ConeHandle(ref float angle, ref float height, ref float radius, Transform trans,
 			bool flip = false) {
-
 			BaseHandle(trans, trans.localScale);
-
 
 			float r = radius;
 			float r2 = Mathf.Tan(angle * Mathf.Deg2Rad) * height;
@@ -333,11 +321,10 @@ namespace TC.EditorIntegration {
 			Handles.DrawLine(-Vector3.up * r, up - Vector3.up * (f * r2 + r));
 			Handles.DrawLine(Vector3.up * r, up + Vector3.up * (f * r2 + r));
 
-
-			if (height != 0) {
+			if (Mathf.Abs(height) > Mathf.Epsilon) {
 				angle =
 					Mathf.Clamp(
-						Mathf.Atan((RadiusDisc(up, Vector3.forward, Vector3.right, Vector3.up, (r2 + r), 1.0f) - r) / height) *
+						Mathf.Atan((RadiusDisc(up, Vector3.forward, Vector3.right, Vector3.up, r2 + r, 1.0f) - r) / height) *
 						Mathf.Rad2Deg, 0.0f, 90.0f);
 			}
 
@@ -360,11 +347,9 @@ namespace TC.EditorIntegration {
 				Handles.RadiusHandle(Quaternion.identity, Vector3.zero, radius * sc) / sc;
 		}
 
-
 		public static void TorusHandle(ref float innerRadius, ref float outerRadius, Transform trans) {
 			BaseHandle(trans, trans.localScale);
 			Vector2 ret;
-
 
 			ret.x = RadiusDisc(Vector3.zero, Vector3.forward, Vector3.right, Vector3.up, innerRadius, 1.0f);
 
@@ -372,18 +357,18 @@ namespace TC.EditorIntegration {
 
 			Handles.color = new Color(c.r, c.g, c.b, 0.4f);
 
-			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, (innerRadius - outerRadius));
-			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, (innerRadius + outerRadius));
+			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, innerRadius - outerRadius);
+			Handles.DrawWireDisc(Vector3.zero, Vector3.forward, innerRadius + outerRadius);
 
 			Handles.DrawWireDisc(Vector3.zero + 0.5f * outerRadius * Vector3.forward, Vector3.forward,
-				(innerRadius - 0.5f * Mathf.Sqrt(2.0f) * outerRadius));
+				innerRadius - 0.5f * Mathf.Sqrt(2.0f) * outerRadius);
 			Handles.DrawWireDisc(Vector3.zero - 0.5f * outerRadius * Vector3.forward, Vector3.forward,
-				(innerRadius - 0.5f * Mathf.Sqrt(2.0f) * outerRadius));
+				innerRadius - 0.5f * Mathf.Sqrt(2.0f) * outerRadius);
 
 			Handles.DrawWireDisc(Vector3.zero + 0.5f * outerRadius * Vector3.forward, Vector3.forward,
-				(innerRadius + 0.5f * Mathf.Sqrt(2.0f) * outerRadius));
+				innerRadius + 0.5f * Mathf.Sqrt(2.0f) * outerRadius);
 			Handles.DrawWireDisc(Vector3.zero - 0.5f * outerRadius * Vector3.forward, Vector3.forward,
-				(innerRadius + 0.5f * Mathf.Sqrt(2.0f) * outerRadius));
+				innerRadius + 0.5f * Mathf.Sqrt(2.0f) * outerRadius);
 
 			Handles.DrawWireDisc(Vector3.zero + outerRadius * Vector3.forward, Vector3.forward, innerRadius);
 			Handles.DrawWireDisc(Vector3.zero - outerRadius * Vector3.forward, Vector3.forward, innerRadius);
@@ -396,7 +381,6 @@ namespace TC.EditorIntegration {
 
 			Handles.DrawWireDisc(Vector3.zero + cross2 * innerRadius, Vector3.Cross(cross2, Vector3.forward), outerRadius);
 			Handles.DrawWireDisc(Vector3.zero - cross2 * innerRadius, Vector3.Cross(cross2, Vector3.forward), outerRadius);
-
 
 			Handles.color = c;
 
@@ -421,7 +405,6 @@ namespace TC.EditorIntegration {
 			outerRadius = ret.y;
 		}
 
-
 		public static void DiscHandle(Transform trans, float rMin, float rMax, float height, float rounding, int mode,
 			out float outRMin, out float outRMax, out float outRounding) {
 			BaseHandle(trans, Vector3.one);
@@ -441,9 +424,8 @@ namespace TC.EditorIntegration {
 				DiscValueSlider(rMin, rMax, -Vector3.forward, xzs, out rMin, out rMax);
 			}
 
-			if (height != 0.0f) {
+			if (Mathf.Abs(height) > Mathf.Epsilon) {
 				ArcAngle(angle, rMax * xzs, height * ys, rounding, 1.0f);
-
 
 				if (rMin - rounding > 0.0f) {
 					ArcAngle(angle, rMin * xzs, height * ys, rounding, -1.0f);
@@ -460,7 +442,6 @@ namespace TC.EditorIntegration {
 
 			outRounding = Mathf.Clamp(rounding, 0.0f, height / 2.0f);
 		}
-
 
 		public static Vector3 RoundedCubeHandle(Vector3 sz, float r, Transform trans) {
 			BaseHandle(trans, Vector3.one);
@@ -502,7 +483,6 @@ namespace TC.EditorIntegration {
 			return szOrig;
 		}
 
-
 		public static Vector2 CapsuleHandle(Transform transform, float radius, float height) {
 			BaseHandle(transform, Vector3.one);
 
@@ -523,17 +503,16 @@ namespace TC.EditorIntegration {
 				newVal = ValueSlider(Vector3.zero, radius, -Vector3.forward, xzs);
 			}
 
-
 			var newHeight = ValueSlider(Vector3.zero, 0.5f * height, Vector3.up, xzs) * 2.0f;
 
 			if (newHeight == height) {
 				newHeight = ValueSlider(Vector3.zero, 0.5f * height, -Vector3.up, xzs) * 2.0f;
 			}
 
-			float offset = Mathf.Max(0.0f, (0.5f * newHeight - newVal));
+			float offset = Mathf.Max(0.0f, 0.5f * newHeight - newVal);
 
-			Vector3 ymax = offset * Vector3.up * ys;
-			Vector3 ymin = -offset * Vector3.up * ys;
+			Vector3 ymax = offset * ys * Vector3.up;
+			Vector3 ymin = -offset * ys * Vector3.up;
 
 			Handles.DrawWireDisc(ymax, Vector3.up, radius * xzs);
 			Handles.DrawWireDisc(ymin, -Vector3.up, radius * xzs);
@@ -542,7 +521,6 @@ namespace TC.EditorIntegration {
 			Handles.DrawLine(ymin + radius * xzs * Vector3.forward, ymax + radius * xzs * Vector3.forward);
 			Handles.DrawLine(ymin + radius * xzs * -Vector3.right, ymax + radius * xzs * -Vector3.right);
 			Handles.DrawLine(ymin + radius * xzs * -Vector3.forward, ymax + radius * xzs * -Vector3.forward);
-
 
 			Handles.DrawWireArc(ymax, Vector3.forward, Vector3.right, 180.0f, radius * xzs);
 			Handles.DrawWireArc(ymax, Vector3.right, -Vector3.forward, 180.0f, radius * xzs);

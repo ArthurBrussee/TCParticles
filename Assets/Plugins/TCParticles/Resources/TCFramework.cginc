@@ -118,7 +118,7 @@ uint PackColor(float4 unpackedInput) {
 	return packedOutput;
 }
 	
-// Generates an orthonormal (row-major) basis from a unit vector. TODO: make it column-major.
+// Generates an orthonormal (row-major) basis from a unit vector
 // The resulting rotation matrix has the determinant of +1.
 // Ref: 'ortho_basis_pixar_r2' from http://marc-b-reynolds.github.io/quaternions/2016/07/06/Orthonormal.html
 void OrthonormalBasis(float3 localZ, out float3 localX, out float3 localY) {

@@ -49,7 +49,6 @@ namespace TC.EditorIntegration {
 			s.contentOffset = new Vector2(100.0f, 100.0f);
 			s.fixedWidth = 12.0f;
 
-
 			c = EditorGUI.Popup(GetRect(80.0f), c, options, s);
 			prop.FindPropertyRelative("isConstant").boolValue = c == 0;
 

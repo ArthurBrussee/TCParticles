@@ -1,19 +1,17 @@
 // Pcx - Point cloud importer & renderer for Unity
 // https://github.com/keijiro/Pcx
-using UnityEngine;
-using UnityEditor;
-using UnityEditor.Experimental.AssetImporters;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
-using TC;
 using System.Runtime.CompilerServices;
-using Object = UnityEngine.Object;
+using TC;
+using UnityEditor;
+using UnityEditor.Experimental.AssetImporters;
+using UnityEngine;
 
 namespace Pcx {
-	//TODO: Agressive inline
-	class PclBinaryReader {
+	internal class PclBinaryReader {
 		byte[] m_bytes;
 		public int Position;
 
@@ -28,7 +26,7 @@ namespace Pcx {
 			int charsRead = 0;
 
 			while (true) {
-				char c = (char)m_bytes[Position++];
+				char c = (char) m_bytes[Position++];
 
 				if (c == '\n') {
 					return new string(m_readChars, 0, charsRead);
@@ -39,6 +37,8 @@ namespace Pcx {
 				}
 			}
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float ReadSingleLittleEndian() {
 			m_scratchRead[0] = m_bytes[Position++];
 			m_scratchRead[1] = m_bytes[Position++];
@@ -47,6 +47,7 @@ namespace Pcx {
 			return BitConverter.ToSingle(m_scratchRead, 0);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float ReadSingleBigEndian() {
 			m_scratchRead[3] = m_bytes[Position++];
 			m_scratchRead[2] = m_bytes[Position++];
@@ -57,7 +58,7 @@ namespace Pcx {
 
 		public void AdvancePropertyAscii() {
 			while (true) {
-				char c = (char)m_bytes[Position++];
+				char c = (char) m_bytes[Position++];
 
 				if (c == ' ') {
 					return;
@@ -65,11 +66,12 @@ namespace Pcx {
 			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float ReadSingleAscii() {
 			int charsRead = 0;
 
 			while (true) {
-				char c = (char)m_bytes[Position++];
+				char c = (char) m_bytes[Position++];
 
 				if (c == ' ') {
 					return float.Parse(new string(m_readChars, 0, charsRead));
@@ -79,14 +81,14 @@ namespace Pcx {
 			}
 		}
 
-
 		char[] m_readChars = new char[512];
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ReadByteAscii() {
 			int charsRead = 0;
 
 			while (true) {
-				char c = (char)m_bytes[Position++];
+				char c = (char) m_bytes[Position++];
 
 				if (c == ' ') {
 					return byte.Parse(new string(m_readChars, 0, charsRead));
@@ -96,13 +98,14 @@ namespace Pcx {
 			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public byte ReadByte() {
 			return m_bytes[Position++];
 		}
 	}
 
 	[ScriptedImporter(1, "ply")]
-	class PlyImporter : ScriptedImporter {
+	internal class PlyImporter : ScriptedImporter {
 		[Header("Point Cloud Data Settings")]
 		public float Scale = 1;
 #pragma warning disable 649
@@ -122,7 +125,7 @@ namespace Pcx {
 			var system = gameObject.AddComponent<TCParticleSystem>();
 			system.Emitter.Shape = EmitShapes.PointCloud;
 			system.Emitter.PointCloud = data;
-			system.Emitter.SetBursts(new[] { new BurstEmission { Time = 0, Amount = data.PointCount } });
+			system.Emitter.SetBursts(new[] {new BurstEmission {Time = 0, Amount = data.PointCount}});
 			system.Emitter.EmissionRate = 0;
 			system.Emitter.Lifetime = MinMaxRandom.Constant(-1.0f);
 			system.Looping = false;
@@ -136,13 +139,14 @@ namespace Pcx {
 
 				var quadGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
 				system.ParticleRenderer.Mesh = quadGo.GetComponent<MeshFilter>().sharedMesh;
-				Object.DestroyImmediate(quadGo);
+				DestroyImmediate(quadGo);
 			}
 
 			context.AddObjectToAsset("prefab", gameObject);
 			if (data != null) {
 				context.AddObjectToAsset("data", data);
 			}
+
 			context.SetMainObject(gameObject);
 		}
 
@@ -154,10 +158,19 @@ namespace Pcx {
 
 		enum DataProperty {
 			Invalid,
-			X, Y, Z,
-			NX, NY, NZ,
-			R, G, B, A,
-			Data8, Data16, Data32,
+			X,
+			Y,
+			Z,
+			NX,
+			NY,
+			NZ,
+			R,
+			G,
+			B,
+			A,
+			Data8,
+			Data16,
+			Data32,
 			DataAscii
 		}
 
@@ -166,11 +179,11 @@ namespace Pcx {
 				case DataProperty.X: return 4;
 				case DataProperty.Y: return 4;
 				case DataProperty.Z: return 4;
-				
+
 				case DataProperty.NX: return 4;
 				case DataProperty.NY: return 4;
 				case DataProperty.NZ: return 4;
-				
+
 				case DataProperty.R: return 1;
 				case DataProperty.G: return 1;
 				case DataProperty.B: return 1;
@@ -179,24 +192,25 @@ namespace Pcx {
 				case DataProperty.Data16: return 2;
 				case DataProperty.Data32: return 4;
 			}
+
 			return 0;
 		}
 
 		class DataHeader {
-			public List<DataProperty> properties = new List<DataProperty>();
-			public int vertexCount = -1;
+			public List<DataProperty> Properties = new List<DataProperty>();
+			public int VertexCount = -1;
 			public PlyFormat Format;
 		}
 
 		class DataBody {
-			public Vector3[] vertices;
-			public Vector3[] normals;
-			public Color32[] colors;
+			public Vector3[] Vertices;
+			public Vector3[] Normals;
+			public Color32[] Colors;
 
 			public DataBody(int vertexCount) {
-				vertices = new Vector3[vertexCount];
-				normals = new Vector3[vertexCount];
-				colors = new Color32[vertexCount];
+				Vertices = new Vector3[vertexCount];
+				Normals = new Vector3[vertexCount];
+				Colors = new Color32[vertexCount];
 			}
 		}
 
@@ -220,16 +234,16 @@ namespace Pcx {
 			var body = ReadDataBody(header, reader);
 
 			var data = ScriptableObject.CreateInstance<PointCloudData>();
-			data.Initialize(body.vertices, body.normals, body.colors, Scale, PivotOffset, NormalRotation);
+			data.Initialize(body.Vertices, body.Normals, body.Colors, Scale, PivotOffset, NormalRotation);
 			data.name = Path.GetFileNameWithoutExtension(path);
-			
+
 			return data;
 		}
 
 		enum PlyFormat {
 			BinaryLittleEndian,
 			BinaryBigEndian,
-			ASCII
+			Ascii
 		}
 
 		DataHeader ReadDataHeader(PclBinaryReader reader) {
@@ -245,21 +259,21 @@ namespace Pcx {
 			while (true) {
 				// Read a line and split it with white space.
 				line = reader.ReadLine();
-				if (line == "end_header") break;
-				
-				var col = line.Split(' ');
-				if (col[0] == "comment") {
-					continue;
+				if (line == "end_header") {
+					break;
 				}
 
-				// Element declaration (unskippable)
-				if (col[0] == "element") {
-					if (col[1] == "vertex") {
-						data.vertexCount = Convert.ToInt32(col[2]);
-					} else {
+				var col = line.Split(' ');
+				switch (col[0]) {
+					case "comment":
+						continue;
+					// Element declaration (unskippable)
+					case "element" when col[1] == "vertex":
+						data.VertexCount = Convert.ToInt32(col[2]);
+						break;
+					case "element":
 						// Don't read elements other than vertices.
 						continue;
-					}
 				}
 
 				if (col[0] == "format") {
@@ -273,7 +287,7 @@ namespace Pcx {
 							break;
 
 						case "ascii":
-							data.Format = PlyFormat.ASCII;
+							data.Format = PlyFormat.Ascii;
 							break;
 
 						default:
@@ -293,18 +307,46 @@ namespace Pcx {
 
 					// Parse the property name entry.
 					switch (col[2]) {
-						case "x": prop = DataProperty.X; break;
-						case "y": prop = DataProperty.Y; break;
-						case "z": prop = DataProperty.Z; break;
-						
-						case "nx": prop = DataProperty.NX; break;
-						case "ny": prop = DataProperty.NY; break;
-						case "nz": prop = DataProperty.NZ; break;
-						
-						case "red": case "r": case "diffuse_red": prop = DataProperty.R; break;
-						case "green": case "g": case "diffuse_green": prop = DataProperty.G; break;
-						case "blue": case "b": case "diffuse_blue": prop = DataProperty.B; break;
-						case "alpha": case "a": case "diffuse_alpha": prop = DataProperty.A; break;
+						case "x":
+							prop = DataProperty.X;
+							break;
+						case "y":
+							prop = DataProperty.Y;
+							break;
+						case "z":
+							prop = DataProperty.Z;
+							break;
+
+						case "nx":
+							prop = DataProperty.NX;
+							break;
+						case "ny":
+							prop = DataProperty.NY;
+							break;
+						case "nz":
+							prop = DataProperty.NZ;
+							break;
+
+						case "red":
+						case "r":
+						case "diffuse_red":
+							prop = DataProperty.R;
+							break;
+						case "green":
+						case "g":
+						case "diffuse_green":
+							prop = DataProperty.G;
+							break;
+						case "blue":
+						case "b":
+						case "diffuse_blue":
+							prop = DataProperty.B;
+							break;
+						case "alpha":
+						case "a":
+						case "diffuse_alpha":
+							prop = DataProperty.A;
+							break;
 					}
 
 					switch (col[1]) {
@@ -320,6 +362,7 @@ namespace Pcx {
 
 							break;
 						}
+
 						case "short":
 						case "ushort": {
 							if (prop == DataProperty.Invalid) {
@@ -330,6 +373,7 @@ namespace Pcx {
 
 							break;
 						}
+
 						case "int":
 						case "uint": {
 							if (prop == DataProperty.Invalid) {
@@ -340,10 +384,11 @@ namespace Pcx {
 
 							break;
 						}
+
 						case "float":
 						case "float32": {
 							if (prop == DataProperty.Invalid) {
-								if (data.Format == PlyFormat.ASCII) {
+								if (data.Format == PlyFormat.Ascii) {
 									prop = DataProperty.DataAscii;
 								} else {
 									prop = DataProperty.Data32;
@@ -354,11 +399,12 @@ namespace Pcx {
 
 							break;
 						}
+
 						default:
 							throw new ArgumentException("Unsupported property type ('" + line + "').");
 					}
 
-					data.properties.Add(prop);
+					data.Properties.Add(prop);
 				}
 			}
 
@@ -367,97 +413,174 @@ namespace Pcx {
 		}
 
 		DataBody ReadDataBody(DataHeader header, PclBinaryReader reader) {
-			var data = new DataBody(header.vertexCount);
+			var data = new DataBody(header.VertexCount);
 
 			byte r = 255, g = 255, b = 255, a = 255;
 
 			switch (header.Format) {
 				case PlyFormat.BinaryLittleEndian:
-					for (var i = 0; i < header.vertexCount; i++) {
-						for (int j = 0; j < header.properties.Count; ++j) {
-							switch (header.properties[j]) {
-								case DataProperty.X: data.vertices[i].x = reader.ReadSingleLittleEndian(); break;
-								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleLittleEndian(); break;
-								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleLittleEndian(); break;
+					for (var i = 0; i < header.VertexCount; i++) {
+						for (int j = 0; j < header.Properties.Count; ++j) {
+							switch (header.Properties[j]) {
+								case DataProperty.X:
+									data.Vertices[i].x = reader.ReadSingleLittleEndian();
+									break;
+								case DataProperty.Y:
+									data.Vertices[i].y = reader.ReadSingleLittleEndian();
+									break;
+								case DataProperty.Z:
+									data.Vertices[i].z = reader.ReadSingleLittleEndian();
+									break;
 
-								case DataProperty.NX: data.normals[i].x = reader.ReadSingleLittleEndian(); break;
-								case DataProperty.NY: data.normals[i].y = reader.ReadSingleLittleEndian(); break;
-								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleLittleEndian(); break;
-								
-								case DataProperty.R: r = reader.ReadByte(); break;
-								case DataProperty.G: g = reader.ReadByte(); break;
-								case DataProperty.B: b = reader.ReadByte(); break;
-								case DataProperty.A: a = reader.ReadByte(); break;
+								case DataProperty.NX:
+									data.Normals[i].x = reader.ReadSingleLittleEndian();
+									break;
+								case DataProperty.NY:
+									data.Normals[i].y = reader.ReadSingleLittleEndian();
+									break;
+								case DataProperty.NZ:
+									data.Normals[i].z = reader.ReadSingleLittleEndian();
+									break;
 
-								case DataProperty.Data8: reader.Position += 1; break;
-								case DataProperty.Data16: reader.Position += 2; break;
-								case DataProperty.Data32: reader.Position += 4; break;
+								case DataProperty.R:
+									r = reader.ReadByte();
+									break;
+								case DataProperty.G:
+									g = reader.ReadByte();
+									break;
+								case DataProperty.B:
+									b = reader.ReadByte();
+									break;
+								case DataProperty.A:
+									a = reader.ReadByte();
+									break;
+
+								case DataProperty.Data8:
+									reader.Position += 1;
+									break;
+								case DataProperty.Data16:
+									reader.Position += 2;
+									break;
+								case DataProperty.Data32:
+									reader.Position += 4;
+									break;
 							}
 						}
 
-						data.colors[i].r = r;
-						data.colors[i].g = g;
-						data.colors[i].b = b;
-						data.colors[i].a = a;
+						data.Colors[i].r = r;
+						data.Colors[i].g = g;
+						data.Colors[i].b = b;
+						data.Colors[i].a = a;
 					}
+
 					break;
 
 				case PlyFormat.BinaryBigEndian:
-					for (var i = 0; i < header.vertexCount; i++) {
-						for (int j = 0; j < header.properties.Count; ++j) {
-							switch (header.properties[j]) {
-								case DataProperty.X: data.vertices[i].x = reader.ReadSingleBigEndian(); break;
-								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleBigEndian(); break;
-								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleBigEndian(); break;
+					for (var i = 0; i < header.VertexCount; i++) {
+						for (int j = 0; j < header.Properties.Count; ++j) {
+							switch (header.Properties[j]) {
+								case DataProperty.X:
+									data.Vertices[i].x = reader.ReadSingleBigEndian();
+									break;
+								case DataProperty.Y:
+									data.Vertices[i].y = reader.ReadSingleBigEndian();
+									break;
+								case DataProperty.Z:
+									data.Vertices[i].z = reader.ReadSingleBigEndian();
+									break;
 
-								case DataProperty.NX: data.normals[i].x = reader.ReadSingleBigEndian(); break;
-								case DataProperty.NY: data.normals[i].y = reader.ReadSingleBigEndian(); break;
-								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleBigEndian(); break;
-								
-								case DataProperty.R: r = reader.ReadByte(); break;
-								case DataProperty.G: g = reader.ReadByte(); break;
-								case DataProperty.B: b = reader.ReadByte(); break;
-								case DataProperty.A: a = reader.ReadByte(); break;
+								case DataProperty.NX:
+									data.Normals[i].x = reader.ReadSingleBigEndian();
+									break;
+								case DataProperty.NY:
+									data.Normals[i].y = reader.ReadSingleBigEndian();
+									break;
+								case DataProperty.NZ:
+									data.Normals[i].z = reader.ReadSingleBigEndian();
+									break;
 
-								case DataProperty.Data8: reader.Position += 1; break;
-								case DataProperty.Data16: reader.Position += 2; break;
-								case DataProperty.Data32: reader.Position += 4; break;
+								case DataProperty.R:
+									r = reader.ReadByte();
+									break;
+								case DataProperty.G:
+									g = reader.ReadByte();
+									break;
+								case DataProperty.B:
+									b = reader.ReadByte();
+									break;
+								case DataProperty.A:
+									a = reader.ReadByte();
+									break;
+
+								case DataProperty.Data8:
+									reader.Position += 1;
+									break;
+								case DataProperty.Data16:
+									reader.Position += 2;
+									break;
+								case DataProperty.Data32:
+									reader.Position += 4;
+									break;
 							}
 						}
 
-						data.colors[i].r = r;
-						data.colors[i].g = g;
-						data.colors[i].b = b;
-						data.colors[i].a = a;
+						data.Colors[i].r = r;
+						data.Colors[i].g = g;
+						data.Colors[i].b = b;
+						data.Colors[i].a = a;
 					}
+
 					break;
 
-				case PlyFormat.ASCII:
-					for (var i = 0; i < header.vertexCount; i++) {
-						for (int j = 0; j < header.properties.Count; ++j) {
-							switch (header.properties[j]) {
-								case DataProperty.X: data.vertices[i].x = reader.ReadSingleAscii(); break;
-								case DataProperty.Y: data.vertices[i].y = reader.ReadSingleAscii(); break;
-								case DataProperty.Z: data.vertices[i].z = reader.ReadSingleAscii(); break;
+				case PlyFormat.Ascii:
+					for (var i = 0; i < header.VertexCount; i++) {
+						for (int j = 0; j < header.Properties.Count; ++j) {
+							switch (header.Properties[j]) {
+								case DataProperty.X:
+									data.Vertices[i].x = reader.ReadSingleAscii();
+									break;
+								case DataProperty.Y:
+									data.Vertices[i].y = reader.ReadSingleAscii();
+									break;
+								case DataProperty.Z:
+									data.Vertices[i].z = reader.ReadSingleAscii();
+									break;
 
-								case DataProperty.NX: data.normals[i].x = reader.ReadSingleAscii(); break;
-								case DataProperty.NY: data.normals[i].y = reader.ReadSingleAscii(); break;
-								case DataProperty.NZ: data.normals[i].z = reader.ReadSingleAscii(); break;
-								
-								case DataProperty.R: r = reader.ReadByteAscii(); break;
-								case DataProperty.G: g = reader.ReadByteAscii(); break;
-								case DataProperty.B: b = reader.ReadByteAscii(); break;
-								case DataProperty.A: a = reader.ReadByteAscii(); break;
+								case DataProperty.NX:
+									data.Normals[i].x = reader.ReadSingleAscii();
+									break;
+								case DataProperty.NY:
+									data.Normals[i].y = reader.ReadSingleAscii();
+									break;
+								case DataProperty.NZ:
+									data.Normals[i].z = reader.ReadSingleAscii();
+									break;
 
-								case DataProperty.DataAscii: reader.AdvancePropertyAscii(); break;
+								case DataProperty.R:
+									r = reader.ReadByteAscii();
+									break;
+								case DataProperty.G:
+									g = reader.ReadByteAscii();
+									break;
+								case DataProperty.B:
+									b = reader.ReadByteAscii();
+									break;
+								case DataProperty.A:
+									a = reader.ReadByteAscii();
+									break;
+
+								case DataProperty.DataAscii:
+									reader.AdvancePropertyAscii();
+									break;
 							}
 						}
 
-						data.colors[i].r = r;
-						data.colors[i].g = g;
-						data.colors[i].b = b;
-						data.colors[i].a = a;
+						data.Colors[i].r = r;
+						data.Colors[i].g = g;
+						data.Colors[i].b = b;
+						data.Colors[i].a = a;
 					}
+
 					break;
 			}
 

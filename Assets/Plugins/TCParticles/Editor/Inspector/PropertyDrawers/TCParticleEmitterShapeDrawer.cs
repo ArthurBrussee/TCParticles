@@ -38,7 +38,7 @@ namespace TC.EditorIntegration {
 
 			PropField("shape", position);
 
-			EmitShapes s = (EmitShapes)GetProperty("shape").enumValueIndex;
+			EmitShapes s = (EmitShapes) GetProperty("shape").enumValueIndex;
 
 			switch (s) {
 				case EmitShapes.HemiSphere:
@@ -75,6 +75,7 @@ namespace TC.EditorIntegration {
 					if (GetProperty("texture").objectReferenceValue != null) {
 						PropField("uvChannel");
 					}
+
 					break;
 				case EmitShapes.PointCloud:
 					PropField("pointCloud");

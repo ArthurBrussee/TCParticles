@@ -6,14 +6,13 @@ namespace TC {
 	/// Holds values that can be set to a constant or a range
 	/// </summary>
 	[Serializable]
-	public class MinMax
-	{
-		public enum MinMaxMode
-		{
+	public class MinMax {
+		public enum MinMaxMode {
 			/// <summary>
 			/// Constant value
 			/// </summary>
 			Constant,
+
 			/// <summary>
 			/// Random value between <see cref="Min"/> and <see cref="Max"/>
 			/// </summary>
@@ -28,14 +27,11 @@ namespace TC {
 		/// <summary>
 		/// Current mode this MinMax property is in
 		/// </summary>
-		public MinMaxMode Mode
-		{
-			get { return modeProp; }
+		public MinMaxMode Mode {
+			get => modeProp;
 
-			set
-			{
-				if (IsConstant && value == MinMaxMode.Between)
-				{
+			set {
+				if (IsConstant && value == MinMaxMode.Between) {
 					minProp = valueProp;
 					maxProp = valueProp;
 				}
@@ -44,7 +40,6 @@ namespace TC {
 			}
 		}
 
-
 		/// <summary>
 		/// Minimum value of this property
 		/// </summary>
@@ -52,7 +47,7 @@ namespace TC {
 		/// In constant mode this returns the constant value
 		/// </remarks>
 		public float Min {
-			get { return IsConstant ? valueProp : minProp; }
+			get => IsConstant ? valueProp : minProp;
 			set {
 				if (IsConstant) {
 					valueProp = value;
@@ -69,7 +64,7 @@ namespace TC {
 		/// In constant mode this returns the constant value
 		/// </remarks>
 		public float Max {
-			get { return IsConstant ? valueProp : maxProp; }
+			get => IsConstant ? valueProp : maxProp;
 
 			set {
 				if (IsConstant) {
@@ -79,7 +74,6 @@ namespace TC {
 				maxProp = value;
 			}
 		}
-
 
 		/// <summary>
 		/// Constant value if IsConstant is true or overage of Min and Max otherwise.
@@ -109,10 +103,7 @@ namespace TC {
 		/// <summary>
 		/// Is this MinMax just a constant value
 		/// </summary>
-		public bool IsConstant {
-			get { return Mode == MinMaxMode.Constant; }
-		}
-
+		public bool IsConstant => Mode == MinMaxMode.Constant;
 
 		/// <summary>
 		/// Creates a new MinMax instance holding a constant value
@@ -164,13 +155,10 @@ namespace TC {
 
 		[SerializeField] MinMaxMode modeProp;
 
-
-		bool IsCurve {
-			get { return Mode == MinMaxMode.Curve || Mode == MinMaxMode.RandomBetweenCurves; }
-		}
+		bool IsCurve => Mode == MinMaxMode.Curve || Mode == MinMaxMode.RandomBetweenCurves;
 
 		public MinMaxMode Mode {
-			get { return modeProp; }
+			get => modeProp;
 
 			set {
 				if (IsConstant && (value == MinMaxMode.RandomBetween || value == MinMaxMode.RandomBetweenCurves)) {
@@ -183,7 +171,6 @@ namespace TC {
 				modeProp = value;
 			}
 		}
-
 
 		/// <summary>
 		/// Minium value at this time
@@ -237,8 +224,9 @@ namespace TC {
 			}
 
 			set {
-				if (IsCurve)
+				if (IsCurve) {
 					maxCurve.MoveKey(0, new Keyframe(0.0f, value));
+				}
 
 				maxProp = value;
 
@@ -279,9 +267,7 @@ namespace TC {
 		/// <summary>
 		/// Is the value a constant or a single curve
 		/// </summary>
-		public bool IsConstant {
-			get { return Mode == MinMaxMode.Constant || Mode == MinMaxMode.Curve; }
-		}
+		public bool IsConstant => Mode == MinMaxMode.Constant || Mode == MinMaxMode.Curve;
 
 		/// <summary>
 		/// Returns a new MinMaxRandom instance holding a constant value

@@ -37,8 +37,7 @@ namespace TC {
 			Count
 		}
 
-		const int ForceTypeKernelCount = (int)ForceTypeKernel.Count;
-
+		const int ForceTypeKernelCount = (int) ForceTypeKernel.Count;
 
 		[SerializeField] int _maxForces = 1;
 
@@ -49,25 +48,21 @@ namespace TC {
 		/// If the number of forces this system could link too exceeds this, the chosen forces are sorted by distance and size
 		/// </remarks>
 		public int MaxForces {
-			get { return _maxForces; }
-			set { _maxForces = value; }
+			get => _maxForces;
+			set => _maxForces = value;
 		}
 
 		/// <summary>
 		/// Maxinum number of forces particles react to
 		/// </summary>
-		public int NumForcesTotal {
-			get { return m_forcesList == null ? 0 : Mathf.Min(m_forcesList.Count, _maxForces); }
-		}
+		public int NumForcesTotal => m_forcesList == null ? 0 : Mathf.Min(m_forcesList.Count, _maxForces);
 
 		[SerializeField] List<TCForce> _baseForces = new List<TCForce>();
 
 		/// <summary>
 		/// A list of forces to link irregardles of distance or layer
 		/// </summary>
-		public List<TCForce> BaseForces {
-			get { return _baseForces; }
-		}
+		public List<TCForce> BaseForces => _baseForces;
 
 		/// <summary>
 		/// Enable/disable the use of boids flocking particles
@@ -92,7 +87,6 @@ namespace TC {
 		[Range(0.0f, 5.0f)]
 		public float boidsCenterStrength = 1.0f;
 
-
 		Comparison<TCForce> m_forceSort;
 		ComputeBuffer[] m_forcesBuffer;
 		TCParticlesBoidsFlock m_boidsFlock;
@@ -109,8 +103,8 @@ namespace TC {
 		/// On what layers to look for forces
 		/// </summary>
 		public LayerMask ForceLayers {
-			get { return _forceLayers; }
-			set { _forceLayers = value; }
+			get => _forceLayers;
+			set => _forceLayers = value;
 		}
 
 		void CreateBuffers() {
@@ -150,7 +144,7 @@ namespace TC {
 				return;
 			}
 
-			if (m_forcesBuffer[0] != null && m_forcesBuffer[0].count != MaxForces || (m_forcesBuffer[1] != null && m_forcesBuffer[1].count != MaxForces)) {
+			if (m_forcesBuffer[0] != null && m_forcesBuffer[0].count != MaxForces || m_forcesBuffer[1] != null && m_forcesBuffer[1].count != MaxForces) {
 				CreateBuffers();
 			}
 		}
@@ -183,7 +177,7 @@ namespace TC {
 					Vector3 forcePos = forceTransform.position;
 
 					curForce.type = (uint) force.forceType;
-					
+
 					curForce.axisX = forceTransform.right;
 					curForce.axisY = forceTransform.up;
 					curForce.axisZ = forceTransform.forward;
@@ -197,8 +191,7 @@ namespace TC {
 
 							if (force.radius.IsConstant) {
 								curForce.minRadius = -1.0f;
-							}
-							else {
+							} else {
 								curForce.minRadius = force.radius.Min * force.radius.Min;
 							}
 
@@ -208,13 +201,14 @@ namespace TC {
 							break;
 
 						case ForceShape.Capsule:
-							float xzScale = Mathf.Max(force.transform.localScale.x, force.transform.localScale.z);
-
-							float axisHeight = force.height / 2.0f * force.transform.localScale.y - force.radius.Max * xzScale;
+							var forceTrans = force.transform;
+							var forceScale = forceTrans.localScale;
+							float xzScale = Mathf.Max(forceScale.x, forceScale.z);
+							float axisHeight = force.height / 2.0f * forceScale.y - force.radius.Max * xzScale;
 							axisHeight = Mathf.Max(0, axisHeight);
-							curForce.boxSize = new Vector3(0.0f, axisHeight * force.transform.localScale.y, 0.0f);
+							curForce.boxSize = new Vector3(0.0f, axisHeight * forceScale.y, 0.0f);
 							curForce.radius = force.radius.Max;
-							curForce.enclosingRadius = curForce.radius + force.height / 2.0f * force.transform.localScale.y;
+							curForce.enclosingRadius = curForce.radius + force.height / 2.0f * forceScale.y;
 							curForce.vtype = 1;
 							break;
 
@@ -226,15 +220,15 @@ namespace TC {
 							curForce.vtype = 2;
 							curForce.attenuation = 0;
 							break;
-							
+
 						case ForceShape.Hemisphere:
 							curForce.radius = 0.1f;
 							curForce.boxSize = Vector3.Scale(new Vector3(force.radius.Max, force.radius.Max, force.radius.Max),
-							                                 force.transform.localScale);
+								force.transform.localScale);
 							curForce.enclosingRadius = force.radius.Max;
 							curForce.vtype = 3;
 							break;
-							
+
 						case ForceShape.Disc:
 							curForce.minRadius = -1.0f;
 							curForce.vtype = (uint) force.discType;
@@ -258,6 +252,7 @@ namespace TC {
 									curForce.vtype = 6;
 									break;
 							}
+
 							break;
 
 						case ForceShape.Constant:
@@ -269,17 +264,17 @@ namespace TC {
 					}
 
 					curForce.force = force.power * Manager.ParticleTimeDelta;
-					
+
 					switch (force.forceType) {
 						case ForceType.Vector:
 							if (force.forceDirection != Vector3.zero) {
 								if (force.forceDirectionSpace == TCForce.ForceSpace.World) {
 									curForce.axis = Vector3.Normalize(force.forceDirection);
-								}
-								else {
+								} else {
 									curForce.axis = force.transform.TransformDirection(Vector3.Normalize(force.forceDirection));
 								}
 							}
+
 							break;
 
 						case ForceType.Vortex:
@@ -299,8 +294,7 @@ namespace TC {
 
 					if (force.IsPrimaryForce) {
 						curForce.velocity = force.Velocity * force.InheritVelocity;
-					}
-					else {
+					} else {
 						curForce.velocity = Vector3.zero;
 					}
 
@@ -308,7 +302,7 @@ namespace TC {
 					curForce.turbulencePosFac = 1.0f - force.smoothness;
 
 					curForce.pos = forcePos;
-					
+
 					switch (Manager.SimulationSpace) {
 						case Space.Local:
 							curForce.pos = systTransform.InverseTransformPoint(curForce.pos);
@@ -316,7 +310,7 @@ namespace TC {
 							curForce.axisY = systTransform.InverseTransformDirection(curForce.axisY);
 							curForce.axisZ = systTransform.InverseTransformDirection(curForce.axisZ);
 							break;
-						
+
 						case Space.Parent:
 							curForce.pos = forcePos - parentPosition;
 							break;
@@ -335,7 +329,7 @@ namespace TC {
 
 			if (m_forcesList == null) {
 				m_forcesList = new List<TCForce>(32);
-			}else{
+			} else {
 				m_forcesList.Clear();
 			}
 
@@ -408,8 +402,6 @@ namespace TC {
 					Matrix4x4 rotation = Matrix4x4.TRS(Vector3.zero, force.transform.rotation, Vector3.one);
 					ComputeShader.SetMatrix(SID._TurbulenceRotation, rotation);
 					ComputeShader.SetMatrix(SID._TurbulenceRotationInv, rotation.inverse);
-
-					//TODO: Just bind one force?
 					ComputeShader.SetInt("turbulenceKernelOffset", k);
 
 					Manager.BindPariclesToKernel(ComputeShader, UpdateTurbulenceForcesKernel);
@@ -440,24 +432,21 @@ namespace TC {
 			switch (force.attenuationType) {
 				case AttenuationType.Linear:
 				case AttenuationType.EaseInOut:
-					projectedForce = projectedForce * (1.0f - dist / force.radius.Max * force.Attenuation);
+					projectedForce *= (1.0f - dist / force.radius.Max * force.Attenuation);
 					break;
-
 
 				case AttenuationType.Divide:
 					projectedForce = Mathf.Lerp(projectedForce, projectedForce / dist, force.Attenuation);
 					break;
 			}
 
-
-			var points = Mathf.Abs(projectedForce);
+			float points = Mathf.Abs(projectedForce);
 			return points;
 		}
 
-
-		internal override void OnDestroy() {
+		internal virtual void OnDestroy() {
 			for (int t = 0; t < ForceTypeKernelCount; ++t) {
-				if (m_forcesBuffer != null && m_forcesBuffer[t] != null){
+				if (m_forcesBuffer != null && m_forcesBuffer[t] != null) {
 					Release(ref m_forcesBuffer[t]);
 				}
 			}

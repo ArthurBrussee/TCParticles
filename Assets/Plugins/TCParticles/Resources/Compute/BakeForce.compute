@@ -103,10 +103,10 @@ float3 CalculateRidged(float3 pos) {
 
 float3 CalculateNoise(float3 pos) {
 	switch (_NoiseType) {
-	case NOISE_BILLOW:  return CalculateBillow(pos);
-	case NOISE_PERLIN:  return CalculatePerlin(pos);
-	case NOISE_RIDGED:  return CalculateRidged(pos);
-	default:			return 0;
+        case NOISE_BILLOW:  return CalculateBillow(pos);
+        case NOISE_PERLIN:  return CalculatePerlin(pos);
+        case NOISE_RIDGED:  return CalculateRidged(pos);
+        default:			return 0;
 	}
 }
 

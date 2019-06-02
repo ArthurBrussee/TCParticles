@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
-
 namespace TC {
 	/// <summary>
 	/// Class containing rendering settings for the TC Particle system
@@ -19,8 +18,8 @@ namespace TC {
 		/// Current material used by the renderer
 		/// </summary>
 		public Material Material {
-			get { return _material; }
-			set { _material = value; }
+			get => _material;
+			set => _material = value;
 		}
 
 		[SerializeField] GeometryRenderMode _renderMode;
@@ -29,8 +28,8 @@ namespace TC {
 		/// Render mode for the particles
 		/// </summary>
 		public GeometryRenderMode RenderMode {
-			get { return _renderMode; }
-			set { _renderMode = value; }
+			get => _renderMode;
+			set => _renderMode = value;
 		}
 
 		GeometryRenderMode m_prevRenderMode;
@@ -41,25 +40,27 @@ namespace TC {
 		/// Factor to strech out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBilloard
 		/// </summary>
 		public float LengthScale {
-			get { return _lengthScale; }
-			set { _lengthScale = value; }
+			get => _lengthScale;
+			set => _lengthScale = value;
 		}
 
 		[SerializeField] float _speedScale = 0.25f;
+
 		/// <summary>
 		/// Factor to strech out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBilloard bassed on the particles speed
 		/// </summary>
 		public float SpeedScale {
-			get { return _speedScale; }
-			set { _speedScale = value; }
+			get => _speedScale;
+			set => _speedScale = value;
 		}
 
 		[SerializeField] Mesh _mesh;
+
 		/// <summary>
 		/// Mesh used when <see cref="RenderMode"/> is set to Mesh
 		/// </summary>
 		public Mesh Mesh {
-			get { return _mesh; }
+			get => _mesh;
 			set {
 				_mesh = value;
 				BuildBuffer();
@@ -84,7 +85,7 @@ namespace TC {
 		/// Current gradient, used for color over speed/lifetime base on <see cref="colourGradientMode" />
 		/// </summary>
 		public Gradient ColorOverLifetime {
-			get { return _colourOverLifetime; }
+			get => _colourOverLifetime;
 			set {
 				_colourOverLifetime = value;
 				UpdateColourOverLifetime();
@@ -102,9 +103,7 @@ namespace TC {
 		public float glow;
 
 		Texture2D colorOverLifetimeTexture;
-		Color TintColor {
-			get { return _material.HasProperty("_TintColor") ? _material.GetColor("_TintColor") : Color.white; }
-		}
+		Color TintColor => _material.HasProperty("_TintColor") ? _material.GetColor("_TintColor") : Color.white;
 
 		Color curTintColor = Color.white;
 		[SerializeField] Bounds _bounds;
@@ -113,8 +112,8 @@ namespace TC {
 		/// Renderer bounds used for frustum culling when <see cref="UseFrustumCulling"/> is on.
 		/// </summary>
 		public Bounds Bounds {
-			get { return _bounds; }
-			set { _bounds = value; }
+			get => _bounds;
+			set => _bounds = value;
 		}
 
 		//TODO: Fix frustum culling
@@ -124,8 +123,8 @@ namespace TC {
 		/// Whether to use frustum culling
 		/// </summary>
 		public bool UseFrustumCulling {
-			get { return _useFrustumCulling; }
-			set { _useFrustumCulling = value; }
+			get => _useFrustumCulling;
+			set => _useFrustumCulling = value;
 		}
 
 		/// <summary>
@@ -148,12 +147,11 @@ namespace TC {
 		/// </summary>
 		[Range(0.02f, 0.75f)] public float cullSimulationDelta;
 
-
 		/// <summary>
 		/// Bind the point cloud data Normals as a buffer. WARNING: These normals are directly from the ply, and not stored in the particles.
 		/// </summary>
 		public bool pointCloudNormals;
-		
+
 		/// <summary>
 		/// Is the size specified for the particles in pixels
 		/// </summary>
@@ -187,7 +185,7 @@ namespace TC {
 		/// <summary>
 		/// Speed at which the system always plays sprite sheets. Useful for particles with infinite lifetime
 		/// </summary>
-		public float spriteSheetBasePlaySpeed = 0.0f;
+		public float spriteSheetBasePlaySpeed;
 
 		/// <summary>
 		/// Was this particle renderer visible last frame
@@ -198,7 +196,7 @@ namespace TC {
 		ComputeBuffer m_argsBuffer;
 
 		ComputeBuffer m_customNormalsBuffer;
-		
+
 		Mesh m_tailStretchMesh;
 		Mesh m_prevRenderModeMesh;
 
@@ -208,6 +206,7 @@ namespace TC {
 		static Plane[] s_planes = new Plane[6];
 
 		public delegate void OnSetMaterialCB(Material mat);
+
 		public OnSetMaterialCB OnSetMaterial;
 
 		public bool DoRender = true;
@@ -225,18 +224,34 @@ namespace TC {
 			BuildBuffer();
 
 			colorOverLifetimeTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true)
-			{wrapMode = TextureWrapMode.Clamp, anisoLevel = 0};
+				{wrapMode = TextureWrapMode.Clamp, anisoLevel = 0};
 			colorOverLifetimeTexture.hideFlags = HideFlags.HideAndDontSave;
 
 			UpdateColourOverLifetime();
 		}
 
+		static Color[] s_colours = new Color[c_dimSize];
+		const int c_dimSize = 128;
+
+		//Prodcues a texture of resolution of dimx1 encoding a gradient
+		public static void TextureFromGradient(Gradient gradient, Texture2D toSet, Color tint) {
+			if (toSet == null) {
+				return;
+			}
+
+			for (int i = 0; i < c_dimSize; ++i) {
+				s_colours[i] = gradient.Evaluate(i / (c_dimSize - 1.0f)) * tint;
+			}
+
+			toSet.SetPixels(s_colours);
+			toSet.Apply();
+		}
 
 		/// <summary>
 		/// Update the colour over lifetime texture. Should be called whenever changing the colour over lifetime gradient
 		/// </summary>
 		public void UpdateColourOverLifetime() {
-			TCHelper.TextureFromGradient(ColorOverLifetime, colorOverLifetimeTexture, TintColor);
+			TextureFromGradient(ColorOverLifetime, colorOverLifetimeTexture, TintColor);
 		}
 
 		void BuildBuffer() {
@@ -261,9 +276,9 @@ namespace TC {
 				m_tailStretchMesh.vertices = tailVerts;
 
 				//TODO: Triangles buffer ed. 4 Triangles
-				m_tailStretchMesh.uv = tailVerts.Select(v => (Vector2)v + new Vector2(0.5f, 0.5f)).ToArray();
+				m_tailStretchMesh.uv = tailVerts.Select(v => (Vector2) v + new Vector2(0.5f, 0.5f)).ToArray();
 				m_tailStretchMesh.uv2 = new[] {Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.one, Vector2.one};
-				m_tailStretchMesh.triangles = new[] { 0, 1, 2, 2, 1, 3, 4, 2, 3, 4, 3, 5 }.Reverse().ToArray();
+				m_tailStretchMesh.triangles = new[] {0, 1, 2, 2, 1, 3, 4, 2, 3, 4, 3, 5}.Reverse().ToArray();
 			}
 		}
 
@@ -300,7 +315,6 @@ namespace TC {
 			ToggleKeyword(keyword2, index == 2);
 		}
 
-		
 		void ChooseKeyword(string keyword0, string keyword1, int index) {
 			ToggleKeyword(keyword0, index == 0);
 			ToggleKeyword(keyword1, index == 1);
@@ -322,9 +336,8 @@ namespace TC {
 
 			m_cacheMaterial.CopyPropertiesFromMaterial(_material);
 
-
 			int index = -1;
-			
+
 			switch (RenderMode) {
 				case GeometryRenderMode.Billboard:
 					index = 0;
@@ -341,7 +354,7 @@ namespace TC {
 			}
 
 			ChooseKeyword("TC_BILLBOARD", "TC_BILLBOARD_STRETCHED", "TC_MESH", index);
-			
+
 			m_cacheMaterial.SetInt("_UvSpriteAnimation", spriteSheetAnimation ? 1 : 0);
 
 			//enable sprite uv animation keyword
@@ -351,7 +364,7 @@ namespace TC {
 				m_cacheMaterial.SetFloat(SID._SpriteSheetBaseSpeed, spriteSheetBasePlaySpeed);
 				m_cacheMaterial.SetFloat(SID._SpriteSheetRandomStart, spriteSheetRandomStart ? 1.0f : 0.0f);
 			}
-			
+
 			Color tint = TintColor;
 
 			if (tint != curTintColor) {
@@ -367,7 +380,7 @@ namespace TC {
 			                            cloud != null &&
 			                            cloud.Normals != null &&
 			                            Emitter.Shape == EmitShapes.PointCloud;
-			
+
 			if (usePointCloudNormals) {
 				if (m_customNormalsBuffer == null || m_customNormalsBuffer.count != cloud.PointCount) {
 					m_customNormalsBuffer = new ComputeBuffer(cloud.PointCount, 12);
@@ -376,6 +389,7 @@ namespace TC {
 
 				m_cacheMaterial.SetBuffer("_CustomNormalsBuffer", m_customNormalsBuffer);
 			}
+
 			ToggleKeyword("TC_CUSTOM_NORMAL_ORIENT", usePointCloudNormals);
 
 			m_cacheMaterial.SetTexture(SID._ColTex, colorOverLifetimeTexture);
@@ -463,7 +477,7 @@ namespace TC {
 
 			//TODO: How to do submeshes?
 			m_argsData[0] = m_particleMesh.GetIndexCount(0);
-			m_argsData[1] = (uint)SystemComp.ParticleCount;
+			m_argsData[1] = (uint) SystemComp.ParticleCount;
 			m_argsData[2] = 0;
 			m_argsData[3] = 0;
 			m_argsData[4] = 0;
@@ -475,9 +489,9 @@ namespace TC {
 				if (cam.orthographic) {
 					pixelMult *= cam.orthographicSize * 2.0f;
 				}
+
 				m_cacheMaterial.SetVector(SID._PixelMult, new Vector4(pixelMult, cam.orthographic ? 0.0f : 1.0f));
-			}
-			else {
+			} else {
 				m_cacheMaterial.SetVector(SID._PixelMult, new Vector4(1.0f, 0.0f));
 			}
 
@@ -487,7 +501,7 @@ namespace TC {
 			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, CastShadows, ReceiveShadows, layer, cam);
 		}
 
-		internal override void OnDestroy() {
+		internal void OnDestroy() {
 			ReleaseBuffers();
 			Object.DestroyImmediate(colorOverLifetimeTexture);
 		}

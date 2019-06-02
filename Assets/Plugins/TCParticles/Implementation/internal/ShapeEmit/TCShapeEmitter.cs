@@ -1,15 +1,13 @@
 ﻿using System;
+using System.Linq;
 using TC.Internal;
 using UnityEngine;
-using System.Linq;
-
 
 namespace TC {
 	/// <summary>
 	/// Emitter shape that can be linked to a particle system to emit efficiently from lots of sources
 	/// </summary>
-	[ExecuteInEditMode]
-	[AddComponentMenu("TC Particles/Shape Emitter")]
+	[ExecuteInEditMode, AddComponentMenu("TC Particles/Shape Emitter")]
 	public class TCShapeEmitter : MonoBehaviour, ITracked {
 		int m_index = -1;
 
@@ -17,10 +15,9 @@ namespace TC {
 		/// Unique index in Tracker list
 		/// </summary>
 		public int Index {
-			get { return m_index; }
-			set { m_index = value; }
+			get => m_index;
+			set => m_index = value;
 		}
-
 
 		/// <summary>
 		/// Holds all data about the curret emission shape
@@ -42,7 +39,6 @@ namespace TC {
 		/// </summary>
 		public bool Emit = true;
 
-
 		//TODO: Can we make this private?
 		[NonSerialized] public Vector3 PrevPos;
 		[NonSerialized] public Vector3 PrevSpeed;
@@ -53,14 +49,12 @@ namespace TC {
 		/// The emission tag used to link this shape emitter to some particle emtiter in the scene
 		/// </summary>
 		public TCShapeEmitTag Tag {
-			get { return m_tag; }
-			set { m_tag = value; }
+			get => m_tag;
+			set => m_tag = value;
 		}
 
 		bool m_firstEmit;
 		float m_femit;
-
-
 
 		void Awake() {
 			m_firstEmit = true;
@@ -86,13 +80,12 @@ namespace TC {
 			m_femit += particles;
 		}
 
-
 		/// <summary>
 		/// Emit a given amount of particles with some initial starting positions
 		/// </summary>
 		/// <param name="positions">Starting positions of particles</param>
 		public void BurstEmit(Vector3[] positions) {
-			BurstEmit(positions.Select(pos => new ParticleProto { Position = pos }).ToArray(), false, false, false);
+			BurstEmit(positions.Select(pos => new ParticleProto {Position = pos}).ToArray(), false, false, false);
 		}
 
 		/// <summary>
@@ -115,7 +108,6 @@ namespace TC {
 			ShapeData.SetPrototypeEmission(prototypes, count, useColor, useSize, useVelocity, usePosition);
 			m_femit += count;
 		}
-
 
 		/// <summary>
 		/// Whether this system links with a particular emit tag
@@ -143,7 +135,6 @@ namespace TC {
 				m_femit += delta.magnitude * EmissionRate;
 			}
 
-
 			int num = Mathf.FloorToInt(m_femit);
 			m_femit -= num;
 
@@ -160,6 +151,5 @@ namespace TC {
 				Gizmos.DrawWireCube(Vector3.zero, ShapeData.cubeSize);
 			}
 		}
-
 	}
 }

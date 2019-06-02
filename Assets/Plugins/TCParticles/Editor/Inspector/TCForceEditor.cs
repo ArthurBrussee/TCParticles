@@ -3,8 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace TC.EditorIntegration {
-	[CustomEditor(typeof(TCForce))]
-	[CanEditMultipleObjects]
+	[CustomEditor(typeof(TCForce)), CanEditMultipleObjects]
 	public class TCForceEditor : TCEdtiorBase<TCForce> {
 		TCForce m_forceTarget;
 		List<TCForce> m_forces;
@@ -19,6 +18,7 @@ namespace TC.EditorIntegration {
 			if (m_forceTarget != null) {
 				m_forces = new List<TCForce>(m_forceTarget.GetComponents<TCForce>());
 			}
+
 			m_primeForce = m_forces[0];
 			m_forces.RemoveAt(0);
 
@@ -54,6 +54,7 @@ namespace TC.EditorIntegration {
 							"Factor of velocity to carry over to the particle when it is inside the volume"));
 				}
 			}
+
 			m_openClose.ToggleAreaEnd("TC Force");
 
 			if (!m_primeForce.IsGlobalShape || m_forceTarget == m_primeForce) {
@@ -85,6 +86,7 @@ namespace TC.EditorIntegration {
 						PropField("discType", new GUIContent("Disc Type"));
 					}
 				}
+
 				m_openClose.ToggleAreaEnd("Force Shape");
 			}
 
@@ -145,11 +147,9 @@ namespace TC.EditorIntegration {
 						m_forceVisualize.PreviewSlice = slice;
 					}
 
-
 					if (GUI.changed) {
 						SceneView.RepaintAll();
 					}
-
 				}
 
 				if (type == (int) ForceType.TurbulenceTexture) {
@@ -180,7 +180,6 @@ namespace TC.EditorIntegration {
 					f.boxSize = TCDrawFunctions.CubeHandle(f.transform, f.boxSize);
 					break;
 
-
 				case ForceShape.Capsule:
 					float r = f.radius.IsConstant ? f.radius.Value : f.radius.Max;
 					Vector2 c = TCDrawFunctions.CapsuleHandle(f.transform, r, f.height);
@@ -190,16 +189,16 @@ namespace TC.EditorIntegration {
 					} else {
 						f.radius.Max = c.x;
 					}
+
 					f.height = c.y;
 					break;
 
 				case ForceShape.Disc:
 					float rmin = f.radius.IsConstant ? 0.0f : f.radius.Min;
 					float rmax = f.radius.Max;
-					float round;
 					TCDrawFunctions.DiscHandle(f.transform, rmin, rmax, f.discHeight, f.discRounding, (int) f.discType, out rmin,
 						out rmax,
-						out round);
+						out float round);
 					f.discRounding = round;
 					f.radius.Min = rmin;
 					f.radius.Max = rmax;

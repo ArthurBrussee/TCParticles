@@ -1,10 +1,8 @@
-using TC.Internal;
 using UnityEditor;
 using UnityEngine;
 
 namespace TC.EditorIntegration {
-	[CustomEditor(typeof(TCParticleSystem))]
-	[CanEditMultipleObjects]
+	[CustomEditor(typeof(TCParticleSystem)), CanEditMultipleObjects]
 	public class TCParticleSystemEditor : TCEdtiorBase<TCParticleSystem> {
 		[SerializeField] OpenClose m_tabGroup;
 
@@ -34,13 +32,9 @@ namespace TC.EditorIntegration {
 				GUILayout.BeginHorizontal();
 
 				ToolbarToggle("_manager.looping", new GUIContent("Loop", "Looping vs One shot"));
-				ToolbarToggle("_manager.playOnAwake",
-					new GUIContent("Play on awake", "Play when instantiated or play on script event"));
-				ToolbarToggle("_manager.prewarm",
-					new GUIContent("Prewarm", "Simulate particles on first frame to prevent startup issues"));
-				ToolbarToggle("_manager.m_noSimulation",
-					new GUIContent("No Simulation",
-						"Simulation on/off. Useful when driving particles from custom shader to save performance"));
+				ToolbarToggle("_manager.playOnAwake", new GUIContent("Play on awake", "Play when instantiated or play on script event"));
+				ToolbarToggle("_manager.prewarm", new GUIContent("Prewarm", "Simulate particles on first frame to prevent startup issues"));
+				ToolbarToggle("_manager.m_noSimulation", new GUIContent("No Simulation", "Simulation on/off. Useful when driving particles from custom shader to save performance"));
 
 				GUILayout.Space(10.0f);
 
@@ -61,9 +55,7 @@ namespace TC.EditorIntegration {
 
 				GUI.enabled = true;
 
-				PropField("_manager._maxParticles",
-					new GUIContent("Max particles",
-						"Maximum amount of particles the system has at any point in time. Keep low to increase performance"));
+				PropField("_manager._maxParticles", new GUIContent("Max particles", "Maximum amount of particles the system has at any point in time. Keep low to increase performance"));
 
 				Space();
 
@@ -76,8 +68,8 @@ namespace TC.EditorIntegration {
 						new GUIContent("Inherit Velocity", "Factor of movement from the system to be inherited for the particles"));
 				}
 			}
-			m_tabGroup.ToggleAreaEnd("Particle Manager");
 
+			m_tabGroup.ToggleAreaEnd("Particle Manager");
 
 			if (m_tabGroup.ToggleArea("Emission", new Color(0.8f, 1.0f, 0.8f))) {
 				PropField("_emitter.emit",
@@ -106,7 +98,6 @@ namespace TC.EditorIntegration {
 					GUILayout.Label("Particles", GUILayout.Width(width));
 					EditorGUILayout.EndHorizontal();
 
-
 					int del = -1;
 					for (int i = 0; i < bursts.arraySize; ++i) {
 						GUILayout.BeginHorizontal();
@@ -121,11 +112,13 @@ namespace TC.EditorIntegration {
 
 						GUILayout.EndHorizontal();
 					}
+
 					GUILayout.BeginHorizontal();
 					GUILayout.Space(103.0f + 2 * width);
 					if (GUILayout.Button("", "OL Plus", GUILayout.Width(24.0f))) {
 						bursts.InsertArrayElementAtIndex(bursts.arraySize);
 					}
+
 					GUILayout.EndHorizontal();
 
 					if (del != -1) {
@@ -139,11 +132,10 @@ namespace TC.EditorIntegration {
 				GUILayout.Label("Shape emission", EditorStyles.boldLabel);
 				PropField("_emitter.m_emitTag", new GUIContent("Emit Tag", "The tag to link with shape emitters"));
 			}
+
 			m_tabGroup.ToggleAreaEnd("Emission");
 
-
 			if (m_tabGroup.ToggleArea("Particles", new Color(0.0f, 0.8f, 1.0f))) {
-
 				if (sim) {
 					PropField("_emitter._energy", new GUIContent("Lifetime", "Amount of seconds particles can be alive"));
 
@@ -166,7 +158,6 @@ namespace TC.EditorIntegration {
 
 				Space();
 
-
 				PropField("_emitter._rotation", new GUIContent("Start Rotation", "The rotation a particle starts with"));
 
 				if (sim) {
@@ -174,11 +165,8 @@ namespace TC.EditorIntegration {
 						new GUIContent("Angular Velocity", "Degrees per second all particles rotate with"));
 				}
 
-
-
 				if (sim) {
 					GUILayout.Space(10.0f);
-
 
 					GUILayout.BeginHorizontal();
 					var mode = GetProperty("_particleRenderer.colourGradientMode");
@@ -197,17 +185,14 @@ namespace TC.EditorIntegration {
 
 					GUILayout.EndHorizontal();
 
-
 					if (mode.enumValueIndex != (int) ParticleColourGradientMode.OverLifetime) {
 						EditorGUILayout.PropertyField(GetProperty("_particleRenderer.maxSpeed"),
 							new GUIContent("Max Speed", "The speed where particles are colored like the end of the gradient"));
 					}
 				}
 			}
+
 			m_tabGroup.ToggleAreaEnd("Particles");
-
-
-
 
 			if (sim) {
 				if (m_tabGroup.ToggleArea("Forces", new Color(1.0f, 1.0f, 0.8f))) {
@@ -217,7 +202,6 @@ namespace TC.EditorIntegration {
 					var maxProp = GetProperty("_forcesManager._maxForces");
 
 					if (!maxProp.hasMultipleDifferentValues && maxProp.intValue != 0) {
-
 						PropField("_manager.gravityMultiplier",
 							new GUIContent("Gravity Multiplier",
 								"The amount of gravity (determined in physics settings) applied to the particles"));
@@ -226,11 +210,9 @@ namespace TC.EditorIntegration {
 								"A force that is constantly applied to the particles, accelerating them in one direction"));
 					}
 
-
 					EditorGUILayout.BeginHorizontal();
 					PropField("_forcesManager._forceLayers",
 						new GUIContent("Force Layers", "Layers to filter what forces can affect this system"));
-
 
 					if (Targets.Length == 1) {
 						if (GUILayout.Button("", "OL Plus", GUILayout.Width(20.0f))) {
@@ -240,10 +222,7 @@ namespace TC.EditorIntegration {
 
 					EditorGUILayout.EndHorizontal();
 
-
-
 					if (Targets.Length == 1) {
-
 						var forceManager = Targets[0].ForceManager;
 
 						int del = -1;
@@ -269,14 +248,11 @@ namespace TC.EditorIntegration {
 						forceManager.MaxForces = Mathf.Max(forceManager.MaxForces, forceManager.BaseForces.Count);
 					}
 
-
 					GUILayout.BeginHorizontal();
 					SerializedProperty curveProp = GetProperty("_manager.dampingIsCurve");
 					EditorGUILayout.PropertyField(
 						curveProp.boolValue ? GetProperty("_manager.dampingCurve") : GetProperty("_manager.damping"),
 						new GUIContent("Damping"));
-
-
 
 					curveProp.boolValue =
 						(DampingPopup)
@@ -284,11 +260,9 @@ namespace TC.EditorIntegration {
 							EditorStyles.toolbarPopup,
 							GUILayout.Width(15.0f)) == DampingPopup.Curve;
 
-
 					GUILayout.EndHorizontal();
 
 					PropField("_manager.MaxSpeed", new GUIContent("Max Speed", "The speed particles are clamped to. -1 for infinity"));
-
 
 					PropField("_forcesManager.useBoidsFlocking",
 						new GUIContent("Boids Flocking",
@@ -306,6 +280,7 @@ namespace TC.EditorIntegration {
 								"The strength at which particles are pushed to the position of the particle system"));
 					}
 				}
+
 				m_tabGroup.ToggleAreaEnd("Forces");
 
 				if (m_tabGroup.ToggleArea("Collision", new Color(1.0f, 0.8f, 1.0f))) {
@@ -316,7 +291,6 @@ namespace TC.EditorIntegration {
 					var maxProp = GetProperty("_colliderManager._maxColliders");
 
 					if (!maxProp.hasMultipleDifferentValues && maxProp.intValue != 0) {
-
 						PropField("_colliderManager.overrideBounciness", new GUIContent("Override Bounciness"));
 
 						if (GetProperty("_colliderManager.overrideBounciness").boolValue) {
@@ -333,7 +307,6 @@ namespace TC.EditorIntegration {
 
 						PropField("_colliderManager._particleThickness", new GUIContent("Particle Thickness"));
 					}
-
 
 					EditorGUILayout.BeginHorizontal();
 					PropField("_colliderManager._colliderLayers",
@@ -369,16 +342,14 @@ namespace TC.EditorIntegration {
 						}
 					}
 
-
-
 					foreach (var system in Targets) {
 						system.ColliderManager.MaxColliders = Mathf.Max(system.ColliderManager.MaxColliders,
 							system.ColliderManager.BaseColliders.Count);
 					}
 				}
+
 				m_tabGroup.ToggleAreaEnd("Collision");
 			}
-
 
 			if (m_tabGroup.ToggleArea("Renderer", new Color(0.8f, 1.0f, 1.0f))) {
 				PropField("_particleRenderer._material", new GUIContent("Material"));
@@ -406,6 +377,7 @@ namespace TC.EditorIntegration {
 							PropField("_particleRenderer.TailUv",
 								new GUIContent("Tail UV", "The UV Coordinate of the vertex where the particles begins to stretch"));
 						}
+
 						break;
 				}
 
@@ -420,7 +392,6 @@ namespace TC.EditorIntegration {
 					}
 				}
 
-
 				if (sim) {
 					if (GetProperty("_particleRenderer.spriteSheetAnimation").boolValue) {
 						PropField("_particleRenderer.spriteSheetColumns",
@@ -431,7 +402,6 @@ namespace TC.EditorIntegration {
 
 						PropField("_particleRenderer.spriteSheetBasePlaySpeed",
 							new GUIContent("Base Play Speed", "Base speed sprite sheet animation plays at. Useful for particles that life infinitely"));
-
 
 						PropField("_particleRenderer.spriteSheetRandomStart",
 							new GUIContent("Random Start", "Should the sprite sheet start playing at a random point in the sprite sheet?"));
@@ -461,12 +431,12 @@ namespace TC.EditorIntegration {
 					}
 				}
 			}
+
 			m_tabGroup.ToggleAreaEnd("Renderer");
 
-
-
 			if (sim) {
-				foreach (TCParticleSystem t in targets) {
+				foreach (var o in targets) {
+					var t = (TCParticleSystem) o;
 					t.ParticleRenderer.UpdateColourOverLifetime();
 					t.Emitter.UpdateSizeOverLifetime();
 				}

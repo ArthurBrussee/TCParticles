@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using TC.Internal;
 using UnityEngine;
@@ -9,7 +10,7 @@ using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace TC.Internal {
-	// ReSharper disable NotAccessedField.Local
+	[SuppressMessage("ReSharper", "NotAccessedField.Global")]
 	public struct ParticleEmitterData {
 		public Vector3 Pos;
 		public Vector3 Vel;
@@ -23,17 +24,25 @@ namespace TC.Internal {
 
 		public float RotationMin;
 		public float RotationMax;
+
 		public uint Shape;
+
 		//General parameters
 		public float RadiusMax;
+
 		public float RadiusMin;
+
 		//BOX
 		public Vector3 CubeSize;
+
 		//CONE
 		public float ConeHeight;
+
 		public Vector3 ConePointUnder;
+
 		//LINE
 		public float LineLength;
+
 		//MESH
 		public uint MeshVertLen;
 		public uint VelType;
@@ -43,8 +52,7 @@ namespace TC.Internal {
 		public uint Time;
 		public Vector3 Scale;
 		public uint OnSurface;
-	};
-	// ReSharper restore NotAccessedField.Local
+	}
 }
 
 namespace TC {
@@ -59,31 +67,29 @@ namespace TC {
 		/// The current shape of the emitter - read only
 		/// </summary>
 		public EmitShapes Shape {
-			get { return pes.shape; }
-			set { pes.shape = value; }
+			get => pes.shape;
+			set => pes.shape = value;
 		}
 
 		/// <summary>
 		/// Radius of the emitting sphere used when <see cref="Shape"/> is <see cref="EmitShapes.HemiSphere" />
 		/// </summary>
-		public MinMax Radius {
-			get { return pes.radius; }
-		}
+		public MinMax Radius => pes.radius;
 
 		/// <summary>
 		/// Cube size of the emitting cube when <see cref="Shape"/> is <see cref="EmitShapes.Box" />
 		/// </summary>
 		public Vector3 CubeSize {
-			get { return pes.cubeSize; }
-			set { pes.cubeSize = value; }
+			get => pes.cubeSize;
+			set => pes.cubeSize = value;
 		}
 
 		/// <summary>
 		/// The mesh shape of the emitter
 		/// </summary>
 		public Mesh EmitMesh {
-			get { return pes.emitMesh; }
-			set { pes.emitMesh = value; }
+			get => pes.emitMesh;
+			set => pes.emitMesh = value;
 		}
 
 		/// <summary>
@@ -104,85 +110,79 @@ namespace TC {
 		/// The mesh shape of the emitter
 		/// </summary>
 		public Texture MeshTexture {
-			get { return pes.texture; }
-			set { pes.texture = value; }
+			get => pes.texture;
+			set => pes.texture = value;
 		}
 
 		/// <summary>
 		/// Angle of the cone when <see cref="Shape"/> is <see cref="EmitShapes.Cone" />
 		/// </summary>
 		public float ConeAngle {
-			get { return pes.coneAngle; }
-			set { pes.coneAngle = value; }
+			get => pes.coneAngle;
+			set => pes.coneAngle = value;
 		}
 
 		/// <summary>
 		/// Height of the cone when <see cref="Shape"/> is <see cref="EmitShapes.Cone" />
 		/// </summary>
 		public float ConeHeight {
-			get { return pes.coneHeight; }
-			set { pes.coneHeight = value; }
+			get => pes.coneHeight;
+			set => pes.coneHeight = value;
 		}
 
 		/// <summary>
 		/// Radius of the cone when <see cref="Shape"/> is <see cref="EmitShapes.Cone" />
 		/// </summary>
 		public float ConeRadius {
-			get { return pes.coneRadius; }
-			set { pes.coneRadius = value; }
+			get => pes.coneRadius;
+			set => pes.coneRadius = value;
 		}
 
 		/// <summary>
 		/// Outer radius of the ring when <see cref="Shape"/> is <see cref="EmitShapes.Ring" />
 		/// </summary>
 		public float RingOuterRadius {
-			get { return pes.ringOuterRadius; }
-			set { pes.ringOuterRadius = value; }
+			get => pes.ringOuterRadius;
+			set => pes.ringOuterRadius = value;
 		}
 
 		/// <summary>
 		/// Radius of the ring when <see cref="Shape"/> is <see cref="EmitShapes.Ring" />
 		/// </summary>
 		public float RingRadius {
-			get { return pes.ringRadius; }
-			set { pes.ringRadius = value; }
+			get => pes.ringRadius;
+			set => pes.ringRadius = value;
 		}
 
 		/// <summary>
 		/// The length of the line particles emit from when <see cref="Shape"/> is <see cref="EmitShapes.Line" />
 		/// </summary>
 		public float LineLength {
-			get { return pes.lineLength; }
-			set { pes.lineLength = value; }
+			get => pes.lineLength;
+			set => pes.lineLength = value;
 		}
-
 
 		[SerializeField] MinMaxRandom _speed = MinMaxRandom.Constant(3.0f);
 
 		/// <summary>
 		/// Start speed of a particle in the particle's start direction
 		/// </summary>
-		public MinMaxRandom Speed {
-			get { return _speed; }
-		}
+		public MinMaxRandom Speed => _speed;
 
 		[SerializeField] MinMaxRandom _energy = MinMaxRandom.Constant(3.0f);
-
 
 		/// <summary>
 		/// Time a particle can be alive. Measured in seconds
 		/// </summary>
 		[Obsolete("Obsolete: Use Lifetime instead.")]
-		public MinMaxRandom Energy {
-			get { return _energy; }
-		}
+		public MinMaxRandom Energy => _energy;
 
 		/// <summary>
 		/// Time a particle can be alive. Measured in seconds
 		/// </summary>
 		public MinMaxRandom Lifetime {
-			get { return _energy; }
-			set { _energy = value; }
+			get => _energy;
+			set => _energy = value;
 		}
 
 		[SerializeField] MinMaxRandom _size = MinMaxRandom.Constant(0.5f);
@@ -191,19 +191,16 @@ namespace TC {
 		/// Starting size of the particle
 		/// </summary>
 		public MinMaxRandom Size {
-			get { return _size; }
-			set { _size = value; }
+			get => _size;
+			set => _size = value;
 		}
 
 		[SerializeField] MinMaxRandom _rotation = MinMaxRandom.Constant(0.0f);
 
-
 		/// <summary>
 		/// Start rotation of a particle
 		/// </summary>
-		public MinMaxRandom Rotation {
-			get { return _rotation; }
-		}
+		public MinMaxRandom Rotation => _rotation;
 
 		[SerializeField] float _angularVelocity;
 
@@ -211,8 +208,8 @@ namespace TC {
 		/// Angular velocity of a particle (degrees per second)
 		/// </summary>
 		public float AngularVelocity {
-			get { return _angularVelocity; }
-			set { _angularVelocity = value; }
+			get => _angularVelocity;
+			set => _angularVelocity = value;
 		}
 
 		[SerializeField] Vector3Curve _constantForce = Vector3Curve.Zero();
@@ -221,8 +218,8 @@ namespace TC {
 		/// Constant force on the particle system. The force is in world space
 		/// </summary>
 		public Vector3Curve ConstantForce {
-			get { return _constantForce; }
-			set { _constantForce = value; }
+			get => _constantForce;
+			set => _constantForce = value;
 		}
 
 		[SerializeField] float _emissionRate = 100.0f;
@@ -231,8 +228,8 @@ namespace TC {
 		/// Number of particles emitted per seond or per unit depending on the <see cref="EmissionType"/>
 		/// </summary>
 		public float EmissionRate {
-			get { return _emissionRate; }
-			set { _emissionRate = value; }
+			get => _emissionRate;
+			set => _emissionRate = value;
 		}
 
 		/// <summary>
@@ -243,6 +240,7 @@ namespace TC {
 			/// Emit set number of particles per second
 			/// </summary>
 			PerSecond,
+
 			/// <summary>
 			/// Emit set number of particles per unit
 			/// </summary>
@@ -255,8 +253,8 @@ namespace TC {
 		/// Method of emission (per second or per unit)
 		/// </summary>
 		public EmissionMethod EmissionType {
-			get { return m_emissionType; }
-			set { m_emissionType = value; }
+			get => m_emissionType;
+			set => m_emissionType = value;
 		}
 
 		[SerializeField] AnimationCurve _sizeOverLifetime = AnimationCurve.Linear(0.0f, 1.0f, 1.0f, 1.0f);
@@ -265,7 +263,7 @@ namespace TC {
 		/// Size over lifetime curve. Call UpdateSizeOverLifetime when changed. Clamped between [0-1]
 		/// </summary>
 		public AnimationCurve SizeOverLifetime {
-			get { return _sizeOverLifetime; }
+			get => _sizeOverLifetime;
 			set {
 				_sizeOverLifetime = value;
 				UpdateSizeOverLifetime();
@@ -276,7 +274,7 @@ namespace TC {
 		/// The first value of size over lifetime
 		/// </summary>
 		public float StartSizeMultiplier {
-			get { return _sizeOverLifetime.Evaluate(0.0f); }
+			get => _sizeOverLifetime.Evaluate(0.0f);
 
 			set {
 				_sizeOverLifetime.MoveKey(0, new Keyframe(0.0f, value));
@@ -291,7 +289,7 @@ namespace TC {
 		/// Velocity over lifetime. Call <see cref="UpdateVelocityOverLifetime"/> when changed. 
 		/// </summary>
 		public Vector3Curve VelocityOverLifetime {
-			get { return _velocityOverLifetime; }
+			get => _velocityOverLifetime;
 			set {
 				_velocityOverLifetime = value;
 				UpdateVelocityOverLifetime();
@@ -306,79 +304,71 @@ namespace TC {
 		/// Should particles be emitted currently?
 		/// </summary>
 		public bool DoEmit {
-			get { return emit; }
-			set { emit = value; }
+			get => emit;
+			set => emit = value;
 		}
 
 		/// <summary>
 		/// The colour of the particles when they are emitted
 		/// </summary>
-		public Color StartColor {
-			get { return Renderer.ColorOverLifetime.Evaluate(0.0f); }
-		}
+		public Color StartColor => Renderer.ColorOverLifetime.Evaluate(0.0f);
 
-		[SerializeField] [Range(0.0f, 1.0f)] float _inheritVelocity;
+		[SerializeField, Range(0.0f, 1.0f)] float _inheritVelocity;
 
 		/// <summary>
 		/// How much of the emitter's velocity should be inherited
 		/// </summary>
 		public float InheritVelocity {
-			get { return _inheritVelocity; }
-			set { _inheritVelocity = value; }
+			get => _inheritVelocity;
+			set => _inheritVelocity = value;
 		}
 
 		/// <summary>
 		/// How should the particle choose direction it should start in 
 		/// </summary>
 		public StartDirection StartDirectionType {
-			get { return pes.startDirectionType; }
-			set { pes.startDirectionType = value; }
+			get => pes.startDirectionType;
+			set => pes.startDirectionType = value;
 		}
 
 		/// <summary>
 		/// starting direciton of particles when <see cref="StartDirectionType"/> is <see cref="StartDirection.Vector"/>
 		/// </summary>
 		public Vector3 StartDirectionVector {
-			get { return pes.startDirectionVector; }
-			set { pes.startDirectionVector = value; }
+			get => pes.startDirectionVector;
+			set => pes.startDirectionVector = value;
 		}
 
 		///<summay>
 		/// Random angle of the starting direction (applies to <see cref="StartDirection.Vector"/> and <see cref="StartDirection.Normal"/>)
 		/// </summay>
 		public float StartDirectionRandomAngle {
-			get { return pes.startDirectionRandomAngle; }
-			set { pes.startDirectionRandomAngle = value; }
+			get => pes.startDirectionRandomAngle;
+			set => pes.startDirectionRandomAngle = value;
 		}
 
-		public EmitShapes EmitShape { get { return pes.shape; } set { pes.shape = value; } }
+		public EmitShapes EmitShape {
+			get => pes.shape;
+			set => pes.shape = value;
+		}
 
 		/// <summary>
 		/// Holds all data about the curret emission shape
 		/// </summary>
-		public ParticleEmitterShape ShapeData {
-			get { return pes; }
-		}
-
+		public ParticleEmitterShape ShapeData => pes;
 
 		/// <summary>
 		/// The current baked texture used for size over lifetime
 		/// RGB = velocity. Alpha = size
 		/// </summary>
-		public Texture2D LifetimeTexture {
-			get { return m_lifetimeTexture; }
-		}
+		public Texture2D LifetimeTexture => m_lifetimeTexture;
 
 		bool m_doSizeOverLifetime;
 
 		/// <summary>
 		/// Is size over lifetime used
 		/// </summary>
-		public bool DoSizeOverLifetime {
-			get { return m_doSizeOverLifetime; }
-
-		}
-
+		public bool DoSizeOverLifetime => m_doSizeOverLifetime;
 
 		/// <summary>
 		/// Current (approximate) particle count
@@ -400,19 +390,22 @@ namespace TC {
 		[SerializeField] TCShapeEmitTag m_emitTag;
 		[SerializeField] List<Burst> bursts = new List<Burst>();
 
-		public void SetBursts(BurstEmission[] bursts) {
-			this.bursts = bursts.Select(b => new Burst { time = b.Time, amount = b.Amount }).ToList();
+		public void SetBursts(BurstEmission[] setBursts) {
+			bursts = setBursts.Select(b => new Burst {time = b.Time, amount = b.Amount}).ToList();
 		}
 
 		/// <summary>
 		/// The emission tag used to link this emitter to the right shape emitters in the scene
 		/// </summary>
 		public TCShapeEmitTag Tag {
-			get { return m_emitTag; }
-			set { m_emitTag = value; }
+			get => m_emitTag;
+			set => m_emitTag = value;
 		}
 
-		public PointCloudData PointCloud { get { return pes.pointCloud; } set { pes.pointCloud = value; } }
+		public PointCloudData PointCloud {
+			get => pes.pointCloud;
+			set => pes.pointCloud = value;
+		}
 
 		//Bursts sequences
 		[Serializable]
@@ -430,7 +423,6 @@ namespace TC {
 		}
 
 		BindSettings m_currentEmitBind;
-
 
 		ParticleEmitterData[] m_emitSet;
 
@@ -554,6 +546,7 @@ namespace TC {
 						ComputeShader.SetMatrix(SID._EmitterMatrix, Matrix4x4.TRS(Vector3.zero, rot2, localScale));
 						ComputeShader.SetMatrix(SID._EmitterRotationMatrix, Matrix4x4.TRS(Vector3.zero, rot2, Vector3.one));
 					}
+
 					break;
 			}
 
@@ -607,8 +600,9 @@ namespace TC {
 
 		internal void Update() {
 			if (Manager.ParticleTimeDelta > 0.0f) {
-				m_velocity = (SystemComp.transform.position - m_prevPosition) / Manager.ParticleTimeDelta;
-				m_prevPosition = SystemComp.transform.position;
+				var position = SystemComp.transform.position;
+				m_velocity = (position - m_prevPosition) / Manager.ParticleTimeDelta;
+				m_prevPosition = position;
 			}
 		}
 
@@ -621,7 +615,6 @@ namespace TC {
 		internal void UpdateForDispatch() {
 			var realTime = Manager.RealTime;
 
-
 			while (m_burstsDone.Count > 0) {
 				var nextTime = m_burstsDone.Peek();
 
@@ -629,8 +622,7 @@ namespace TC {
 					Offset += nextTime.amount;
 					ParticleCount -= nextTime.amount;
 					m_burstsDone.Dequeue();
-				}
-				else {
+				} else {
 					break;
 				}
 			}
@@ -644,8 +636,7 @@ namespace TC {
 			if (emit) {
 				if (m_emissionType == EmissionMethod.PerSecond) {
 					m_femit += Manager.ParticleTimeDelta * EmissionRate;
-				}
-				else {
+				} else {
 					Vector3 pos = GetEmitPos(SystemComp, SystemComp.transform);
 					Vector3 delta = pos - m_emitPrevPos;
 					m_femit += delta.magnitude * EmissionRate;
@@ -682,7 +673,6 @@ namespace TC {
 						continue;
 					}
 
-
 					//Set local data
 					EmitSetInternal(count, emitter.ShapeData, emitter.transform, ref emitter.PrevPos, ref emitter.PrevSpeed);
 				}
@@ -710,13 +700,12 @@ namespace TC {
 			ParticleCount = 0;
 		}
 
-
 		/// <summary>
 		/// Emit a given amount of particles with some initial starting positions
 		/// </summary>
 		/// <param name="positions">Starting positions of particles</param>
 		public void Emit(Vector3[] positions) {
-			Emit(positions.Select(pos => new ParticleProto { Position = pos}).ToArray(), false, false, false);
+			Emit(positions.Select(pos => new ParticleProto {Position = pos}).ToArray(), false, false, false);
 		}
 
 		/// <summary>
@@ -775,8 +764,8 @@ namespace TC {
 			emitter.RotationMax = Rotation.Max * Mathf.Deg2Rad;
 			emitter.RotationMin = Rotation.Min * Mathf.Deg2Rad;
 			emitter.StartSpeed = m_velocity * InheritVelocity;
-			emitter.Time = (uint)Random.Range(0, Manager.MaxParticles);
-			emitter.Shape = (uint)emitShape.shape;
+			emitter.Time = (uint) Random.Range(0, Manager.MaxParticles);
+			emitter.Shape = (uint) emitShape.shape;
 
 			//Bind default
 			ComputeShader.SetTexture(EmitKernel, "_MeshTexture", Texture2D.whiteTexture);
@@ -789,7 +778,6 @@ namespace TC {
 						: Mathf.Max(Mathf.Min(emitShape.radius.Min, emitShape.radius.Max), 0.0f);
 					emitter.RadiusMax = emitShape.radius.Max;
 					break;
-
 
 				case EmitShapes.Box:
 					emitter.CubeSize = emitShape.cubeSize * 0.5f;
@@ -832,7 +820,7 @@ namespace TC {
 			}
 
 			pes.UpdateListData(ComputeShader, EmitKernel);
-			emitter.VelType = (uint)emitShape.startDirectionType;
+			emitter.VelType = (uint) emitShape.startDirectionType;
 			emitter.RandomAngle = Mathf.Cos(emitShape.startDirectionRandomAngle * Mathf.Deg2Rad);
 
 			var localScale = trans.localScale;
@@ -852,10 +840,10 @@ namespace TC {
 			m_emitSet[0] = emitter;
 			m_emitBuffer.SetData(m_emitSet);
 
-
 			if (OnEmissionBind != null) {
 				OnEmissionBind(ComputeShader, EmitKernel);
 			}
+
 			Profiler.EndSample();
 
 			Profiler.BeginSample("Emit now");
@@ -881,8 +869,8 @@ namespace TC {
 		}
 
 		public delegate void EmissionCallbackCB(int emittedCount);
-		public EmissionCallbackCB OnEmissionCallback;
 
+		public EmissionCallbackCB OnEmissionCallback;
 
 		/// <summary>
 		/// Launch a compute shader kernel with a thread for each newly emitted particle. Should be used in <see cref="OnEmissionCallback"/>
@@ -901,7 +889,7 @@ namespace TC {
 			uint x, y, z;
 			cs.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
 
-			int dispatch = Mathf.CeilToInt(m_currentEmitBind.Count / (float)x);
+			int dispatch = Mathf.CeilToInt(m_currentEmitBind.Count / (float) x);
 
 			Manager.BindPariclesToKernel(cs, EmitKernel);
 			cs.SetInt(SID._BufferOffset, m_currentEmitBind.Offset);
@@ -910,7 +898,7 @@ namespace TC {
 			cs.Dispatch(kernel, dispatch, 1, 1);
 		}
 
-		internal override void OnDestroy() {
+		internal virtual void OnDestroy() {
 			Release(ref m_emitBuffer);
 
 			if (m_dummyBuffer != null) {

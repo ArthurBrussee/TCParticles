@@ -7,8 +7,7 @@ namespace TC {
 	/// <summary>
 	/// Component to create a force that influences particle systems
 	/// </summary>
-	[AddComponentMenu("TC Particles/Force")]
-	[ExecuteInEditMode]
+	[AddComponentMenu("TC Particles/Force"), ExecuteInEditMode]
 	public class TCForce : MonoBehaviour, ITracked {
 		int m_index = -1;
 
@@ -16,8 +15,8 @@ namespace TC {
 		/// Unique index in Tracker list
 		/// </summary>
 		public int Index {
-			get { return m_index; }
-			set { m_index = value; }
+			get => m_index;
+			set => m_index = value;
 		}
 
 		///<summary>
@@ -55,14 +54,14 @@ namespace TC {
 		/// </summary>
 		public float power = 1.0f;
 
-		[Range(0, 1)] [SerializeField] float _attenuation = 1.0f;
+		[Range(0, 1), SerializeField]  float _attenuation = 1.0f;
 
 		/// <summary>
 		/// amount this force fades from the center point to the radius ([0...1])
 		/// </summary>
 		public float Attenuation {
-			get { return _attenuation; }
-			set { _attenuation = Mathf.Clamp01(value); }
+			get => _attenuation;
+			set => _attenuation = Mathf.Clamp01(value);
 		}
 
 		/// <summary>
@@ -83,7 +82,7 @@ namespace TC {
 			/// Localspace coordinates
 			/// </summary>
 			Local
-		};
+		}
 
 		/// <summary>
 		/// The space to use for the force direction (world / local)
@@ -115,31 +114,26 @@ namespace TC {
 		/// </summary>
 		public DiscType discType;
 
-		[SerializeField] bool globalShape = false;
+		[SerializeField] bool globalShape;
 
 		/// <summary>
 		/// Is this force shape global for all attached forces?
 		/// </summary>
-		public bool IsGlobalShape {
-			get { return globalShape; }
-		}
+		public bool IsGlobalShape => globalShape;
 
 		/// <summary>
 		/// Is this force the primary force attached? (first one in the component order)
 		/// </summary>
-		public bool IsPrimaryForce {
-			get { return GetComponent<TCForce>() == this; }
-		}
+		public bool IsPrimaryForce => GetComponent<TCForce>() == this;
 
-
-		[Range(0, 1)] [SerializeField] float _inheritVelocity;
+		[Range(0, 1), SerializeField]  float _inheritVelocity;
 
 		/// <summary>
 		/// How much of the force's velocity should be inherited
 		/// </summary>
 		public float InheritVelocity {
-			get { return _inheritVelocity; }
-			set { _inheritVelocity = Mathf.Clamp(value, 0.0f, 1.0f); }
+			get => _inheritVelocity;
+			set => _inheritVelocity = Mathf.Clamp(value, 0.0f, 1.0f);
 		}
 
 		/// <summary>
@@ -151,7 +145,7 @@ namespace TC {
 					return m_rigidbody.velocity;
 				}
 
-				return (transform.position - m_lastPos);
+				return transform.position - m_lastPos;
 			}
 		}
 
@@ -220,6 +214,7 @@ namespace TC {
 		/// The type of the noise when <see cref="forceType"/> is <see cref="ForceType.Turbulence"/>
 		/// </summary>
 		public NoiseType noiseType;
+
 		NoiseType m_prevType;
 
 		bool Changed(float cur, ref float prev) {
@@ -227,6 +222,7 @@ namespace TC {
 				prev = cur;
 				return true;
 			}
+
 			return false;
 		}
 
@@ -235,6 +231,7 @@ namespace TC {
 				prev = cur;
 				return true;
 			}
+
 			return false;
 		}
 
@@ -243,6 +240,7 @@ namespace TC {
 				prev = cur;
 				return true;
 			}
+
 			return false;
 		}
 
@@ -251,6 +249,7 @@ namespace TC {
 				prev = cur;
 				return true;
 			}
+
 			return false;
 		}
 
@@ -259,7 +258,6 @@ namespace TC {
 		/// </summary>
 		public Texture CurrentForceVolume {
 			get {
-
 				if (forceType == ForceType.Turbulence) {
 					//Don't short circuit or! Make sure all prevs are set
 					if (Changed(resolution, ref m_prevResolution) |
@@ -276,11 +274,9 @@ namespace TC {
 					return m_forceBaked;
 				}
 
-
 				return forceTexture;
 			}
 		}
-
 
 		Vector3 m_lastPos;
 		Rigidbody m_rigidbody;
@@ -305,6 +301,7 @@ namespace TC {
 					discType = forces[0].discType;
 				}
 			}
+
 			m_rigidbody = GetComponent<Rigidbody>();
 		}
 
@@ -380,7 +377,7 @@ namespace TC {
 		}
 
 		bool IsPowerOfTwo(int x) {
-			return (x != 0) && ((x & (x - 1)) == 0);
+			return x != 0 && (x & (x - 1)) == 0;
 		}
 
 		/// <summary>

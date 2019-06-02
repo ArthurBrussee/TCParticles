@@ -1,15 +1,16 @@
 using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace TC.Internal {
 	[Serializable]
 	public class ParticleComponent {
-		protected ParticleColliderManager ColliderManager { get { return SystemComp.ColliderManager; } }
-		protected ParticleEmitter Emitter { get { return SystemComp.Emitter; } }
-		protected ParticleForceManager ForceManager { get { return SystemComp.ForceManager; } }
-		protected ParticleRenderer Renderer { get { return SystemComp.ParticleRenderer; } }
-		protected ParticleManager Manager { get { return SystemComp.Manager; } }
+		protected ParticleColliderManager ColliderManager => SystemComp.ColliderManager;
+		protected ParticleEmitter Emitter => SystemComp.Emitter;
+		protected ParticleForceManager ForceManager => SystemComp.ForceManager;
+		protected ParticleRenderer Renderer => SystemComp.ParticleRenderer;
+		protected ParticleManager Manager => SystemComp.Manager;
 
 		protected TCParticleSystem SystemComp;
 
@@ -25,21 +26,7 @@ namespace TC.Internal {
 		protected const int ColliderStride = 96;
 		protected const int ForcesStride = 124;
 
-		/*
-			float3 pos;
-			float rotation;
-
-			float3 velocity;
-			float baseSize;
-
-			float life;
-			uint color;
-
-			float random;
-			float pad;
-		*/
-
-		public const int ParticleStride = 4 * (3 + 1 + 3 + 1 + 1 + 1 + 1 + 1);
+		protected const int ParticleStride = 4 * (3 + 1 + 3 + 1 + 1 + 1 + 1 + 1);
 
 		protected float SimulationDeltTime;
 
@@ -49,14 +36,15 @@ namespace TC.Internal {
 
 		protected Vector3 ParentPosition {
 			get {
-				if (SystemComp.transform.parent == null) return Vector3.zero;
+				if (SystemComp.transform.parent == null) {
+					return Vector3.zero;
+				}
+
 				return SystemComp.transform.parent.position;
 			}
 		}
 
-		float CurTime {
-			get { return Application.isPlaying ? Time.time : Time.realtimeSinceStartup; }
-		}
+		float CurTime => Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
 
 		protected bool ShouldUpdate() {
 			bool culled = Renderer.UseFrustumCulling && !Renderer.isVisible;
@@ -86,7 +74,7 @@ namespace TC.Internal {
 		}
 
 		public static int SizeOf<T>() {
-			return System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
+			return Marshal.SizeOf(typeof(T));
 		}
 
 		internal void Awake(TCParticleSystem comp) {
@@ -107,17 +95,19 @@ namespace TC.Internal {
 			Initialize();
 		}
 
-		internal virtual void OnEnable() {}
-		internal virtual void OnDisable() {}
-		internal virtual void OnDestroy() {}
+		internal virtual void OnEnable() {
+		}
 
-
-		[EditorBrowsable(EditorBrowsableState.Never)]
-		protected virtual void Bind() {}
+		internal virtual void OnDisable() {
+		}
 
 		[EditorBrowsable(EditorBrowsableState.Never)]
-		protected virtual void Initialize() { }
+		protected virtual void Bind() {
+		}
 
+		[EditorBrowsable(EditorBrowsableState.Never)]
+		protected virtual void Initialize() {
+		}
 
 		//SetParticles does a global set, so you can be sure all kernels neccesary for updating use the right memory.
 		protected void BindParticles() {

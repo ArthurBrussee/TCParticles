@@ -90,9 +90,9 @@ namespace TC.EditorIntegration {
 				o = CreateInstance<OpenClose>();
 				o.hideFlags = HideFlags.HideAndDontSave;
 			}
+
 			return o;
 		}
-
 
 		protected void ToolbarToggle(string varName, GUIContent dispName, params GUILayoutOption[] options) {
 			SerializedProperty prop = CheckProp(varName);
@@ -104,20 +104,19 @@ namespace TC.EditorIntegration {
 			content = EditorGUI.BeginProperty(position, content, prop);
 			EditorGUI.BeginChangeCheck();
 
-			if (EditorGUI.showMixedValue)
+			if (EditorGUI.showMixedValue) {
 				content.text += " - (mixed)";
+			}
 
 			var newVal = GUI.Toggle(position, prop.boolValue && !EditorGUI.showMixedValue, content, EditorStyles.toolbarButton);
 
-
-			if (EditorGUI.EndChangeCheck())
+			if (EditorGUI.EndChangeCheck()) {
 				prop.boolValue = newVal;
-
+			}
 
 			EditorGUI.EndProperty();
 		}
 
-		protected virtual void OnTCInspectorGUI() {
-		}
+		protected virtual void OnTCInspectorGUI() {}
 	}
 }

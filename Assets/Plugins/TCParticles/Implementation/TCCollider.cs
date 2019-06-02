@@ -5,8 +5,7 @@ namespace TC {
 	/// <summary>
 	/// Component to add a collider in the world TC Particle systems can react to
 	/// </summary>
-	[AddComponentMenu("TC Particles/Collider")]
-	[ExecuteInEditMode]
+	[AddComponentMenu("TC Particles/Collider"), ExecuteInEditMode]
 	public class TCCollider : MonoBehaviour, ITracked {
 		int m_index = -1;
 
@@ -14,9 +13,10 @@ namespace TC {
 		/// Unique index in Tracker list
 		/// </summary>
 		public int Index {
-			get { return m_index; }
-			set { m_index = value; }
+			get => m_index;
+			set => m_index = value;
 		}
+
 		/// <summary>
 		/// Sphere collider, if attached
 		/// </summary>
@@ -32,35 +32,34 @@ namespace TC {
 		/// </summary>
 		public CapsuleCollider CapsuleCollider { get; private set; }
 
-
-		[SerializeField] [Range(0.0f, 1.0f)] float _bounciness;
+		[SerializeField, Range(0.0f, 1.0f)]  float _bounciness;
 
 		/// <summary>
 		/// Elasticity of the collision.
 		/// </summary>
 		public float Bounciness {
-			get { return _bounciness; }
-			set { _bounciness = value; }
+			get => _bounciness;
+			set => _bounciness = value;
 		}
 
-		[SerializeField] [Range(0.0f, 1.0f)] float _stickiness;
+		[SerializeField, Range(0.0f, 1.0f)]  float _stickiness;
 
 		/// <summary>
 		/// Stickiness of the collision
 		/// </summary>
 		public float Stickiness {
-			get { return _stickiness; }
-			set { _stickiness = value; }
+			get => _stickiness;
+			set => _stickiness = value;
 		}
 
-		[SerializeField] [Range(0.0f, 1.0f)] float _inheritVelocity;
+		[SerializeField, Range(0.0f, 1.0f)]  float _inheritVelocity;
 
 		/// <summary>
 		/// How much of the velocity should be transfered to the particles
 		/// </summary>
 		public float InheritVelocity {
-			get { return _inheritVelocity; }
-			set { _inheritVelocity = value; }
+			get => _inheritVelocity;
+			set => _inheritVelocity = value;
 		}
 
 		/// <summary>
@@ -71,22 +70,23 @@ namespace TC {
 				if (r != null) {
 					return r.velocity;
 				}
+
 				if (controller != null) {
 					return controller.velocity;
 				}
+
 				return (transform.position - lastPos) / Time.deltaTime;
 			}
 		}
 
-
-		[Range(0.0f, 1.0f)] [SerializeField] float _particleLifeLoss;
+		[Range(0.0f, 1.0f), SerializeField]  float _particleLifeLoss;
 
 		/// <summary>
 		/// Amount in seconds that particles loses when colliding
 		/// </summary>
 		public float ParticleLifeLoss {
-			get { return _particleLifeLoss; }
-			set { _particleLifeLoss = value; }
+			get => _particleLifeLoss;
+			set => _particleLifeLoss = value;
 		}
 
 		/// <summary>
@@ -97,6 +97,7 @@ namespace TC {
 				if (shape == ColliderShape.PhysxShape && !noCollider) {
 					return GetComponent<Collider>().bounds.center;
 				}
+
 				return transform.position;
 			}
 		}

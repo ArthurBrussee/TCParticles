@@ -1,19 +1,18 @@
 using System;
 using System.ComponentModel;
 using TC.Internal;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace TC {
-
 	/// <summary>
 	/// GPU Particle system. Provides basic API to control particles
 	/// </summary>
 	/// <remarks>
 	/// To access more specific APIs use the  <see cref="Manager"/>, <see cref="Emitter"/>, <see cref="ForceManager"/> and <see cref="ColliderManager"/> properties.
 	/// </remarks>
-	[AddComponentMenu("TC Particles/TC Particle Manager")]
-	[ExecuteInEditMode]
+	[AddComponentMenu("TC Particles/TC Particle Manager"), ExecuteInEditMode]
 	public class TCParticleSystem : MonoBehaviour, ITracked {
 		int m_index = -1;
 
@@ -21,8 +20,8 @@ namespace TC {
 		/// Unique index in Tracker list
 		/// </summary>
 		public int Index {
-			get { return m_index; }
-			set { m_index = value; }
+			get => m_index;
+			set => m_index = value;
 		}
 
 		[SerializeField] ParticleColliderManager _colliderManager = new ParticleColliderManager();
@@ -39,7 +38,7 @@ namespace TC {
 		/// Should this system be visualized (editor only)
 		/// </summary>
 		public bool DoVisualize {
-			get { return m_doVisualize; }
+			get => m_doVisualize;
 			set {
 				if (value != m_doVisualize) {
 					m_doVisualize = value;
@@ -54,7 +53,7 @@ namespace TC {
 #endif
 
 		public static void UpdateCacheForEmitMesh(Mesh mesh) {
-			for(int i = 0; i < 4; ++i){
+			for (int i = 0; i < 4; ++i) {
 				TCParticleGlobalManager.UpdateCacheForEmitMesh(mesh, i);
 			}
 		}
@@ -68,54 +67,40 @@ namespace TC {
 		/// <summary>
 		/// Contains collision properties
 		/// </summary>
-		public ParticleColliderManager ColliderManager {
-			get { return _colliderManager; }
-		}
+		public ParticleColliderManager ColliderManager => _colliderManager;
 
 		/// <summary>
 		/// Contains emission properties
 		/// </summary>
-		public ParticleEmitter Emitter {
-			get { return _emitter; }
-		}
+		public ParticleEmitter Emitter => _emitter;
 
 		/// <summary>
 		/// Contains rendering properties
 		/// </summary>
-		public ParticleRenderer ParticleRenderer {
-			get { return _particleRenderer; }
-		}
+		public ParticleRenderer ParticleRenderer => _particleRenderer;
 
 		/// <summary>
 		/// Contains force properties
 		/// </summary>
-		public ParticleForceManager ForceManager {
-			get { return _forcesManager; }
-		}
+		public ParticleForceManager ForceManager => _forcesManager;
 
 		/// <summary>
 		/// Main properties
 		/// </summary>
-		public ParticleManager Manager {
-			get { return _manager; }
-		}
+		public ParticleManager Manager => _manager;
 
 		/// <summary>
 		/// At what part of the loop is the system currently? Between 0...1
 		/// </summary>
-		public float Lifespan {
-			get { return _manager.SystemTime / _manager.Duration; }
-		}
+		public float Lifespan => _manager.SystemTime / _manager.Duration;
 
 		/// <summary>
 		/// The maximum number of particles in the particle buffer (Read Only)
 		/// </summary>
 		public int MaxParticles {
-			get { return _manager.MaxParticles; }
+			get => _manager.MaxParticles;
 
-			set {
-				_manager.MaxParticles = value;
-			}
+			set => _manager.MaxParticles = value;
 		}
 
 		/// <summary>
@@ -124,141 +109,116 @@ namespace TC {
 		/// <remarks>
 		/// This is only approximate as it is not known exactly when particles die off. All particles are assumed to live the maximum set lifetime
 		/// </remarks>
-		public int ParticleCount {
-			get { return _emitter.ParticleCount; }
-		}
+		public int ParticleCount => _emitter.ParticleCount;
 
 		/// <summary>
 		/// Space in which the particles should be simulated
 		/// </summary>
 		public Space SimulationSpace {
-			get { return _manager.SimulationSpace; }
-			set { _manager.SimulationSpace = value; }
+			get => _manager.SimulationSpace;
+			set => _manager.SimulationSpace = value;
 		}
-
 
 		/// <summary>
 		/// Are the particles being simulated in world space?
 		/// </summary>
-		public bool IsWorldSpace {
-			get { return SimulationSpace == Space.World; }
-		}
+		public bool IsWorldSpace => SimulationSpace == Space.World;
 
 		/// <summary>
 		/// The current time of the system ranging from 0...duration
 		/// </summary>
-		public float SystemTime {
-			get { return _manager.SystemTime; }
-		}
+		public float SystemTime => _manager.SystemTime;
 
 		/// <summary>
 		/// The duration of the system (or system life)
 		/// </summary>
 		public float Duration {
-			get { return _manager.Duration; }
-			set { _manager.Duration = value; }
+			get => _manager.Duration;
+			set => _manager.Duration = value;
 		}
 
 		/// <summary>
 		/// The initial delay of the particle system
 		/// </summary>
-		public float Delay {
-			get { return _manager.delay; }
-		}
-
+		public float Delay => _manager.delay;
 
 		/// <summary>
 		/// Should the particle system start playing as soon as it's created?
 		/// </summary>
-		public bool PlayOnAwake {
-			get { return _manager.playOnAwake; }
-		}
+		public bool PlayOnAwake => _manager.playOnAwake;
 
 		/// <summary>
 		/// Should the particle system loop?
 		/// </summary>
 		public bool Looping {
-			get { return _manager.looping; }
-			set { _manager.looping = value; }
+			get => _manager.looping;
+			set => _manager.looping = value;
 		}
 
 		/// <summary>
 		/// Should the particle system go through one loop when created?
 		/// </summary>
-		public bool Prewarm {
-			get { return _manager.prewarm; }
-		}
-
+		public bool Prewarm => _manager.prewarm;
 
 		/// <summary>
 		/// A multiplier for the speed of time
 		/// </summary>
 		public float PlaybackSpeed {
-			get { return _manager.playbackSpeed; }
-			set { _manager.playbackSpeed = value; }
+			get => _manager.playbackSpeed;
+			set => _manager.playbackSpeed = value;
 		}
-
 
 		/// <summary>
 		/// Is the particle system currently playing?
 		/// </summary>
-		public bool IsPlaying {
-			get { return _manager.IsPlaying; }
-		}
+		public bool IsPlaying => _manager.IsPlaying;
 
 		/// <summary>
 		/// Has the particle system been stopped?
 		/// </summary>
-		public bool IsStopped {
-			get { return _manager.IsStopped; }
-		}
+		public bool IsStopped => _manager.IsStopped;
 
 		/// <summary>
 		/// Is the particle system paused?
 		/// </summary>
-		public bool IsPaused {
-			get { return _manager.IsPaused; }
-		}
+		public bool IsPaused => _manager.IsPaused;
 
 		/// <summary>
 		/// Constant force over lifetime
 		/// </summary>
 		public Vector3Curve ConstantForce {
-			get { return _manager.ConstantForce; }
-			set { _manager.ConstantForce = value; }
+			get => _manager.ConstantForce;
+			set => _manager.ConstantForce = value;
 		}
-
 
 		/// <summary>
 		/// Amount of particles emitted each second
 		/// </summary>
 		public float EmissionRate {
-			get { return _manager.EmissionRate; }
-			set { _manager.EmissionRate = value; }
+			get => _manager.EmissionRate;
+			set => _manager.EmissionRate = value;
 		}
 
 		/// <summary>
 		/// The amount of damping particles recieve each frame
 		/// </summary>
 		public float Damping {
-			get { return _manager.damping; }
-			set { _manager.damping = value; }
+			get => _manager.damping;
+			set => _manager.damping = value;
 		}
 
 		/// <summary>
 		/// What factor of your physics gravity should be applied?
 		/// </summary>
 		public float GravityMultiplier {
-			get { return _manager.gravityMultiplier; }
-			set { _manager.gravityMultiplier = value; }
+			get => _manager.gravityMultiplier;
+			set => _manager.gravityMultiplier = value;
 		}
 
 		/// <summary>
 		/// Delta time of particle simulation
 		/// </summary>
-		public float ParticleTimeDelta {
-			get { return _manager.ParticleTimeDelta; }
-		}
+		public float ParticleTimeDelta => _manager.ParticleTimeDelta;
 
 		[NonSerialized] bool m_inited;
 
@@ -288,7 +248,7 @@ namespace TC {
 
 		void OnEnable() {
 #if UNITY_EDITOR
-			if (UnityEditor.EditorUtility.IsPersistent(gameObject)) {
+			if (EditorUtility.IsPersistent(gameObject)) {
 				return;
 			}
 #endif
@@ -310,7 +270,7 @@ namespace TC {
 
 		void OnDisable() {
 #if UNITY_EDITOR
-			if (UnityEditor.EditorUtility.IsPersistent(gameObject)) {
+			if (EditorUtility.IsPersistent(gameObject)) {
 				return;
 			}
 #endif
@@ -440,12 +400,14 @@ namespace TC {
 		}
 
 		void OnDrawGizmosSelected() {
-			if (_emitter.Shape == EmitShapes.Box) {
-				Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.localScale);
-				Gizmos.matrix = rotationMatrix;
-
-				Gizmos.DrawWireCube(Vector3.zero, _emitter.CubeSize);
+			if (_emitter.Shape != EmitShapes.Box) {
+				return;
 			}
+
+			var myTransform = transform;
+			Matrix4x4 rotationMatrix = Matrix4x4.TRS(myTransform.position, myTransform.rotation, myTransform.localScale);
+			Gizmos.matrix = rotationMatrix;
+			Gizmos.DrawWireCube(Vector3.zero, _emitter.CubeSize);
 		}
 	}
 }

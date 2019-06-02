@@ -2,8 +2,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace TC.EditorIntegration {
-	[CustomEditor(typeof(TCCollider))]
-	[CanEditMultipleObjects]
+	[CustomEditor(typeof(TCCollider)), CanEditMultipleObjects]
 	public class TCColliderEditor : TCEdtiorBase<TCCollider> {
 		// Update is called once per frame
 		protected override void OnTCInspectorGUI() {
@@ -31,9 +30,7 @@ namespace TC.EditorIntegration {
 					break;
 			}
 
-
 			GUILayout.Space(10.0f);
-
 
 			if (shape != ColliderShape.Terrain) {
 				PropField("inverse", new GUIContent("Inverse", "Determines whether the collider is solid or hollow"));
@@ -41,27 +38,28 @@ namespace TC.EditorIntegration {
 					new GUIContent("Inherit Velocity", "Factor of velocity to carry over to the particle on collision"));
 				PropField("_particleLifeLoss", new GUIContent("Amount of life particle loses per second when it's colliding"));
 			}
+
 			PropField("_bounciness", new GUIContent("Bounciness"));
 			PropField("_stickiness", new GUIContent("Stickiness"));
 		}
 
-
 		public void OnSceneGUI() {
 			var c = target as TCCollider;
 
-			if (c == null) return;
+			if (c == null) {
+				return;
+			}
 
 			switch (c.shape) {
 				case ColliderShape.Disc:
-					if (c.radius == null)
+					if (c.radius == null) {
 						return;
+					}
 
 					float rmin = c.radius.IsConstant ? 0.0f : c.radius.Min;
 					float rmax = c.radius.Max;
 
-					float round;
-					TCDrawFunctions.DiscHandle(c.transform, rmin, rmax, c.discHeight, c.rounding, (int) c.discType, out rmin, out rmax,
-						out round);
+					TCDrawFunctions.DiscHandle(c.transform, rmin, rmax, c.discHeight, c.rounding, (int) c.discType, out rmin, out rmax, out float round);
 
 					c.rounding = round;
 

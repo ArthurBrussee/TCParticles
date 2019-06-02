@@ -2,15 +2,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
 
 internal class TcStandardParticlesShaderGUI : ShaderGUI {
 	public enum BlendMode {
 		Opaque,
 		Cutout,
-		Fade,   // Old school alpha-blending mode, fresnel does not affect amount of transparency
+		Fade, // Old school alpha-blending mode, fresnel does not affect amount of transparency
 		Transparent, // Physically plausible transparency mode, implemented as alpha pre-multiply
 		Additive,
 		Subtractive,
@@ -26,7 +27,7 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 		Difference
 	}
 
-	private static class Styles {
+	static class Styles {
 		public static GUIContent albedoText = new GUIContent("Albedo", "Albedo (RGB) and Transparency (A).");
 		public static GUIContent alphaCutoffText = new GUIContent("Alpha Cutoff", "Threshold for alpha cutoff.");
 		public static GUIContent metallicMapText = new GUIContent("Metallic", "Metallic (R) and Smoothness (A).");
@@ -63,20 +64,20 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 		public static string advancedOptionsText = "Advanced Options";
 	}
 
-	MaterialProperty blendMode = null;
-	MaterialProperty colorMode = null;
-	MaterialProperty cullMode = null;
-	MaterialProperty albedoMap = null;
-	MaterialProperty albedoColor = null;
-	MaterialProperty alphaCutoff = null;
-	MaterialProperty metallicMap = null;
-	MaterialProperty metallic = null;
-	MaterialProperty smoothness = null;
-	MaterialProperty bumpScale = null;
-	MaterialProperty bumpMap = null;
-	MaterialProperty emissionEnabled = null;
-	MaterialProperty emissionColorForRendering = null;
-	MaterialProperty emissionMap = null;
+	MaterialProperty blendMode;
+	MaterialProperty colorMode;
+	MaterialProperty cullMode;
+	MaterialProperty albedoMap;
+	MaterialProperty albedoColor;
+	MaterialProperty alphaCutoff;
+	MaterialProperty metallicMap;
+	MaterialProperty metallic;
+	MaterialProperty smoothness;
+	MaterialProperty bumpScale;
+	MaterialProperty bumpMap;
+	MaterialProperty emissionEnabled;
+	MaterialProperty emissionColorForRendering;
+	MaterialProperty emissionMap;
 
 	MaterialEditor m_MaterialEditor;
 	ColorPickerHDRConfig m_ColorPickerHDRConfig = new ColorPickerHDRConfig(0f, 99f, 1 / 99f, 3f);
@@ -144,8 +145,9 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 			DoEmissionArea(material);
 		}
 		if (EditorGUI.EndChangeCheck()) {
-			foreach (var obj in blendMode.targets)
-				MaterialChanged((Material)obj);
+			foreach (var obj in blendMode.targets) {
+				MaterialChanged((Material) obj);
+			}
 		}
 
 		EditorGUILayout.Space();
@@ -162,10 +164,11 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 
 	public override void AssignNewShaderToMaterial(Material material, Shader oldShader, Shader newShader) {
 		// Sync the lighting flag for the unlit shader
-		if (newShader.name.Contains("Unlit"))
+		if (newShader.name.Contains("Unlit")) {
 			material.SetFloat("_LightingEnabled", 0.0f);
-		else
+		} else {
 			material.SetFloat("_LightingEnabled", 1.0f);
+		}
 
 		// _Emission property is lost after assigning Standard shader to the material
 		// thus transfer it before assigning the new shader
@@ -176,7 +179,7 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 		base.AssignNewShaderToMaterial(material, oldShader, newShader);
 
 		if (oldShader == null || !oldShader.name.Contains("Legacy Shaders/")) {
-			SetupMaterialWithBlendMode(material, (BlendMode)material.GetFloat("_Mode"));
+			SetupMaterialWithBlendMode(material, (BlendMode) material.GetFloat("_Mode"));
 			return;
 		}
 
@@ -188,20 +191,21 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 			// therefore Fade mode
 			blendMode = BlendMode.Fade;
 		}
-		material.SetFloat("_Mode", (float)blendMode);
+
+		material.SetFloat("_Mode", (float) blendMode);
 
 		MaterialChanged(material);
 	}
 
 	void BlendModePopup() {
 		EditorGUI.showMixedValue = blendMode.hasMixedValue;
-		var mode = (BlendMode)blendMode.floatValue;
+		var mode = (BlendMode) blendMode.floatValue;
 
 		EditorGUI.BeginChangeCheck();
-		mode = (BlendMode)EditorGUILayout.Popup(Styles.renderingMode, (int)mode, Styles.blendNames);
+		mode = (BlendMode) EditorGUILayout.Popup(Styles.renderingMode, (int) mode, Styles.blendNames);
 		if (EditorGUI.EndChangeCheck()) {
 			m_MaterialEditor.RegisterPropertyChangeUndo("Rendering Mode");
-			blendMode.floatValue = (float)mode;
+			blendMode.floatValue = (float) mode;
 		}
 
 		EditorGUI.showMixedValue = false;
@@ -210,13 +214,13 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 	void ColorModePopup() {
 		if (colorMode != null) {
 			EditorGUI.showMixedValue = colorMode.hasMixedValue;
-			var mode = (ColorMode)colorMode.floatValue;
+			var mode = (ColorMode) colorMode.floatValue;
 
 			EditorGUI.BeginChangeCheck();
-			mode = (ColorMode)EditorGUILayout.Popup(Styles.colorMode, (int)mode, Styles.colorNames);
+			mode = (ColorMode) EditorGUILayout.Popup(Styles.colorMode, (int) mode, Styles.colorNames);
 			if (EditorGUI.EndChangeCheck()) {
 				m_MaterialEditor.RegisterPropertyChangeUndo("Color Mode");
-				colorMode.floatValue = (float)mode;
+				colorMode.floatValue = (float) mode;
 			}
 
 			EditorGUI.showMixedValue = false;
@@ -225,13 +229,13 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 
 	void TwoSidedPopup(Material material) {
 		EditorGUI.showMixedValue = cullMode.hasMixedValue;
-		var enabled = (cullMode.floatValue == (float)UnityEngine.Rendering.CullMode.Off);
+		var enabled = cullMode.floatValue == (float) CullMode.Off;
 
 		EditorGUI.BeginChangeCheck();
 		enabled = EditorGUILayout.Toggle(Styles.twoSidedEnabled, enabled);
 		if (EditorGUI.EndChangeCheck()) {
 			m_MaterialEditor.RegisterPropertyChangeUndo("Two Sided Enabled");
-			cullMode.floatValue = enabled ? (float)UnityEngine.Rendering.CullMode.Off : (float)UnityEngine.Rendering.CullMode.Back;
+			cullMode.floatValue = enabled ? (float) CullMode.Off : (float) CullMode.Back;
 		}
 
 		EditorGUI.showMixedValue = false;
@@ -239,7 +243,7 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 
 	void DoAlbedoArea(Material material) {
 		m_MaterialEditor.TexturePropertyWithHDRColor(Styles.albedoText, albedoMap, albedoColor, m_ColorPickerHDRConfig, true);
-		if (((BlendMode)material.GetFloat("_Mode") == BlendMode.Cutout)) {
+		if ((BlendMode) material.GetFloat("_Mode") == BlendMode.Cutout) {
 			m_MaterialEditor.ShaderProperty(alphaCutoff, Styles.alphaCutoffText, MaterialEditor.kMiniTextureFieldLabelIndentLevel);
 		}
 	}
@@ -247,7 +251,7 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 	void DoEmissionArea(Material material) {
 		// Emission
 		EditorGUI.showMixedValue = emissionEnabled.hasMixedValue;
-		var enabled = (emissionEnabled.floatValue != 0.0f);
+		var enabled = emissionEnabled.floatValue != 0.0f;
 
 		EditorGUI.BeginChangeCheck();
 		enabled = EditorGUILayout.Toggle(Styles.emissionEnabled, enabled);
@@ -264,16 +268,18 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 
 			// If texture was assigned and color was black set color to white
 			float brightness = emissionColorForRendering.colorValue.maxColorComponent;
-			if (emissionMap.textureValue != null && !hadEmissionTexture && brightness <= 0f)
+			if (emissionMap.textureValue != null && !hadEmissionTexture && brightness <= 0f) {
 				emissionColorForRendering.colorValue = Color.white;
+			}
 		}
 	}
 
 	void DoSpecularMetallicArea(Material material) {
-		if (metallicMap == null)
+		if (metallicMap == null) {
 			return;
+		}
 
-		bool useLighting = (material.GetFloat("_LightingEnabled") > 0.0f);
+		bool useLighting = material.GetFloat("_LightingEnabled") > 0.0f;
 		if (useLighting) {
 			bool hasGlossMap = metallicMap.textureValue != null;
 			m_MaterialEditor.TexturePropertySingleLine(Styles.metallicMapText, metallicMap, hasGlossMap ? null : metallic);
@@ -285,9 +291,9 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 	}
 
 	void DoNormalMapArea(Material material) {
-		bool hasZWrite = (material.GetInt("_ZWrite") != 0);
-		bool useLighting = (material.GetFloat("_LightingEnabled") > 0.0f);
-		bool useDistortion = (material.GetFloat("_DistortionEnabled") > 0.0f) && !hasZWrite;
+		bool hasZWrite = material.GetInt("_ZWrite") != 0;
+		bool useLighting = material.GetFloat("_LightingEnabled") > 0.0f;
+		bool useDistortion = material.GetFloat("_DistortionEnabled") > 0.0f && !hasZWrite;
 		if (useLighting || useDistortion) {
 			m_MaterialEditor.TexturePropertySingleLine(Styles.normalMapText, bumpMap, bumpMap.textureValue != null ? bumpScale : null);
 		}
@@ -297,9 +303,9 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 		switch (blendMode) {
 			case BlendMode.Opaque:
 				material.SetOverrideTag("RenderType", "");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.One);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.Zero);
 				material.SetInt("_ZWrite", 1);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.DisableKeyword("_ALPHABLEND_ON");
@@ -309,75 +315,75 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 				break;
 			case BlendMode.Cutout:
 				material.SetOverrideTag("RenderType", "TransparentCutout");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.One);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.Zero);
 				material.SetInt("_ZWrite", 1);
 				material.EnableKeyword("_ALPHATEST_ON");
 				material.DisableKeyword("_ALPHABLEND_ON");
 				material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.DisableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+				material.renderQueue = (int) RenderQueue.AlphaTest;
 				break;
 			case BlendMode.Fade:
 				material.SetOverrideTag("RenderType", "Transparent");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.SrcAlpha);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
 				material.SetInt("_ZWrite", 0);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.EnableKeyword("_ALPHABLEND_ON");
 				material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.DisableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+				material.renderQueue = (int) RenderQueue.Transparent;
 				break;
 			case BlendMode.Transparent:
 				material.SetOverrideTag("RenderType", "Transparent");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.One);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
 				material.SetInt("_ZWrite", 0);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.DisableKeyword("_ALPHABLEND_ON");
 				material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.DisableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+				material.renderQueue = (int) RenderQueue.Transparent;
 				break;
 			case BlendMode.Additive:
 				material.SetOverrideTag("RenderType", "Transparent");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.SrcAlpha);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.One);
 				material.SetInt("_ZWrite", 0);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.EnableKeyword("_ALPHABLEND_ON");
 				material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.DisableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+				material.renderQueue = (int) RenderQueue.Transparent;
 				break;
 			case BlendMode.Subtractive:
 				material.SetOverrideTag("RenderType", "Transparent");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.ReverseSubtract);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+				material.SetInt("_BlendOp", (int) BlendOp.ReverseSubtract);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.SrcAlpha);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.One);
 				material.SetInt("_ZWrite", 0);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.EnableKeyword("_ALPHABLEND_ON");
 				material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.DisableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+				material.renderQueue = (int) RenderQueue.Transparent;
 				break;
 			case BlendMode.Modulate:
 				material.SetOverrideTag("RenderType", "Transparent");
-				material.SetInt("_BlendOp", (int)UnityEngine.Rendering.BlendOp.Add);
-				material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.DstColor);
-				material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+				material.SetInt("_BlendOp", (int) BlendOp.Add);
+				material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.DstColor);
+				material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
 				material.SetInt("_ZWrite", 0);
 				material.DisableKeyword("_ALPHATEST_ON");
 				material.DisableKeyword("_ALPHABLEND_ON");
 				material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
 				material.EnableKeyword("_ALPHAMODULATE_ON");
-				material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+				material.renderQueue = (int) RenderQueue.Transparent;
 				break;
 		}
 	}
@@ -422,27 +428,27 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 
 	void SetMaterialKeywords(Material material) {
 		// Z write doesn't work with distortion/fading
-		bool hasZWrite = (material.GetInt("_ZWrite") != 0);
+		bool hasZWrite = material.GetInt("_ZWrite") != 0;
 
 		// Lit shader?
-		bool useLighting = (material.GetTag("TC_LIT", false, "False") == "True");
+		bool useLighting = material.GetTag("TC_LIT", false, "False") == "True";
 
 		// Note: keywords must be based on Material value not on MaterialProperty due to multi-edit & material animation
 		// (MaterialProperty value might come from renderer material property block)
-		bool useDistortion = (material.GetFloat("_DistortionEnabled") > 0.0f) && !hasZWrite;
+		bool useDistortion = material.GetFloat("_DistortionEnabled") > 0.0f && !hasZWrite;
 		SetKeyword(material, "_NORMALMAP", material.GetTexture("_BumpMap") && (useLighting || useDistortion));
-		SetKeyword(material, "_METALLICGLOSSMAP", useLighting && (material.GetTexture("_MetallicGlossMap") != null));
+		SetKeyword(material, "_METALLICGLOSSMAP", useLighting && material.GetTexture("_MetallicGlossMap") != null);
 
 		material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
 		SetKeyword(material, "_EMISSION", material.GetFloat("_EmissionEnabled") > 0.0f);
 
 		// Set the define for flipbook blending
-		bool useFlipbookBlending = (material.GetFloat("_FlipbookMode") > 0.0f);
+		bool useFlipbookBlending = material.GetFloat("_FlipbookMode") > 0.0f;
 		SetKeyword(material, "_REQUIRE_UV2", useFlipbookBlending);
 
 		// Clamp fade distances
-		bool useSoftParticles = (material.GetFloat("_SoftParticlesEnabled") > 0.0f);
-		bool useCameraFading = (material.GetFloat("_CameraFadingEnabled") > 0.0f);
+		bool useSoftParticles = material.GetFloat("_SoftParticlesEnabled") > 0.0f;
+		bool useCameraFading = material.GetFloat("_CameraFadingEnabled") > 0.0f;
 		float softParticlesNearFadeDistance = material.GetFloat("_SoftParticlesNearFadeDistance");
 		float softParticlesFarFadeDistance = material.GetFloat("_SoftParticlesFarFadeDistance");
 		float cameraNearFadeDistance = material.GetFloat("_CameraNearFadeDistance");
@@ -452,14 +458,17 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 			softParticlesNearFadeDistance = 0.0f;
 			material.SetFloat("_SoftParticlesNearFadeDistance", 0.0f);
 		}
+
 		if (softParticlesFarFadeDistance < 0.0f) {
 			softParticlesFarFadeDistance = 0.0f;
 			material.SetFloat("_SoftParticlesFarFadeDistance", 0.0f);
 		}
+
 		if (cameraNearFadeDistance < 0.0f) {
 			cameraNearFadeDistance = 0.0f;
 			material.SetFloat("_CameraNearFadeDistance", 0.0f);
 		}
+
 		if (cameraFarFadeDistance < 0.0f) {
 			cameraFarFadeDistance = 0.0f;
 			material.SetFloat("_CameraFarFadeDistance", 0.0f);
@@ -468,43 +477,51 @@ internal class TcStandardParticlesShaderGUI : ShaderGUI {
 		// Set the define for fading
 		bool useFading = (useSoftParticles || useCameraFading) && !hasZWrite;
 		SetKeyword(material, "_FADING_ON", useFading);
-		if (useSoftParticles)
+		if (useSoftParticles) {
 			material.SetVector("_SoftParticleFadeParams", new Vector4(softParticlesNearFadeDistance, 1.0f / (softParticlesFarFadeDistance - softParticlesNearFadeDistance), 0.0f, 0.0f));
-		else
+		} else {
 			material.SetVector("_SoftParticleFadeParams", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-		if (useCameraFading)
+		}
+
+		if (useCameraFading) {
 			material.SetVector("_CameraFadeParams", new Vector4(cameraNearFadeDistance, 1.0f / (cameraFarFadeDistance - cameraNearFadeDistance), 0.0f, 0.0f));
-		else
+		} else {
 			material.SetVector("_CameraFadeParams", new Vector4(0.0f, Mathf.Infinity, 0.0f, 0.0f));
+		}
 
 		// Set the define for distortion + grabpass
 		SetKeyword(material, "EFFECT_BUMP", useDistortion);
 		material.SetShaderPassEnabled("Always", useDistortion);
-		if (useDistortion)
-			material.SetFloat("_DistortionStrengthScaled", material.GetFloat("_DistortionStrength") * 0.1f);   // more friendly number scale than 1 unit per size of the screen
+		if (useDistortion) {
+			material.SetFloat("_DistortionStrengthScaled", material.GetFloat("_DistortionStrength") * 0.1f); // more friendly number scale than 1 unit per size of the screen
+		}
 	}
 
 	void MaterialChanged(Material material) {
-		SetupMaterialWithBlendMode(material, (BlendMode)material.GetFloat("_Mode"));
-		if (colorMode != null)
-			SetupMaterialWithColorMode(material, (ColorMode)material.GetFloat("_ColorMode"));
+		SetupMaterialWithBlendMode(material, (BlendMode) material.GetFloat("_Mode"));
+		if (colorMode != null) {
+			SetupMaterialWithColorMode(material, (ColorMode) material.GetFloat("_ColorMode"));
+		}
+
 		SetMaterialKeywords(material);
 	}
 
 	void CacheRenderersUsingThisMaterial(Material material) {
 		m_RenderersUsingThisMaterial.Clear();
 
-		ParticleSystemRenderer[] renderers = UnityEngine.Object.FindObjectsOfType(typeof(ParticleSystemRenderer)) as ParticleSystemRenderer[];
+		ParticleSystemRenderer[] renderers = Object.FindObjectsOfType(typeof(ParticleSystemRenderer)) as ParticleSystemRenderer[];
 		foreach (ParticleSystemRenderer renderer in renderers) {
-			if (renderer.sharedMaterial == material)
+			if (renderer.sharedMaterial == material) {
 				m_RenderersUsingThisMaterial.Add(renderer);
+			}
 		}
 	}
 
 	static void SetKeyword(Material m, string keyword, bool state) {
-		if (state)
+		if (state) {
 			m.EnableKeyword(keyword);
-		else
+		} else {
 			m.DisableKeyword(keyword);
+		}
 	}
 }

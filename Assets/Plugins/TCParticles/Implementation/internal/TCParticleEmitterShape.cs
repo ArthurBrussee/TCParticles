@@ -58,20 +58,19 @@ namespace TC.Internal {
 			var buffer = TCParticleGlobalManager.GetMeshBuffer(emitMesh, uvChannel);
 			uint onSurface;
 
-			if (!spawnOnMeshSurface)
+			if (!spawnOnMeshSurface) {
 				onSurface = 0;
-			else {
+			} else {
 				onSurface = normalizeArea ? (uint) 1 : 2;
 			}
 
-			emitter.MeshVertLen = (uint)buffer.count;
+			emitter.MeshVertLen = (uint) buffer.count;
 			emitter.OnSurface = onSurface;
 			cs.SetBuffer(kern, "emitFaces", buffer);
 
 			if (texture != null) {
 				cs.SetTexture(kern, "_MeshTexture", texture);
-			}
-			else {
+			} else {
 				cs.SetTexture(kern, "_MeshTexture", Texture2D.whiteTexture);
 			}
 		}
@@ -87,7 +86,7 @@ namespace TC.Internal {
 			}
 
 			cs.SetBuffer(kern, "emitList", m_emitProtoBuffer);
-			 
+
 			if (m_toEmitBuffer != null) {
 				Profiler.BeginSample("Upload Particle Prototype data");
 				cs.SetFloat(SID._UseEmitList, 1.0f);

@@ -24,7 +24,7 @@ namespace TC.Internal {
 		public static int _BufferOffset = Shader.PropertyToID("_BufferOffset");
 		public static int _DeltTime = Shader.PropertyToID("_DeltTime");
 
-		//TODO: Can't rename because extension kernels rely on it :(
+		// Can't rename because extension kernels rely on it :(
 		public static int _Particles = Shader.PropertyToID("particles");
 		public static int _SystemParameters = Shader.PropertyToID("systemParameters");
 
@@ -36,8 +36,6 @@ namespace TC.Internal {
 
 		public static int _MaxSpeed = Shader.PropertyToID("_MaxSpeed");
 		public static int _ColorSpeedLerp = Shader.PropertyToID("_ColorSpeedLerp");
-
-
 
 		public static int _Glow = Shader.PropertyToID("_Glow");
 		public static int _PixelMult = Shader.PropertyToID("_PixelMult");

@@ -3,7 +3,6 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-
 namespace TC.EditorIntegration {
 	[CustomPropertyDrawer(typeof(TCShapeEmitTag))]
 	public class TCShapeEmitTagDrawer : PropertyDrawer {
@@ -12,44 +11,34 @@ namespace TC.EditorIntegration {
 		static List<TCShapeEmitTag> s_tags;
 		static GUIContent[] s_display;
 
-		void InitTags() {
-			s_tags = new List<TCShapeEmitTag>();
-
-			var assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
-
-
-			foreach (var guid in assetPaths) {
-				var path = AssetDatabase.GUIDToAssetPath(guid);
-				var loaded = AssetDatabase.LoadAssetAtPath(path, typeof(TCShapeEmitTag)) as TCShapeEmitTag;
-
-				s_tags.Add(loaded);
-			}
-
-			s_display = new GUIContent[s_tags.Count + 2];
-
-
-			s_display[0] = new GUIContent("None");
-
-			for (int i = 0; i < s_tags.Count; ++i) {
-				s_display[i + 1] = new GUIContent(s_tags[i].name);
-			}
-
-			s_display[s_tags.Count + 1] = new GUIContent("+New Tag");
-		}
-
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-			//if (s_tags == null) {
-			InitTags();
-			//}
+			if (s_tags == null) {
+				s_tags = new List<TCShapeEmitTag>();
+
+				var assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
+
+				foreach (var guid in assetPaths) {
+					var path = AssetDatabase.GUIDToAssetPath(guid);
+					var loaded = AssetDatabase.LoadAssetAtPath(path, typeof(TCShapeEmitTag)) as TCShapeEmitTag;
+
+					s_tags.Add(loaded);
+				}
+
+				s_display = new GUIContent[s_tags.Count + 2];
+				s_display[0] = new GUIContent("None");
+
+				for (int i = 0; i < s_tags.Count; ++i) {
+					s_display[i + 1] = new GUIContent(s_tags[i].name);
+				}
+
+				s_display[s_tags.Count + 1] = new GUIContent("+New Tag");
+			}
 
 			s_tags.RemoveAll(tag => tag == null);
-
-
 			DrawEmitTagUI(position, property, label);
 		}
 
-		private void DrawEmitTagUI(Rect pos, SerializedProperty prop, GUIContent label) {
-
+		void DrawEmitTagUI(Rect pos, SerializedProperty prop, GUIContent label) {
 			EditorGUI.BeginProperty(pos, label, prop);
 
 			EditorGUI.BeginChangeCheck();
@@ -80,7 +69,7 @@ namespace TC.EditorIntegration {
 			}
 		}
 
-		private TCShapeEmitTag CreateNewTag() {
+		TCShapeEmitTag CreateNewTag() {
 			if (!Directory.Exists("Assets/TCParticleTags")) {
 				AssetDatabase.CreateFolder("Assets", "TCParticleTags");
 			}
