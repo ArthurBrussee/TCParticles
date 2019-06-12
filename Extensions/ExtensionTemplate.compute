@@ -1,4 +1,4 @@
-#include "Assets/TCParticles/Resources/TCFramework.cginc"
+#include "Packages/com.akb.tcparticles/Resources/TCFramework.cginc"
 
 //===============================================================
 //Example kernel

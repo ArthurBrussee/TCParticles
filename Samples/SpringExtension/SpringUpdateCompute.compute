@@ -1,5 +1,5 @@
 //Include tc particles frammework code
-#include "Assets/TCParticles/Resources/TCFramework.cginc"
+#include "Packages/com.akb.tcparticles/Resources/TCFramework.cginc"
 
 //Kernels we can call from script
 #pragma kernel WriteInitialPos
@@ -16,7 +16,6 @@ float _SpringDamping;
 //Kernel to write initial positions into our buffer whenever we emit particles
 [numthreads(TCGroupSize, 1, 1)]
 void WriteInitialPos(uint3 DTid : SV_DispatchThreadID) {
-	
 	if (DTid.x >= (uint)_ParticleEmitCount) {
 		return;
 	}
