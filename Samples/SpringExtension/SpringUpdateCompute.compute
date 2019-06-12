@@ -1,0 +1,47 @@
+//Include tc particles frammework code
+#include "Assets/TCParticles/Resources/TCFramework.cginc"
+
+//Kernels we can call from script
+#pragma kernel WriteInitialPos
+#pragma kernel UpdateSpring
+
+//Buffer where we store initial positions
+RWStructuredBuffer<float3> _InitialPos;
+
+//How strong our spring is
+float _SpringConstant;
+float _SpringDamping;
+
+
+//Kernel to write initial positions into our buffer whenever we emit particles
+[numthreads(TCGroupSize, 1, 1)]
+void WriteInitialPos(uint3 DTid : SV_DispatchThreadID) {
+	
+	if (DTid.x >= (uint)_ParticleEmitCount) {
+		return;
+	}
+
+	uint id = GetId(DTid.x); //Never read directly from DTid.x, but use GetId(). This gets the correct particle from the current ring buffer
+	_InitialPos[id] = particles[id].pos;
+}
+
+[numthreads(TCGroupSize, 1, 1)]
+void UpdateSpring(uint3 DTid : SV_DispatchThreadID) {
+	uint id = GetId(DTid.x); 
+
+	//Get the initial position from our buffer
+	float3 initialPos = _InitialPos[id];
+
+	//Get difference from initial position
+	float3 dif = particles[id].pos - initialPos;
+
+	//Calculate simple spring force (hooks law)
+	float3 force = -_SpringConstant * dif;
+
+	force = min(1.0f, abs(force)) * sign(force);
+
+	//Apply our force to the particle velocity
+	particles[id].velocity += force;
+
+	particles[id].velocity *= _SpringDamping;
+}
