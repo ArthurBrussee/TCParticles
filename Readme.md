@@ -1,6 +1,6 @@
-# TC Particles
+<img src="http://g2f.nl/0rargh1" alt="alt text" width="250px">
 
-![Logo](http://g2f.nl/0rargh1)
+# TC Particles
 
 ![Hero shot](http://g2f.nl/0pgcokl)
 
