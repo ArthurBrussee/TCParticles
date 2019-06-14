@@ -24,7 +24,7 @@ The package incude a variety of samples, showing various TC Particle usages, and
 TC Particles works on any shader model 5.0 platform (DirectX 11/12, Metal, Vulkan).
 
 
-## Why not use Unity's VFX graph?
+### Why not use Unity's VFX graph?
 By all means do so if that works! This library was originally created about ~6 years before Unity's solution. Today it still can be a preferred solution if you're on Unity's legacy rendering pipeline, or need some of TC Particles' specific features.
 
 ### Installation
