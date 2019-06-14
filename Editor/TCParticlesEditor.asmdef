@@ -1,0 +1,10 @@
+{
+    "name": "TCParticlesEditor",
+    "references": [
+        "TCParticles"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+	"excludePlatforms": []
+}

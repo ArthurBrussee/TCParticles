@@ -1,0 +1,118 @@
+﻿#pragma kernel BakeForce
+
+#include "SimplexNoise3D.cginc"
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> _ForceTexture;
+
+float _Frequency;
+float _Lacunarity;
+float _Persistence;
+
+uint _OctaveCount;
+uint _NoiseType;
+
+float _Resolution;
+
+#define NOISE_BILLOW 0
+#define NOISE_PERLIN 1
+#define NOISE_RIDGED 2
+#define NOISE_VORONOI 3
+
+float4 _NoiseOffset;
+
+#define NOISE_SCALE 0.4f
+
+float3 GradientCoherentNoise3D(float3 pos) {
+	return snoise_grad(pos) * NOISE_SCALE;
+}
+
+float3 GradientCoherentNoiseCurl(float3 pos) {
+	return cross(GradientCoherentNoise3D(pos), GradientCoherentNoise3D(pos + 372));
+}
+
+float ValueNoise(float3 pos) {
+	return snoise(pos * 1000);
+}
+
+float3 CalculatePerlin(float3 pos) {
+	float3 val = 0.0f;
+	float weight = 1.0f;
+
+	pos *= _Frequency;
+	
+	for (uint index = 0; index < _OctaveCount; ++index) {
+		val += GradientCoherentNoiseCurl(pos) * weight;
+		pos *= _Lacunarity;
+		weight *= _Persistence;
+	}
+
+	return val;
+}
+
+float3 CalculateBillow(float3 pos) {
+	float3 val = 0.0f;
+	float weight = 1.0f;
+	
+	pos *= _Frequency;
+
+	float off = 0;
+
+	for (uint index = 0; index < _OctaveCount; ++index) {
+		float3 samp = 2.0f * abs(GradientCoherentNoiseCurl(pos)) - 1.0f;
+		off += (1 - NOISE_SCALE) * weight;
+
+		val += samp * weight;
+		pos *= _Lacunarity;
+		weight *= _Persistence;
+	}
+
+	return val + off;
+}
+
+
+float3 CalculateRidged(float3 pos) {
+	pos *= _Frequency;
+
+	float3 val = 0.0;
+	float weight = 1.0;
+
+	float num = 1.0;
+	float x = 1.0;
+
+	float off = 0;
+
+	for (uint index = 0; index < _OctaveCount; ++index) {
+		float3 samp = abs(GradientCoherentNoiseCurl(pos) * 2);
+		
+		float3 invSamp = 1 - samp;
+		float3 finalSamp = invSamp * invSamp * weight;
+
+		x *= _Lacunarity;
+
+		off += 1.375f * NOISE_SCALE * weight / x;
+		val += finalSamp / x;
+
+		weight = saturate(length(finalSamp) * 2);
+		pos *= _Lacunarity;
+	}
+
+	return val - off;
+}
+
+float3 CalculateNoise(float3 pos) {
+	switch (_NoiseType) {
+        case NOISE_BILLOW:  return CalculateBillow(pos);
+        case NOISE_PERLIN:  return CalculatePerlin(pos);
+        case NOISE_RIDGED:  return CalculateRidged(pos);
+        default:			return 0;
+	}
+}
+
+[numthreads(4, 4, 4)]
+void BakeForce(uint3 id : SV_DispatchThreadID) {
+	float3 nn = CalculateNoise(id / _Resolution * 0.4f + _NoiseOffset.xyz);
+	float4 packedForce = float4(nn * 0.5f + 0.5f, 0);
+	_ForceTexture[id] = packedForce;
+}

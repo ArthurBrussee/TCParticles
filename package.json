@@ -1,0 +1,21 @@
+{
+    "name": "com.akb.tcparticles",
+    "displayName": "TCParticles",
+    "version": "1.0.0",
+    "unity": "2019.1",
+    "description": "GPU Acelerated particles library",
+    "keywords": [
+        "tcp",
+        "tc particles",
+        "gpu",
+        "particles"
+    ],
+    "author": {
+        "name": "Arthur Brussee",
+        "email": "arthur.brussee@gmail.com",
+        "url": "https://www.arthurbrussee.com"
+    },
+    "category": "VFX",
+    "dependencies": {
+    }
+}
