@@ -1,13 +1,13 @@
-<img src="http://g2f.nl/0rargh1" alt="alt text" width="250px">
+![Logo](http://g2f.nl/0fa2cd5)
 
-# TC Particles
 
-![Hero shot](http://g2f.nl/0pgcokl)
+
 
 TC Particles is an extensive GPU particles system for Unity. It used to be a commercial asset on the Asset store, but I have decided it was high time to make this available for free to everyone! The library has been maintained for many years but is showing some of it's age. Yet I hope people find some use for it, if nothing else to experiment with and learn about compute shaders.
 
 It can be used to make special effects requiring many particles, and comes with a PLY importer and can work as a point cloud visualizer.
 
+![Hero shot](http://g2f.nl/0pgcokl)
 
 ### Documentation
 For more info, support, documentation and the API reference, please refer to https://arthurbrussee.github.io/TCParticlesDocumentation/ . There is also a tutorial video by Anton Hand for a slightly older version https://vimeo.com/62746307
