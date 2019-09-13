@@ -86,7 +86,7 @@ namespace TC.Internal {
 		static void OnCamRender(Camera cam) {
 			for (int i = 0; i < Tracker<TCParticleSystem>.Count; ++i) {
 				var rend = Tracker<TCParticleSystem>.All[i].ParticleRenderer;
-				rend.SetupDrawCall(cam);
+				rend.SetupDrawCall(cam, i);
 			}
 		}
 

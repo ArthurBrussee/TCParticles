@@ -5,6 +5,7 @@ using TC.Internal;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
+using Random = System.Random;
 
 namespace TC {
 	/// <summary>
@@ -201,6 +202,8 @@ namespace TC {
 
 		Mesh m_particleMesh;
 		Material m_cacheMaterial;
+		
+		MaterialPropertyBlock m_block;
 
 		static Plane[] s_planes = new Plane[6];
 
@@ -221,7 +224,8 @@ namespace TC {
 			m_cacheMaterial = new Material(_material.shader);
 			m_prevRenderModeMesh = Mesh;
 			m_argsBuffer = new ComputeBuffer(5, 4, ComputeBufferType.IndirectArguments);
-
+			m_block = new MaterialPropertyBlock();
+			
 			BuildBuffer();
 
 			colorOverLifetimeTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true)
@@ -313,7 +317,7 @@ namespace TC {
 			ToggleKeyword(keyword2, index == 2);
 		}
 
-		internal void SetupDrawCall(Camera cam) {
+		internal void SetupDrawCall(Camera cam, int index) {
 			if (UseFrustumCulling) {
 				GeometryUtility.CalculateFrustumPlanes(cam.projectionMatrix * cam.worldToCameraMatrix, s_planes);
 				IsVisible |= GeometryUtility.TestPlanesAABB(s_planes, Bounds);
@@ -329,24 +333,24 @@ namespace TC {
 
 			m_cacheMaterial.CopyPropertiesFromMaterial(_material);
 
-			int index = -1;
+			int renderKeyIndex = -1;
 
 			switch (RenderMode) {
 				case GeometryRenderMode.Billboard:
-					index = 0;
+					renderKeyIndex = 0;
 					break;
 
 				case GeometryRenderMode.StretchedBillboard:
 				case GeometryRenderMode.TailStretchBillboard:
-					index = 1;
+					renderKeyIndex = 1;
 					break;
 
 				case GeometryRenderMode.Mesh:
-					index = 2;
+					renderKeyIndex = 2;
 					break;
 			}
 
-			ChooseKeyword("TC_BILLBOARD", "TC_BILLBOARD_STRETCHED", "TC_MESH", index);
+			ChooseKeyword("TC_BILLBOARD", "TC_BILLBOARD_STRETCHED", "TC_MESH", renderKeyIndex);
 
 			m_cacheMaterial.SetInt("_UvSpriteAnimation", spriteSheetAnimation ? 1 : 0);
 
@@ -485,8 +489,14 @@ namespace TC {
 
 			//Setup DrawM
 			Bounds bounds = UseFrustumCulling ? _bounds : new Bounds(Vector3.zero, Vector3.one * 100000);
+			
 			var layer = SystemComp.gameObject.layer;
-			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, CastShadows, ReceiveShadows, layer, cam);
+
+			// Unity has a bug where it tries to batch some Indirect calls together
+			// Which breaks shadows....
+			// Force  Unity to treat the particles as seperate draw calls
+			m_block.SetFloat("_Dummy", index);
+			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, m_block, CastShadows, ReceiveShadows, layer, cam);
 		}
 
 		internal void OnDestroy() {
