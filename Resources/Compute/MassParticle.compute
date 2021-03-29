@@ -231,6 +231,7 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 	emitPart.color = PackColor(float4(1, 1, 1, 1));
 
 	bool normalVel = (tcEmit.velType == EV_NORMAL);
+	
 	switch(tcEmit.shape){
 		case ES_SPHERE:
 			float3 sdir = RandomInUnitSphere();
@@ -331,7 +332,7 @@ void Emit(uint3 DTid : SV_DispatchThreadID) {
 					face = emitFaces[lo];					
 				}
 				
-				//random number in parralelogram
+				//random number in parallelogram
 				b = Random();
 				c = Random();
 
@@ -571,17 +572,18 @@ float GetForceStrength(float d, float radius, uint atten, float attenuation) {
 float3 GetForceDirection(float3 dif, float d, float3 velocity, uint type, float3 axis) {
 	if (type == FORCE_RADIAL){
 		return -dif / d;
-	} else if (type == FORCE_VECTOR){
+	}
+	if (type == FORCE_VECTOR){
 		return axis;
-	} else if (type == FORCE_DRAG) {
+	}
+	if (type == FORCE_DRAG) {
 		return -normalize(velocity);
-	} else if (type == FORCE_VORTEX) {
+	}
+	if (type == FORCE_VORTEX) {
 		return cross(axis, dif / d);
 	}
-
 	return float3(0.0f, 0.0f, 0.0f);
 }
-
 
 [numthreads(TCGroupSize, 1, 1)]
 void UpdateForces(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID) {
@@ -621,7 +623,6 @@ void UpdateForces(uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID) {
 		}
 	}
 
-
 	particles[id].velocity += (forceApply + gf.velocity);
 }
 
@@ -631,7 +632,7 @@ void UpdateTurbulenceForces(uint3 DTid : SV_DispatchThreadID) {
 
 	uint id = GetId(DTid.x);
 	float3 rawDif = particles[id].pos - gf.pos;
-	float3 applyForce = 0;
+	float3 applyForce;
 
 	float3 uv = 0.5f + mul(float4(rawDif, 0.0f), _TurbulenceRotationInv).xyz / gf.axis;
 	float3 untransForce = _TurbulenceTexture.SampleLevel(TurbulenceLinearRepeatSampler, uv, 0.0f).rgb * 2.0f - 1.0f;
@@ -664,7 +665,7 @@ void UpdateTurbulenceForces(uint3 DTid : SV_DispatchThreadID) {
 //Boids flocking code
 #define BoidsGroupSize 16
 
-//Biggest task is the parralel summing 
+//Biggest task is the parallel summing 
 groupshared float3 sdata[BoidsGroupSize];
 
 uint n;
@@ -725,7 +726,7 @@ void BoidsFlockUpdate(uint3 DTid : SV_DispatchThreadID, uint tid : SV_GroupIndex
 	particles[id].velocity = particles[id].velocity * (1.0f - _DeltTime * boidsVelStr) + _DeltTime * boidsVelStr * avgVelocity;
 }
 
-//Parralel summing kernel
+//Parallel summing kernel
 //Progressively collapses the values summing them together
 RWStructuredBuffer<float3> sumInput;
 RWStructuredBuffer<float3> sumOutput;

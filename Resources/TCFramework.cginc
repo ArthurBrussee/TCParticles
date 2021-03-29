@@ -28,7 +28,6 @@ struct Particle {
 	float pad;
 };
 
-
 #if TC_COMPUTES
 	RWStructuredBuffer<Particle> particles : register(u1);
 	StructuredBuffer<Particle> particlesRead : register(t1);
@@ -108,16 +107,13 @@ float4 UnpackColor(uint packedInput) {
 }
 
 uint PackColor(float4 unpackedInput) {
-	uint packedOutput;
-
-	packedOutput = ((D3DX_FLOAT_to_UINT(saturate(unpackedInput.x), 255)) |
-		(D3DX_FLOAT_to_UINT(saturate(unpackedInput.y), 255) << 8) |
-		(D3DX_FLOAT_to_UINT(saturate(unpackedInput.z), 255) << 16) |
-		(D3DX_FLOAT_to_UINT(saturate(unpackedInput.w), 255) << 24));
-
+	uint packedOutput = D3DX_FLOAT_to_UINT(saturate(unpackedInput.x), 255) |
+		D3DX_FLOAT_to_UINT(saturate(unpackedInput.y), 255) << 8 |
+		D3DX_FLOAT_to_UINT(saturate(unpackedInput.z), 255) << 16 |
+		D3DX_FLOAT_to_UINT(saturate(unpackedInput.w), 255) << 24;
 	return packedOutput;
 }
-	
+
 // Generates an orthonormal (row-major) basis from a unit vector
 // The resulting rotation matrix has the determinant of +1.
 // Ref: 'ortho_basis_pixar_r2' from http://marc-b-reynolds.github.io/quaternions/2016/07/06/Orthonormal.html
@@ -204,7 +200,7 @@ struct TCFragment {
 	#endif
 #endif
 
-//Dummy function necesarry to compile
+//Dummy function necessary to compile
 void TCDefaultProc(){}
 
 #if !SHADER_STAGE_COMPUTE && defined(PROCEDURAL_INSTANCING_ON) && TC_COMPUTES
@@ -226,8 +222,6 @@ void TCDefaultProc(){}
 		float velLength = length(realVelocity);
 
 		float4 partColor = UnpackColor(tc_Particle.color);
-
-		// tc_Particle.baseSize *= saturate(saturate(partColor.a - 0.2f) / 0.8f + 0.4f);
 
 		float totalSize = (tc_Particle.baseSize * lifeTex.a);
 		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;
@@ -268,15 +262,10 @@ void TCDefaultProc(){}
             #endif
             
             input.vertex.xyz += tc_Particle.pos;
-            
-			// TODO: This is wrong?
-			// float3 camFwd = _WorldSpaceCameraPos - tc_Particle.pos;
-            // input.normal.xyz *= dot(input.normal, camFwd) < 0 ? -1 : 1;
         #endif
 
-			float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
-			input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;
-
+		float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
+		input.color = tex2Dlod(_ColTex, tp) * _Glow * partColor;
 
         if (_UvSpriteAnimation > 0) {
             float2 uv = input.texcoord.xy;

@@ -36,7 +36,6 @@ Shader "TCParticles/Legacy/Alpha cutout" {
 
 					return col;
 				}
-
 				ENDCG
 			}
 		}

@@ -91,5 +91,4 @@ uint RandomRangeUInt(uint minVal, uint maxVal) {
 uint RandomRangeUInt(uint max) {
 	return NextXor() % max;
 }
-
 #endif

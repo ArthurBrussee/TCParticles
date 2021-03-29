@@ -114,13 +114,10 @@
 					return o;
 				}
 
-
 				half4 fragParticleUnlit (VertexOutput IN) : SV_Target {
 					half4 albedo = readTexture (_MainTex, IN) * _Color;
 					albedo *= _Color;
 					
-
-
 					fragColorMode(IN);
 
 					#if defined(_EMISSION)

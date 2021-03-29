@@ -1,10 +1,8 @@
 ﻿Shader "Hidden/TCWireframeShader"
 {
-	Properties {
-	}
+	Properties {}
 
-	SubShader
-	{
+	SubShader {
 		Tags { "RenderType"="Transparent" }
 
 		Blend SrcAlpha OneMinusSrcAlpha
@@ -45,7 +43,6 @@
 		Pass
 		{
 			Cull Front
-
 
 			CGPROGRAM
 			#pragma vertex vert

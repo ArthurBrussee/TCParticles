@@ -1,5 +1,5 @@
 #if !defined(TC_DEFAULT_VERT)
-#define TC_DEFALT_VERT
+#define TC_DEFAULT_VERT
 
 sampler2D _MainTex;
 float4 _MainTex_ST;
@@ -12,5 +12,4 @@ TCFragment TCDefaultVert (appdata_full input) {
 	o.col = input.color;
 	return o;
 }
-
 #endif

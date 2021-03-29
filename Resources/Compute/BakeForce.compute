@@ -60,10 +60,10 @@ float3 CalculateBillow(float3 pos) {
 	float off = 0;
 
 	for (uint index = 0; index < _OctaveCount; ++index) {
-		float3 samp = 2.0f * abs(GradientCoherentNoiseCurl(pos)) - 1.0f;
+		float3 sample = 2.0f * abs(GradientCoherentNoiseCurl(pos)) - 1.0f;
 		off += (1 - NOISE_SCALE) * weight;
 
-		val += samp * weight;
+		val += sample * weight;
 		pos *= _Lacunarity;
 		weight *= _Persistence;
 	}

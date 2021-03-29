@@ -69,11 +69,8 @@
 			uint _PreviewMode;
 			
 			sampler3D _ForceTexture;
-
 			Texture3D<float4> _ForceTextureRW;
-
 			SamplerState sampler_ForceTextureRW;
-
 
 			v2f vert (uint vert : SV_VertexID, uint inst : SV_InstanceID) {
 				v2f o;

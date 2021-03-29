@@ -193,8 +193,8 @@ namespace TC {
 		public bool IsVisible { get; private set; }
 
 		uint[] m_argsData = new uint[5];
-		ComputeBuffer m_argsBuffer;
 
+		ComputeBuffer m_argsBuffer;
 		ComputeBuffer m_customNormalsBuffer;
 
 		Mesh m_tailStretchMesh;
@@ -322,6 +322,7 @@ namespace TC {
 
 		internal void SetupDrawCall(Camera cam) {
 			if (UseFrustumCulling) {
+				// TODO: Frustum culling needs to account for XR.
 				Camera currentCam = Camera.current;
 				GeometryUtility.CalculateFrustumPlanes(currentCam.projectionMatrix * currentCam.worldToCameraMatrix, s_planes);
 				IsVisible |= GeometryUtility.TestPlanesAABB(s_planes, Bounds);
@@ -375,8 +376,7 @@ namespace TC {
 
 			m_cacheMaterial.SetBuffer("particlesRead", Manager.GetParticlesBuffer());
 
-			var cloud = Emitter.PointCloud;
-
+			PointCloudData cloud = Emitter.PointCloud;
 			bool usePointCloudNormals = pointCloudNormals &&
 			                            cloud != null &&
 			                            cloud.Normals != null &&
@@ -417,15 +417,12 @@ namespace TC {
 				case Space.Local:
 					m = Matrix4x4.TRS(systTransform.position, systTransform.rotation, Vector3.one);
 					break;
-
 				case Space.Parent:
 					m = Matrix4x4.TRS(ParentPosition, systTransform.parent.rotation, Vector3.one);
 					break;
-
 				case Space.LocalWithScale:
 					m = Matrix4x4.TRS(systTransform.position, systTransform.rotation, systTransform.localScale);
 					break;
-
 				default:
 					m = Matrix4x4.identity;
 					break;
@@ -453,13 +450,11 @@ namespace TC {
 					m_cacheMaterial.SetFloat(SID._LengthScale, LengthScale - 1.0f);
 					m_particleMesh = TCParticleGlobalManager.GlobalQuad;
 					break;
-
 				case GeometryRenderMode.TailStretchBillboard:
 					m_cacheMaterial.SetFloat(SID._SpeedScale, SpeedScale);
 					m_cacheMaterial.SetFloat(SID._LengthScale, LengthScale - 1.0f);
 					m_particleMesh = m_tailStretchMesh;
 					break;
-
 				case GeometryRenderMode.Mesh:
 					m_particleMesh = _mesh;
 					break;
@@ -484,11 +479,10 @@ namespace TC {
 
 			//Setup proper size mult depending on camera ortho size
 			if (isPixelSize) {
-				var pixelMult = Mathf.Max(1.0f / Screen.width, 1.0f / Screen.height);
+				float pixelMult = Mathf.Max(1.0f / Screen.width, 1.0f / Screen.height);
 				if (cam.orthographic) {
 					pixelMult *= cam.orthographicSize * 2.0f;
 				}
-
 				m_cacheMaterial.SetVector(SID._PixelMult, new Vector4(pixelMult, cam.orthographic ? 0.0f : 1.0f));
 			} else {
 				m_cacheMaterial.SetVector(SID._PixelMult, new Vector4(1.0f, 0.0f));
