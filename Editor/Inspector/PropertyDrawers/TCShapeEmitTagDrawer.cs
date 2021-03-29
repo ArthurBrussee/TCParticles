@@ -15,12 +15,11 @@ namespace TC.EditorIntegration {
 			if (s_tags == null) {
 				s_tags = new List<TCShapeEmitTag>();
 
-				var assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
+				string[] assetPaths = AssetDatabase.FindAssets("t:TCShapeEmitTag");
 
-				foreach (var guid in assetPaths) {
-					var path = AssetDatabase.GUIDToAssetPath(guid);
-					var loaded = AssetDatabase.LoadAssetAtPath(path, typeof(TCShapeEmitTag)) as TCShapeEmitTag;
-
+				foreach (string guid in assetPaths) {
+					string path = AssetDatabase.GUIDToAssetPath(guid);
+					var loaded = AssetDatabase.LoadAssetAtPath<TCShapeEmitTag>(path);
 					s_tags.Add(loaded);
 				}
 

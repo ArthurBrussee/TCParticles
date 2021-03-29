@@ -82,21 +82,10 @@ namespace TC.Internal {
 		}
 
 		public void ReleaseBuffers() {
-			if (m_posSumBuffer != null) {
-				m_posSumBuffer.Release();
-			}
-
-			if (m_velocitySumBuffer != null) {
-				m_velocitySumBuffer.Release();
-			}
-
-			if (m_tempPosBuffer != null) {
-				m_tempPosBuffer.Release();
-			}
-
-			if (m_tempVelocityBuffer != null) {
-				m_tempVelocityBuffer.Release();
-			}
+			m_posSumBuffer?.Release();
+			m_velocitySumBuffer?.Release();
+			m_tempPosBuffer?.Release();
+			m_tempVelocityBuffer?.Release();
 		}
 	}
 }

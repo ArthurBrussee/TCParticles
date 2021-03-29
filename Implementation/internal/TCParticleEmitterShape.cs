@@ -78,10 +78,7 @@ namespace TC.Internal {
 		public void UpdateListData(ComputeShader cs, int kern) {
 			//Make sure we always have some buffer
 			if (m_emitProtoBuffer == null || m_emitProtoBuffer.count < m_toEmitListCount) {
-				if (m_emitProtoBuffer != null) {
-					m_emitProtoBuffer.Release();
-				}
-
+				m_emitProtoBuffer?.Release();
 				m_emitProtoBuffer = new ComputeBuffer(Mathf.Max(1, m_toEmitListCount), ParticleProto.Stride);
 			}
 
@@ -104,15 +101,11 @@ namespace TC.Internal {
 				return;
 			}
 
-			var particlePrototypes = pointCloud.GetPrototypes(count);
+			ParticleProto[] particlePrototypes = pointCloud.GetPrototypes(count);
 			SetPrototypeEmission(particlePrototypes, count, true, false, false, true);
 		}
 
-		public void ReleaseData() {
-			if (m_emitProtoBuffer != null) {
-				m_emitProtoBuffer.Release();
-			}
-		}
+		public void ReleaseData() => m_emitProtoBuffer?.Release();
 
 		internal void SetPrototypeEmission(ParticleProto[] prototypes, int count, bool useColor, bool useSize, bool useVelocity, bool usePosition) {
 			m_toEmitBuffer = prototypes;

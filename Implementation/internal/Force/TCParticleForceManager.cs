@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using TC.Internal;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -11,6 +12,7 @@ namespace TC {
 	/// </summary>
 	[Serializable]
 	public class ParticleForceManager : ParticleComponent {
+		[SuppressMessage("ReSharper", "InconsistentNaming")]
 		struct Force {
 			public uint type;
 			public uint attenType;
@@ -31,18 +33,19 @@ namespace TC {
 			public float turbulencePosFac;
 		}
 
+		[SuppressMessage("ReSharper", "UnusedMember.Local")]
 		enum ForceTypeKernel {
 			Normal,
 			Turbulence,
 			Count
 		}
 
-		const int ForceTypeKernelCount = (int) ForceTypeKernel.Count;
+		const int c_forceTypeKernelCount = (int) ForceTypeKernel.Count;
 
 		[SerializeField] int _maxForces = 1;
 
 		/// <summary>
-		/// Maxinum number of forces particles collide with.
+		/// Maximum number of forces particles collide with.
 		/// </summary>
 		/// <remarks>
 		/// If the number of forces this system could link too exceeds this, the chosen forces are sorted by distance and size
@@ -53,14 +56,14 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// Maxinum number of forces particles react to
+		/// Maximum number of forces particles react to
 		/// </summary>
 		public int NumForcesTotal => m_forcesList == null ? 0 : Mathf.Min(m_forcesList.Count, _maxForces);
 
 		[SerializeField] List<TCForce> _baseForces = new List<TCForce>();
 
 		/// <summary>
-		/// A list of forces to link irregardles of distance or layer
+		/// A list of forces to link irregardless of distance or layer
 		/// </summary>
 		public List<TCForce> BaseForces => _baseForces;
 
@@ -112,7 +115,7 @@ namespace TC {
 				return;
 			}
 
-			for (int t = 0; t < ForceTypeKernelCount; ++t) {
+			for (int t = 0; t < c_forceTypeKernelCount; ++t) {
 				if (m_forcesBuffer[t] != null) {
 					m_forcesBuffer[t].Release();
 				}
@@ -126,10 +129,10 @@ namespace TC {
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		protected override void Initialize() {
 			Profiler.BeginSample("Force buffers");
-			m_forcesBuffer = new ComputeBuffer[ForceTypeKernelCount];
-			m_forcesCount = new int[ForceTypeKernelCount];
-			m_forcesStruct = new Force[ForceTypeKernelCount][];
-			m_forcesReference = new TCForce[ForceTypeKernelCount][];
+			m_forcesBuffer = new ComputeBuffer[c_forceTypeKernelCount];
+			m_forcesCount = new int[c_forceTypeKernelCount];
+			m_forcesStruct = new Force[c_forceTypeKernelCount][];
+			m_forcesReference = new TCForce[c_forceTypeKernelCount][];
 			Profiler.EndSample();
 
 			CreateBuffers();
@@ -168,7 +171,7 @@ namespace TC {
 				parentPosition = systTransform.parent.position;
 			}
 
-			for (int t = 0; t < ForceTypeKernelCount; ++t) {
+			for (int t = 0; t < c_forceTypeKernelCount; ++t) {
 				for (int f = 0; f < m_forcesCount[t]; ++f) {
 					Force curForce = m_forcesStruct[t][f];
 					TCForce force = m_forcesReference[t][f];
@@ -333,9 +336,7 @@ namespace TC {
 				m_forcesList.Clear();
 			}
 
-			for (int i = 0; i < Tracker<TCForce>.Count; i++) {
-				TCForce f = Tracker<TCForce>.All[i];
-
+			foreach(TCForce f in Tracker<TCForce>.All) {
 				if (ForceLayers == (ForceLayers | (1 << f.gameObject.layer))) {
 					m_forcesList.Add(f);
 				}
@@ -350,7 +351,7 @@ namespace TC {
 			}
 
 			//Update data
-			for (int t = 0; t < ForceTypeKernelCount; ++t) {
+			for (int t = 0; t < c_forceTypeKernelCount; ++t) {
 				m_forcesCount[t] = 0;
 			}
 
@@ -445,15 +446,13 @@ namespace TC {
 		}
 
 		internal virtual void OnDestroy() {
-			for (int t = 0; t < ForceTypeKernelCount; ++t) {
-				if (m_forcesBuffer != null && m_forcesBuffer[t] != null) {
+			for (int t = 0; t < c_forceTypeKernelCount; ++t) {
+				if (m_forcesBuffer?[t] != null) {
 					Release(ref m_forcesBuffer[t]);
 				}
 			}
 
-			if (m_boidsFlock != null) {
-				m_boidsFlock.ReleaseBuffers();
-			}
+			m_boidsFlock?.ReleaseBuffers();
 		}
 	}
 }

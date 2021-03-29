@@ -37,8 +37,8 @@ namespace TC {
 		/// </remarks>
 		public int DispatchCount {
 			get {
-				const int c_groupSize = 128;
-				return Mathf.CeilToInt(Emitter.ParticleCount / (float) c_groupSize);
+				const int groupSize = 128;
+				return Mathf.CeilToInt(Emitter.ParticleCount / (float) groupSize);
 			}
 		}
 
@@ -50,7 +50,7 @@ namespace TC {
 		/// </remarks>
 		public int ParticleCount => Emitter.ParticleCount;
 
-		ComputeBuffer particles;
+		ComputeBuffer m_particles;
 
 		/// <summary>
 		/// Get the buffer containing the current particles data
@@ -60,13 +60,11 @@ namespace TC {
 		/// Only use in advanced use cases for the extension API.
 		/// In most cases it is better to use the built in <see cref="DispatchExtensionKernel"/> method
 		/// </remarks>
-		public ComputeBuffer GetParticlesBuffer() {
-			return particles;
-		}
+		public ComputeBuffer GetParticlesBuffer() => m_particles;
 
 		public Particle[] GetParticleData() {
-			Particle[] ret = new Particle[ParticleCount];
-			particles.GetData(ret);
+			var ret = new Particle[ParticleCount];
+			m_particles.GetData(ret);
 			return ret;
 		}
 
@@ -235,13 +233,13 @@ namespace TC {
 
 		List<TCParticleSystem> Children {
 			get {
-				if (m_children == null) {
-					//Fill list
-					m_children = new List<TCParticleSystem>();
-					SystemComp.GetComponentsInChildren(m_children);
-					m_children.Remove(SystemComp);
+				if (m_children != null) {
+					return m_children;
 				}
-
+				//Fill list
+				m_children = new List<TCParticleSystem>();
+				SystemComp.GetComponentsInChildren(m_children);
+				m_children.Remove(SystemComp);
 				return m_children;
 			}
 		}
@@ -253,11 +251,8 @@ namespace TC {
 		}
 
 		void CreateParticleBuffer() {
-			if (particles != null) {
-				particles.Release();
-			}
-
-			particles = new ComputeBuffer(MaxParticles, ParticleStride);
+			m_particles?.Release();
+			m_particles = new ComputeBuffer(MaxParticles, ParticleStride);
 		}
 
 		internal override void OnEnable() {
@@ -273,7 +268,7 @@ namespace TC {
 				}
 			}
 
-			if (particles.count != MaxParticles) {
+			if (m_particles.count != MaxParticles) {
 				CreateParticleBuffer();
 			}
 
@@ -283,16 +278,16 @@ namespace TC {
 
 			Profiler.BeginSample("Update loop");
 			if (ShouldUpdate()) {
-				float deltTime = !IsPaused ? Mathf.Min(SimulationDeltTime, 0.1f) * playbackSpeed : 0.0f;
+				float deltTime = !IsPaused ? Mathf.Min(SimulationDeltaTime, 0.1f) * playbackSpeed : 0.0f;
 				UpdateParticles(deltTime);
 			}
 
 			Profiler.EndSample();
 		}
 
-		void UpdateParticles(float deltTime) {
+		void UpdateParticles(float deltaTime) {
 			Profiler.BeginSample("Update particles");
-			ParticleTimeDelta = deltTime;
+			ParticleTimeDelta = deltaTime;
 
 			SystemTime += ParticleTimeDelta;
 			RealTime += ParticleTimeDelta;
@@ -338,10 +333,7 @@ namespace TC {
 
 			if (!NoSimulation) {
 				Profiler.BeginSample("Pre Extenions update");
-				if (OnPreSimulationCallback != null) {
-					OnPreSimulationCallback();
-				}
-
+				OnPreSimulationCallback?.Invoke();
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Main update");
@@ -349,16 +341,12 @@ namespace TC {
 				Profiler.EndSample();
 
 				Profiler.BeginSample("Post Extenions update");
-				if (OnPostSimulationCallback != null) {
-					OnPostSimulationCallback();
-				}
-
+				OnPostSimulationCallback?.Invoke();
 				Profiler.EndSample();
 
 				ColliderManager.Dispatch();
 				ForceManager.Dispatch();
 			}
-
 			Profiler.EndSample();
 		}
 
@@ -367,7 +355,7 @@ namespace TC {
 		}
 
 		internal virtual void OnDestroy() {
-			Release(ref particles);
+			Release(ref m_particles);
 			Release(ref m_systemBuffer);
 		}
 
@@ -375,7 +363,7 @@ namespace TC {
 		protected override void Bind() {
 			float d = dampingIsCurve ? dampingCurve.Evaluate(SystemTime / Duration) : damping;
 
-			var syst = m_systArray[0];
+			SystemParameters syst = m_systArray[0];
 			syst.AngularVelocity = Emitter.AngularVelocity * Mathf.Deg2Rad * Manager.ParticleTimeDelta;
 			syst.Damping = Mathf.Pow(Mathf.Abs(1.0f - d), ParticleTimeDelta);
 			syst.MaxSpeed = MaxSpeed > 0 ? MaxSpeed : float.MaxValue;
@@ -388,7 +376,7 @@ namespace TC {
 			ComputeShader.SetFloat(SID._ParticleThickness, actualThickness);
 
 			syst.ConstantForce = ConstantForce.Value(Manager.SystemTime / Manager.Duration) * ParticleTimeDelta +
-			                     Physics.gravity * Manager.gravityMultiplier * ParticleTimeDelta * syst.Damping;
+			                     Physics.gravity * (Manager.gravityMultiplier * ParticleTimeDelta * syst.Damping);
 
 			m_systArray[0] = syst;
 			m_systemBuffer.SetData(m_systArray);
@@ -528,7 +516,7 @@ namespace TC {
 		/// <param name="kernel"></param>
 		public void BindPariclesToKernel(CommandBuffer command, ComputeShader comp, int kernel) {
 			command.SetComputeBufferParam(comp, kernel, SID._SystemParameters, m_systemBuffer);
-			command.SetComputeBufferParam(comp, kernel, SID._Particles, particles);
+			command.SetComputeBufferParam(comp, kernel, SID._Particles, m_particles);
 
 			command.SetComputeFloatParam(comp, SID._DeltTime, ParticleTimeDelta);
 			command.SetComputeIntParam(comp, SID._MaxParticles, MaxParticles);
@@ -546,7 +534,7 @@ namespace TC {
 			}
 
 			comp.SetBuffer(kernel, SID._SystemParameters, m_systemBuffer);
-			comp.SetBuffer(kernel, SID._Particles, particles);
+			comp.SetBuffer(kernel, SID._Particles, m_particles);
 
 			comp.SetFloat(SID._DeltTime, ParticleTimeDelta);
 			comp.SetInt(SID._MaxParticles, MaxParticles);
@@ -570,20 +558,18 @@ namespace TC {
 		/// </remarks>
 		public void DispatchExtensionKernel(ComputeShader extension, int kernel) {
 			BindPariclesToKernel(extension, kernel);
+			extension.GetKernelThreadGroupSizes(kernel, out uint x, out uint _, out uint _);
 
-			uint x, y, z;
-			extension.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
-
-			int disp = Mathf.CeilToInt((float) Emitter.ParticleCount / x);
-
-			if (disp > 0) {
-				extension.Dispatch(kernel, disp, 1, 1);
+			int dispatchCount = Mathf.CeilToInt((float) Emitter.ParticleCount / x);
+			if (dispatchCount > 0) {
+				extension.Dispatch(kernel, dispatchCount, 1, 1);
 			}
 		}
 
 		/// <summary>
 		/// Launch a compute shader kernel with a thread for each current particle
 		/// </summary>
+		/// <param name="command">The command buffer to add the commands to</param>
 		/// <param name="extension">The compute shader to dispatch</param>
 		/// <param name="kernel">the kernel to dispatch in the compute shader</param>
 		/// <remarks>
@@ -598,12 +584,10 @@ namespace TC {
 		/// </remarks>
 		public void DispatchExtensionKernel(CommandBuffer command, ComputeShader extension, int kernel) {
 			BindPariclesToKernel(command, extension, kernel);
+			extension.GetKernelThreadGroupSizes(kernel, out uint x, out uint _, out uint _);
 
-			uint x, y, z;
-			extension.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
-
-			int disp = Mathf.CeilToInt((float) Emitter.ParticleCount / x);
-			command.DispatchCompute(extension, kernel, disp, 1, 1);
+			int dispatchCount = Mathf.CeilToInt((float) Emitter.ParticleCount / x);
+			command.DispatchCompute(extension, kernel, dispatchCount, 1, 1);
 		}
 	}
 }

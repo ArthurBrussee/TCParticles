@@ -16,13 +16,13 @@ namespace TC.Internal {
 		public ComputeShader ComputeShader;
 
 #if UNITY_EDITOR
-		// ReSharper disable once ArrangeAttributes
 		[InitializeOnLoadMethod]
 #endif
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
 		public static void Init() {
-			var instances = Resources.FindObjectsOfTypeAll<TCParticleGlobalManager>();
-			foreach (var inst in instances) {
+			TCParticleGlobalManager[] instances = Resources.FindObjectsOfTypeAll<TCParticleGlobalManager>();
+			
+			foreach (TCParticleGlobalManager inst in instances) {
 				DestroyImmediate(inst);
 			}
 
@@ -44,27 +44,18 @@ namespace TC.Internal {
 
 		void OnEnable() {
 			Camera.onPreCull += OnCamRender;
-	
-			GlobalQuad = new Mesh();
-			GlobalQuad.vertices = new[] {
-				new Vector3(-0.5f, 0.5f, 0.0f),
-				new Vector3(0.5f, 0.5f, 0.0f),
-				new Vector3(0.5f, -0.5f, 0.0f),
-				new Vector3(-0.5f, -0.5f, 0.0f)
-			};
 
-			GlobalQuad.uv = new[] {
-				new Vector2(0, 1),
-				Vector2.one,
-				new Vector2(1, 0),
-				Vector2.zero
+			GlobalQuad = new Mesh {
+				vertices = new[] {
+					new Vector3(-0.5f, 0.5f, 0.0f), new Vector3(0.5f, 0.5f, 0.0f), new Vector3(0.5f, -0.5f, 0.0f), new Vector3(-0.5f, -0.5f, 0.0f)
+				},
+				uv = new[] {new Vector2(0, 1), Vector2.one, new Vector2(1, 0), Vector2.zero},
+				//Stretch factors encoded in uv2
+				uv2 = new[] {Vector2.zero, Vector2.one, Vector2.zero, Vector2.one},
+				triangles = new[] {0, 1, 2, 0, 2, 3}
 			};
-
-			//Stretch factors encoded in uv2
-			GlobalQuad.uv2 = new[] { Vector2.zero, Vector2.one, Vector2.zero, Vector2.one };
 
 			//TODO: Check if this is reversed or not
-			GlobalQuad.triangles = new[] { 0, 1, 2, 0, 2, 3 };
 			GlobalQuad.RecalculateNormals();
 			GlobalQuad.RecalculateBounds();
 			GlobalQuad.RecalculateTangents();
@@ -78,14 +69,14 @@ namespace TC.Internal {
 		}
 
 		void Update() {
-			for (int i = 0; i < Tracker<TCParticleSystem>.Count; ++i) {
-				Tracker<TCParticleSystem>.All[i].TCUpdate();
+			foreach(TCParticleSystem syst in Tracker<TCParticleSystem>.All) {
+				syst.TCUpdate();
 			}
 		}
 
 		static void OnCamRender(Camera cam) {
-			for (int i = 0; i < Tracker<TCParticleSystem>.Count; ++i) {
-				var rend = Tracker<TCParticleSystem>.All[i].ParticleRenderer;
+			foreach(TCParticleSystem syst in Tracker<TCParticleSystem>.All) {
+				ParticleRenderer rend = syst.ParticleRenderer;
 				rend.SetupDrawCall(cam);
 			}
 		}
@@ -123,7 +114,7 @@ namespace TC.Internal {
 			public float cweight;
 		}
 
-		public struct MeshIndex : IEquatable<MeshIndex> {
+		public readonly struct MeshIndex : IEquatable<MeshIndex> {
 			public readonly Mesh Mesh;
 			public readonly int UvChannel;
 
@@ -138,7 +129,7 @@ namespace TC.Internal {
 
 			public override bool Equals(object obj) {
 				if (ReferenceEquals(null, obj)) return false;
-				return obj is MeshIndex && Equals((MeshIndex) obj);
+				return obj is MeshIndex index && Equals(index);
 			}
 
 			public override int GetHashCode() {
@@ -149,8 +140,8 @@ namespace TC.Internal {
 		}
 
 		static ComputeBuffer GenerateMeshData(MeshIndex meshIndex) {
-			var mesh = meshIndex.Mesh;
-			var uvChannel = meshIndex.UvChannel;
+			Mesh mesh = meshIndex.Mesh;
+			int uvChannel = meshIndex.UvChannel;
 
 			//Build mesh data structure
 			mesh.GetVertices(s_verts);
@@ -164,16 +155,12 @@ namespace TC.Internal {
 
 			//TODO: Reuse face somehow?
 
-			ComputeBuffer buffer;
-			if (!s_meshStore.TryGetValue(meshIndex, out buffer)) {
+			if (!s_meshStore.TryGetValue(meshIndex, out ComputeBuffer buffer)) {
 				buffer = new ComputeBuffer(count, ParticleComponent.SizeOf<Face>());
 				s_meshStore[meshIndex] = buffer;
 			} else {
 				if (buffer == null || buffer.count != count) {
-					if (buffer != null){
-						buffer.Dispose();
-					}
-
+					buffer?.Dispose();
 					buffer = new ComputeBuffer(count, ParticleComponent.SizeOf<Face>());
 					s_meshStore[meshIndex] = buffer;
 				}
@@ -261,7 +248,7 @@ namespace TC.Internal {
 				return;
 			}
 
-			var buffer = s_meshStore[meshIndex];
+			ComputeBuffer buffer = s_meshStore[meshIndex];
 			buffer.Dispose();
 			s_meshStore.Remove(meshIndex);
 		}

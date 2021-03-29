@@ -34,12 +34,12 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// Maxinum number of colliders systems reacts to
+		/// Maximum number of colliders systems reacts to
 		/// </summary>
 		[SerializeField] int _maxColliders = 1;
 
 		/// <summary>
-		/// Maxinum number of colliders particles react to
+		/// Maximum number of colliders particles react to
 		/// </summary>
 		/// <remarks>
 		/// If the number of colliders exceeds this amount, they are sorted by their distance size etc. to pick the most relevant ones.
@@ -125,7 +125,7 @@ namespace TC {
 		[SerializeField] List<TCCollider> _baseColliders = new List<TCCollider>();
 
 		/// <summary>
-		/// A list of colliders to link irregardles of distance or layer. Does count towards MaxColliders
+		/// A list of colliders to link irregardless of distance or layer. Does count towards MaxColliders
 		/// </summary>
 		public List<TCCollider> BaseColliders => _baseColliders;
 
@@ -166,9 +166,7 @@ namespace TC {
 				m_collidersList.Clear();
 			}
 
-			for (int i = 0; i < Tracker<TCCollider>.Count; i++) {
-				TCCollider c = Tracker<TCCollider>.All[i];
-
+			foreach(TCCollider c in Tracker<TCCollider>.All) {
 				if (ColliderLayers == (ColliderLayers | (1 << c.gameObject.layer))) {
 					m_collidersList.Add(c);
 				}

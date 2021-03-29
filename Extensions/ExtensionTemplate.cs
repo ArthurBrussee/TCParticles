@@ -12,7 +12,6 @@ public class ExtensionTemplate : MonoBehaviour {
 	//The amount to accelerate particles
 	[Range(0.0f, 10.0f)] public float AccelSpeed = 1.0f;
 
-
 	void Update() {
 		//Bind own custom variables to compute shader
 		Extension.SetFloat("AccelSpeed", AccelSpeed);

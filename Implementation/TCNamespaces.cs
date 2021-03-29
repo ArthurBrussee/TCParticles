@@ -118,7 +118,7 @@ namespace TC {
 		/// </summary>
 		StretchedBillboard,
 		/// <summary>
-		/// Camera oriented billobard, where the lower part is stretched in the direction the particle is moving
+		/// Camera oriented billboard, where the lower part is stretched in the direction the particle is moving
 		/// </summary>
 		TailStretchBillboard,
 		/// <summary>
@@ -192,11 +192,11 @@ namespace TC {
 	/// </summary>
 	public enum ColliderShape {
 		/// <summary>
-		/// Use the shape of the PhysX component attached to this object. Oonly cube / sphere / capsule are supported
+		/// Use the shape of the PhysX component attached to this object. Only cube / sphere / capsule are supported
 		/// </summary>
 		PhysxShape,
 		/// <summary>
-		/// Colliser has a disc shape. Can have rounded edges and a hole in the middle
+		/// Collider has a disc shape. Can have rounded edges and a hole in the middle
 		/// </summary>
 		Disc,
 
@@ -206,7 +206,7 @@ namespace TC {
 		Hemisphere,
 
 		/// <summary>
-		/// Collider has a cubibcal shape. Can have rounded edges
+		/// Collider has a cubical shape. Can have rounded edges
 		/// </summary>
 		RoundedBox,
 
@@ -236,7 +236,7 @@ namespace TC {
 		Box,
 
 		/// <summary>
-		/// Apply forc in disc shaped region. Can have rounded edges
+		/// Apply force in disc shaped region. Can have rounded edges
 		/// </summary>
 		Disc,
 

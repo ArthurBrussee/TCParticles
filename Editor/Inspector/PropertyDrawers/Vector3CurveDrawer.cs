@@ -4,12 +4,12 @@ using UnityEngine;
 namespace TC.EditorIntegration {
 	[CustomPropertyDrawer(typeof(Vector3Curve))]
 	public class Vector3CurveDrawer : PropertyDrawer {
-		Rect rect;
-		GUIContent[] options = {new GUIContent("constant"), new GUIContent("curve")};
+		Rect m_rect;
+		static readonly GUIContent[] s_options = {new GUIContent("constant"), new GUIContent("curve")};
 
 		Rect GetRect(float width) {
-			Rect ret = new Rect(rect.x, rect.y, width, 16.0f);
-			rect.x += width;
+			Rect ret = new Rect(m_rect.x, m_rect.y, width, 16.0f);
+			m_rect.x += width;
 			return ret;
 		}
 
@@ -21,13 +21,13 @@ namespace TC.EditorIntegration {
 		public override void OnGUI(Rect position, SerializedProperty prop, GUIContent label) {
 			EditorGUI.BeginProperty(position, label, prop);
 			position.x += 5.0f;
-			rect = position;
+			m_rect = position;
 			bool constant = prop.FindPropertyRelative("isConstant").boolValue;
 
 			GUI.Label(GetRect(200.0f), label);
 
-			rect.y += 16.0f;
-			rect.x = 40.0f;
+			m_rect.y += 16.0f;
+			m_rect.x = 40.0f;
 
 			float oldWidth = EditorGUIUtility.labelWidth;
 			EditorGUIUtility.labelWidth = 12.0f;
@@ -49,7 +49,7 @@ namespace TC.EditorIntegration {
 			s.contentOffset = new Vector2(100.0f, 100.0f);
 			s.fixedWidth = 12.0f;
 
-			c = EditorGUI.Popup(GetRect(80.0f), c, options, s);
+			c = EditorGUI.Popup(GetRect(80.0f), c, s_options, s);
 			prop.FindPropertyRelative("isConstant").boolValue = c == 0;
 
 			EditorGUI.EndProperty();

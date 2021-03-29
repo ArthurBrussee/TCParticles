@@ -37,7 +37,7 @@ namespace TC {
 		[SerializeField] float _lengthScale = 1.0f;
 
 		/// <summary>
-		/// Factor to strech out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBilloard
+		/// Factor to stretch out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBillboard
 		/// </summary>
 		public float LengthScale {
 			get => _lengthScale;
@@ -47,7 +47,7 @@ namespace TC {
 		[SerializeField] float _speedScale = 0.25f;
 
 		/// <summary>
-		/// Factor to strech out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBilloard bassed on the particles speed
+		/// Factor to stretch out particles when <see cref="RenderMode"/> is set to (Tail)StretchedBillboard based on the particles speed
 		/// </summary>
 		public float SpeedScale {
 			get => _speedScale;
@@ -102,10 +102,10 @@ namespace TC {
 		/// </summary>
 		public float glow;
 
-		Texture2D colorOverLifetimeTexture;
+		Texture2D m_colorOverLifetimeTexture;
 		Color TintColor => _material.HasProperty("_TintColor") ? _material.GetColor("_TintColor") : Color.white;
 
-		Color curTintColor = Color.white;
+		Color m_curTintColor = Color.white;
 		[SerializeField] Bounds _bounds;
 
 		/// <summary>
@@ -190,7 +190,7 @@ namespace TC {
 		/// <summary>
 		/// Was this particle renderer visible last frame
 		/// </summary>
-		public bool isVisible { get; private set; }
+		public bool IsVisible { get; private set; }
 
 		uint[] m_argsData = new uint[5];
 		ComputeBuffer m_argsBuffer;
@@ -223,17 +223,16 @@ namespace TC {
 
 			BuildBuffer();
 
-			colorOverLifetimeTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true)
-				{wrapMode = TextureWrapMode.Clamp, anisoLevel = 0};
-			colorOverLifetimeTexture.hideFlags = HideFlags.HideAndDontSave;
-
+			m_colorOverLifetimeTexture = new Texture2D(128, 1, TextureFormat.RGBA32, false, true) {
+				wrapMode = TextureWrapMode.Clamp, anisoLevel = 0, hideFlags = HideFlags.HideAndDontSave
+			};
 			UpdateColourOverLifetime();
 		}
 
 		static Color[] s_colours = new Color[c_dimSize];
 		const int c_dimSize = 128;
 
-		//Prodcues a texture of resolution of dimx1 encoding a gradient
+		//Produces a texture of resolution of dimx1 encoding a gradient
 		public static void TextureFromGradient(Gradient gradient, Texture2D toSet, Color tint) {
 			if (toSet == null) {
 				return;
@@ -251,35 +250,36 @@ namespace TC {
 		/// Update the colour over lifetime texture. Should be called whenever changing the colour over lifetime gradient
 		/// </summary>
 		public void UpdateColourOverLifetime() {
-			TextureFromGradient(ColorOverLifetime, colorOverLifetimeTexture, TintColor);
+			TextureFromGradient(ColorOverLifetime, m_colorOverLifetimeTexture, TintColor);
 		}
 
 		void BuildBuffer() {
-			if (RenderMode == GeometryRenderMode.TailStretchBillboard) {
-				if (m_tailStretchMesh == null) {
-					m_tailStretchMesh = new Mesh();
-					m_tailStretchMesh.hideFlags = HideFlags.HideAndDontSave;
-				}
-
-				var tailVerts = new[] {
-					new Vector3(0.5f, -0.5f, 0.0f),
-					new Vector3(0.5f, 0.5f, 0.0f),
-
-					new Vector3(TailUv - 0.5f, -0.5f, 0.0f),
-					new Vector3(TailUv - 0.5f, 0.5f, 0.0f),
-
-					new Vector3(-0.5f, -0.5f, 0.0f),
-					new Vector3(-0.5f, 0.5f, 0.0f)
-				};
-
-				//TODO: Stretch to UV2
-				m_tailStretchMesh.vertices = tailVerts;
-
-				//TODO: Triangles buffer ed. 4 Triangles
-				m_tailStretchMesh.uv = tailVerts.Select(v => (Vector2) v + new Vector2(0.5f, 0.5f)).ToArray();
-				m_tailStretchMesh.uv2 = new[] {Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.one, Vector2.one};
-				m_tailStretchMesh.triangles = new[] {0, 1, 2, 2, 1, 3, 4, 2, 3, 4, 3, 5}.Reverse().ToArray();
+			if (RenderMode != GeometryRenderMode.TailStretchBillboard) {
+				return;
 			}
+
+			if (m_tailStretchMesh == null) {
+				m_tailStretchMesh = new Mesh {hideFlags = HideFlags.HideAndDontSave};
+			}
+
+			var tailVerts = new[] {
+				new Vector3(0.5f, -0.5f, 0.0f),
+				new Vector3(0.5f, 0.5f, 0.0f),
+
+				new Vector3(TailUv - 0.5f, -0.5f, 0.0f),
+				new Vector3(TailUv - 0.5f, 0.5f, 0.0f),
+
+				new Vector3(-0.5f, -0.5f, 0.0f),
+				new Vector3(-0.5f, 0.5f, 0.0f)
+			};
+
+			//TODO: Stretch to UV2
+			m_tailStretchMesh.vertices = tailVerts;
+
+			//TODO: Triangles buffer ed. 4 Triangles
+			m_tailStretchMesh.uv = tailVerts.Select(v => (Vector2) v + new Vector2(0.5f, 0.5f)).ToArray();
+			m_tailStretchMesh.uv2 = new[] {Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.one, Vector2.one};
+			m_tailStretchMesh.triangles = new[] {0, 1, 2, 2, 1, 3, 4, 2, 3, 4, 3, 5}.Reverse().ToArray();
 		}
 
 		void ReleaseBuffers() {
@@ -298,7 +298,7 @@ namespace TC {
 
 		internal void Update() {
 			//Reset flag for next frame
-			isVisible = false;
+			IsVisible = false;
 		}
 
 		void ToggleKeyword(string keyword, bool enabled) {
@@ -322,8 +322,9 @@ namespace TC {
 
 		internal void SetupDrawCall(Camera cam) {
 			if (UseFrustumCulling) {
-				GeometryUtility.CalculateFrustumPlanes(Camera.current.projectionMatrix * Camera.current.worldToCameraMatrix, s_planes);
-				isVisible |= GeometryUtility.TestPlanesAABB(s_planes, Bounds);
+				Camera currentCam = Camera.current;
+				GeometryUtility.CalculateFrustumPlanes(currentCam.projectionMatrix * currentCam.worldToCameraMatrix, s_planes);
+				IsVisible |= GeometryUtility.TestPlanesAABB(s_planes, Bounds);
 			}
 
 			if (!SystemComp.enabled || SystemComp.ParticleCount == 0 || !DoRender || cam.cameraType == CameraType.Preview) {
@@ -367,8 +368,8 @@ namespace TC {
 
 			Color tint = TintColor;
 
-			if (tint != curTintColor) {
-				curTintColor = tint;
+			if (tint != m_curTintColor) {
+				m_curTintColor = tint;
 				UpdateColourOverLifetime();
 			}
 
@@ -392,7 +393,7 @@ namespace TC {
 
 			ToggleKeyword("TC_CUSTOM_NORMAL_ORIENT", usePointCloudNormals);
 
-			m_cacheMaterial.SetTexture(SID._ColTex, colorOverLifetimeTexture);
+			m_cacheMaterial.SetTexture(SID._ColTex, m_colorOverLifetimeTexture);
 
 			if (Emitter.DoSizeOverLifetime) {
 				m_cacheMaterial.SetTexture(SID._LifetimeTexture, Emitter.LifetimeTexture);
@@ -467,9 +468,7 @@ namespace TC {
 			m_cacheMaterial.SetInt(SID._BufferOffset, Emitter.Offset);
 			m_cacheMaterial.SetInt(SID._MaxParticles, Manager.MaxParticles);
 
-			if (OnSetMaterial != null) {
-				OnSetMaterial(m_cacheMaterial);
-			}
+			OnSetMaterial?.Invoke(m_cacheMaterial);
 
 			if (m_particleMesh == null) {
 				return;
@@ -497,13 +496,13 @@ namespace TC {
 
 			//Setup DrawM
 			Bounds bounds = UseFrustumCulling ? _bounds : new Bounds(Vector3.zero, Vector3.one * 100000);
-			var layer = SystemComp.gameObject.layer;
+			int layer = SystemComp.gameObject.layer;
 			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, CastShadows, ReceiveShadows, layer, cam);
 		}
 
 		internal void OnDestroy() {
 			ReleaseBuffers();
-			Object.DestroyImmediate(colorOverLifetimeTexture);
+			Object.DestroyImmediate(m_colorOverLifetimeTexture);
 		}
 	}
 }

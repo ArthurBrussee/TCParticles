@@ -225,7 +225,7 @@ namespace TC {
 		[SerializeField] float _emissionRate = 100.0f;
 
 		/// <summary>
-		/// Number of particles emitted per seond or per unit depending on the <see cref="EmissionType"/>
+		/// Number of particles emitted per second or per unit depending on the <see cref="EmissionType"/>
 		/// </summary>
 		public float EmissionRate {
 			get => _emissionRate;
@@ -332,7 +332,7 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// starting direciton of particles when <see cref="StartDirectionType"/> is <see cref="StartDirection.Vector"/>
+		/// starting direction of particles when <see cref="StartDirectionType"/> is <see cref="StartDirection.Vector"/>
 		/// </summary>
 		public Vector3 StartDirectionVector {
 			get => pes.startDirectionVector;
@@ -353,7 +353,7 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// Holds all data about the curret emission shape
+		/// Holds all data about the current emission shape
 		/// </summary>
 		public ParticleEmitterShape ShapeData => pes;
 
@@ -443,7 +443,7 @@ namespace TC {
 		float m_femit;
 
 		const int c_texDim = 128;
-		static readonly Color[] Colors = new Color[c_texDim];
+		static readonly Color[] s_colors = new Color[c_texDim];
 
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		protected override void Initialize() {
@@ -476,24 +476,24 @@ namespace TC {
 
 				Vector3 v = VelocityOverLifetime.Value(t);
 
-				float r = v.x; //xspeed
-				float g = v.y; //yspeed
-				float b = v.z; //zspeed
+				float r = v.x; // xspeed
+				float g = v.y; // yspeed
+				float b = v.z; // zspeed
 				float a = _sizeOverLifetime.Evaluate(t); //size
 
 				if (a > 0.0f) {
 					m_doSizeOverLifetime = true;
 				}
 
-				Colors[i] = new Color(r, g, b, a);
+				s_colors[i] = new Color(r, g, b, a);
 			}
 
-			m_lifetimeTexture.SetPixels(Colors);
+			m_lifetimeTexture.SetPixels(s_colors);
 			m_lifetimeTexture.Apply();
 		}
 
 		/// <summary>
-		/// Update size over lifetime, get's called automatically in most cases but might be neccesary for custom scripting
+		/// Update size over lifetime, get's called automatically in most cases but might be necessary for custom scripting
 		/// </summary>
 		public void UpdateSizeOverLifetime() {
 			UpdateLifetimeTexture();
@@ -642,9 +642,7 @@ namespace TC {
 					m_femit += delta.magnitude * EmissionRate;
 				}
 
-				for (int i = 0; i < bursts.Count; i++) {
-					var b = bursts[i];
-
+				foreach (Burst b in bursts) {
 					if (Manager.SystemTime > b.time && prevSystemTime <= b.time) {
 						m_femit += b.amount;
 					}
@@ -656,9 +654,7 @@ namespace TC {
 			}
 
 			if (DoEmit && m_emitTag != null) {
-				for (int i = 0; i < Tracker<TCShapeEmitter>.Count; i++) {
-					var emitter = Tracker<TCShapeEmitter>.All[i];
-
+				foreach(TCShapeEmitter emitter in Tracker<TCShapeEmitter>.All) {
 					if (!emitter.Emit) {
 						continue;
 					}
@@ -715,7 +711,7 @@ namespace TC {
 		/// <param name="useColor">Whether the color of the prototypes should be applied</param>
 		/// <param name="useSize">Whether the size of the prototypes should be applied</param>
 		/// <param name="useVelocity">Whether the velocity of the prototypes should be applied</param>
-		/// <param name="usePosition">Wether the position of the prototypes should be applied</param>
+		/// <param name="usePosition">Whether the position of the prototypes should be applied</param>
 		public void Emit(ParticleProto[] prototypes, bool useColor = true, bool useSize = true, bool useVelocity = true, bool usePosition = true) {
 			Emit(prototypes, prototypes.Length, useColor, useSize, useVelocity, usePosition);
 		}
@@ -728,6 +724,7 @@ namespace TC {
 		/// <param name="useColor">Whether the color of the prototypes should be used</param>
 		/// <param name="useSize">Whether the size of the prototypes should be used</param>
 		/// <param name="useVelocity">Whether the velocity of the prototypes should be used</param>
+		/// <param name="usePosition">Whether the position of the prototypes should be used</param>
 		public void Emit(ParticleProto[] prototypes, int count, bool useColor = true, bool useSize = true, bool useVelocity = true, bool usePosition = true) {
 			if (prototypes == null || prototypes.Length == 0) {
 				return;
@@ -756,7 +753,7 @@ namespace TC {
 
 			ComputeShader.SetBuffer(EmitKernel, SID._Emitter, m_emitBuffer);
 
-			var emitter = m_emitSet[0];
+			ParticleEmitterData emitter = m_emitSet[0];
 			emitter.SizeMax = Size.Max;
 			emitter.SizeMin = Size.Min;
 			emitter.SpeedMax = Speed.Max;
@@ -840,9 +837,7 @@ namespace TC {
 			m_emitSet[0] = emitter;
 			m_emitBuffer.SetData(m_emitSet);
 
-			if (OnEmissionBind != null) {
-				OnEmissionBind(ComputeShader, EmitKernel);
-			}
+			OnEmissionBind?.Invoke(ComputeShader, EmitKernel);
 
 			Profiler.EndSample();
 
@@ -861,9 +856,7 @@ namespace TC {
 			DispatchEmitExtensionKernel(ComputeShader, EmitKernel);
 			ParticleCount += count;
 
-			if (OnEmissionCallback != null) {
-				OnEmissionCallback(count);
-			}
+			OnEmissionCallback?.Invoke(count);
 
 			Profiler.EndSample();
 		}
@@ -883,11 +876,10 @@ namespace TC {
 		/// 1. Have a groupsize of (TC_GROUP_SIZE, 1, 1)
 		/// 2. Include TCFramework.cginc
 		/// 3. To get a particle use particles[GetID(dispatchThreadID.x)]
-		/// 4. Use the "_DeltTime" variable for calculations involving delta time
+		/// 4. Use the "_DeltaTime" variable for calculations involving delta time
 		/// </remarks>
 		public void DispatchEmitExtensionKernel(ComputeShader cs, int kernel) {
-			uint x, y, z;
-			cs.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
+			cs.GetKernelThreadGroupSizes(kernel, out uint x, out uint _, out uint _);
 
 			int dispatch = Mathf.CeilToInt(m_currentEmitBind.Count / (float) x);
 
@@ -900,11 +892,7 @@ namespace TC {
 
 		internal virtual void OnDestroy() {
 			Release(ref m_emitBuffer);
-
-			if (m_dummyBuffer != null) {
-				m_dummyBuffer.Dispose();
-			}
-
+			m_dummyBuffer?.Dispose();
 			pes.ReleaseData();
 			Object.DestroyImmediate(m_lifetimeTexture);
 		}

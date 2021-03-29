@@ -1,11 +1,10 @@
 ﻿using TC;
 using UnityEngine;
 
+//Create a cube showing full HSV range.
+//Assign a HSV color based on position to every particle
 public class ColorCubeEmission : MonoBehaviour {
 	void Awake () {
-		//Create a cube showing full HSV range.
-		//Assign a HSV color based on position to every particle
-
 		//This uses the 'ParticleProto' API. You create some prototype particles and emit these.
 		int count = 0;
 		const int num = 80;

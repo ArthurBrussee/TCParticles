@@ -9,15 +9,10 @@ namespace TC {
 	/// </summary>
 	[AddComponentMenu("TC Particles/Force"), ExecuteInEditMode]
 	public class TCForce : MonoBehaviour, ITracked {
-		int m_index = -1;
-
 		/// <summary>
 		/// Unique index in Tracker list
 		/// </summary>
-		public int Index {
-			get => m_index;
-			set => m_index = value;
-		}
+		public int Index { get; set; } = -1;
 
 		///<summary>
 		/// The shape of the force
@@ -95,7 +90,7 @@ namespace TC {
 		public Vector3 vortexAxis = Vector3.up;
 
 		/// <summary>
-		/// Strenght of an extra inward force for when <see cref="forceType"/> is <see cref="ForceType.Vortex"/>
+		/// Strength of an extra inward force for when <see cref="forceType"/> is <see cref="ForceType.Vortex"/>
 		/// </summary>
 		public float inwardForce;
 
@@ -222,7 +217,6 @@ namespace TC {
 				prev = cur;
 				return true;
 			}
-
 			return false;
 		}
 
@@ -312,11 +306,9 @@ namespace TC {
 					DestroyImmediate(m_forceBaked);
 				}
 
-				m_forceBaked = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGB32,
-					RenderTextureReadWrite.Linear);
-				m_forceBaked.dimension = TextureDimension.Tex3D;
-				m_forceBaked.volumeDepth = resolution;
-				m_forceBaked.enableRandomWrite = true;
+				m_forceBaked = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear) {
+					dimension = TextureDimension.Tex3D, volumeDepth = resolution, enableRandomWrite = true
+				};
 				m_forceBaked.Create();
 			}
 
@@ -395,7 +387,7 @@ namespace TC {
 				return;
 			}
 
-			Color[] colors = new Color[xres * yres * zres];
+			var colors = new Color[xres * yres * zres];
 
 			int id = 0;
 			for (int z = 0; z < zres; ++z) {

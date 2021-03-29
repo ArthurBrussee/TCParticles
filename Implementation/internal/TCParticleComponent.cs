@@ -28,41 +28,33 @@ namespace TC.Internal {
 
 		protected const int ParticleStride = 4 * (3 + 1 + 3 + 1 + 1 + 1 + 1 + 1);
 
-		protected float SimulationDeltTime;
+		protected float SimulationDeltaTime;
 
 		float m_lastUpdate;
 
 		public ComputeShader ComputeShader;
 
-		protected Vector3 ParentPosition {
-			get {
-				if (SystemComp.transform.parent == null) {
-					return Vector3.zero;
-				}
-
-				return SystemComp.transform.parent.position;
-			}
-		}
+		protected Vector3 ParentPosition => SystemComp.transform.parent == null ? Vector3.zero : SystemComp.transform.parent.position;
 
 		float CurTime => Application.isPlaying ? Time.time : Time.realtimeSinceStartup;
 
 		protected bool ShouldUpdate() {
-			bool culled = Renderer.UseFrustumCulling && !Renderer.isVisible;
+			bool culled = Renderer.UseFrustumCulling && !Renderer.IsVisible;
 
 			if (!culled || Renderer.culledSimulationMode == CulledSimulationMode.UpdateNormally) {
-				SimulationDeltTime = CurTime - m_lastUpdate;
+				SimulationDeltaTime = CurTime - m_lastUpdate;
 				m_lastUpdate = CurTime;
 				return true;
 			}
 
 			switch (Renderer.culledSimulationMode) {
 				case CulledSimulationMode.StopSimulation:
-					SimulationDeltTime = 0.0f;
+					SimulationDeltaTime = 0.0f;
 					return false;
 
 				case CulledSimulationMode.SlowSimulation:
-					SimulationDeltTime = CurTime - m_lastUpdate;
-					if (SimulationDeltTime > Renderer.cullSimulationDelta) {
+					SimulationDeltaTime = CurTime - m_lastUpdate;
+					if (SimulationDeltaTime > Renderer.cullSimulationDelta) {
 						m_lastUpdate = CurTime;
 						return true;
 					}
@@ -73,16 +65,14 @@ namespace TC.Internal {
 			return false;
 		}
 
-		public static int SizeOf<T>() {
-			return Marshal.SizeOf(typeof(T));
-		}
+		public static int SizeOf<T>() => Marshal.SizeOf(typeof(T));
 
 		internal void Awake(TCParticleSystem comp) {
-			//reference all components for easy acess
+			//reference all components for easy access
 			SystemComp = comp;
 			ComputeShader = TCParticleGlobalManager.Instance.ComputeShader;
 
-			//find all kernels for quick acces.
+			//find all kernels for quick access.
 			UpdateAllKernel = ComputeShader.FindKernel("UpdateAll");
 			EmitKernel = ComputeShader.FindKernel("Emit");
 			ClearKernel = ComputeShader.FindKernel("Clear");
@@ -109,7 +99,7 @@ namespace TC.Internal {
 		protected virtual void Initialize() {
 		}
 
-		//SetParticles does a global set, so you can be sure all kernels neccesary for updating use the right memory.
+		//SetParticles does a global set, so you can be sure all kernels necessary for updating use the right memory.
 		protected void BindParticles() {
 			Manager.Bind();
 			Emitter.Bind();
@@ -118,10 +108,11 @@ namespace TC.Internal {
 		}
 
 		protected void Release(ref ComputeBuffer buf) {
-			if (buf != null) {
-				buf.Release();
-				buf = null;
+			if (buf == null) {
+				return;
 			}
+			buf.Release();
+			buf = null;
 		}
 	}
 }

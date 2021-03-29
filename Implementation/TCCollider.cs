@@ -7,15 +7,10 @@ namespace TC {
 	/// </summary>
 	[AddComponentMenu("TC Particles/Collider"), ExecuteInEditMode]
 	public class TCCollider : MonoBehaviour, ITracked {
-		int m_index = -1;
-
 		/// <summary>
 		/// Unique index in Tracker list
 		/// </summary>
-		public int Index {
-			get => m_index;
-			set => m_index = value;
-		}
+		public int Index { get; set; } = -1;
 
 		/// <summary>
 		/// Sphere collider, if attached
@@ -55,7 +50,7 @@ namespace TC {
 		[SerializeField, Range(0.0f, 1.0f)]  float _inheritVelocity;
 
 		/// <summary>
-		/// How much of the velocity should be transfered to the particles
+		/// How much of the velocity should be transferred to the particles
 		/// </summary>
 		public float InheritVelocity {
 			get => _inheritVelocity;
@@ -67,15 +62,15 @@ namespace TC {
 		/// </summary>
 		public Vector3 Velocity {
 			get {
-				if (r != null) {
-					return r.velocity;
+				if (m_rigidbody != null) {
+					return m_rigidbody.velocity;
 				}
 
-				if (controller != null) {
-					return controller.velocity;
+				if (m_controller != null) {
+					return m_controller.velocity;
 				}
 
-				return (transform.position - lastPos) / Time.deltaTime;
+				return (transform.position - m_lastPos) / Time.deltaTime;
 			}
 		}
 
@@ -94,7 +89,7 @@ namespace TC {
 		/// </summary>
 		public Vector3 Position {
 			get {
-				if (shape == ColliderShape.PhysxShape && !noCollider) {
+				if (shape == ColliderShape.PhysxShape && !m_noCollider) {
 					return GetComponent<Collider>().bounds.center;
 				}
 
@@ -138,7 +133,7 @@ namespace TC {
 		public Vector3 boxSize;
 
 		[SerializeField] Texture2D heightmap;
-		bool hasGeneratedHeightmap;
+		bool m_hasGeneratedHeightmap;
 
 		/// <summary>
 		/// The heightmap extracted from a terrain used in the collider
@@ -149,7 +144,7 @@ namespace TC {
 					return null;
 				}
 
-				if (!hasGeneratedHeightmap) {
+				if (!m_hasGeneratedHeightmap) {
 					GenHeightmap();
 				}
 
@@ -157,13 +152,13 @@ namespace TC {
 			}
 		}
 
-		bool noCollider;
+		bool m_noCollider;
 
 		//Keep track if colliders / forces need to be re-sorted
-		Vector3 lastPos;
+		Vector3 m_lastPos;
 
-		CharacterController controller;
-		Rigidbody r;
+		CharacterController m_controller;
+		Rigidbody m_rigidbody;
 
 		void GenHeightmap() {
 			var t = GetComponent<Terrain>();
@@ -193,7 +188,7 @@ namespace TC {
 
 			heightmap.SetPixels(heightCols);
 			heightmap.Apply();
-			hasGeneratedHeightmap = true;
+			m_hasGeneratedHeightmap = true;
 		}
 
 		void Awake() {
@@ -201,19 +196,19 @@ namespace TC {
 			BoxCollider = GetComponent<BoxCollider>();
 			CapsuleCollider = GetComponent<CapsuleCollider>();
 
-			controller = GetComponent<CharacterController>();
-			r = GetComponent<Rigidbody>();
+			m_controller = GetComponent<CharacterController>();
+			m_rigidbody = GetComponent<Rigidbody>();
 
 			GenHeightmap();
 
 			if (shape == ColliderShape.PhysxShape && SphereCollider == null && BoxCollider == null && CapsuleCollider == null) {
-				noCollider = true;
+				m_noCollider = true;
 				Debug.LogError("To use a physx shape, please attach a physx collider! (Sphere, capsule, or box collider. Mesh is not supported currently)");
 			}
 		}
 
 		void LateUpdate() {
-			lastPos = transform.position;
+			m_lastPos = transform.position;
 		}
 
 		void OnEnable() {

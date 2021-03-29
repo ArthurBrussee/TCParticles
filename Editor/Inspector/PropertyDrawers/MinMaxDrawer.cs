@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TC.EditorIntegration {
 	[CustomPropertyDrawer(typeof(MinMax))]
 	public class MinMaxDrawer : PropertyDrawer {
-		string[] options = {"Constant", "Between"};
+		static readonly string[] Options = {"Constant", "Between"};
 
 		// Here you can define the GUI for your property drawer. Called by Unity.
 		public override void OnGUI(Rect position, SerializedProperty prop, GUIContent label) {
@@ -35,7 +35,7 @@ namespace TC.EditorIntegration {
 				EditorGUI.BeginProperty(new Rect(0, 0, 0, 0), label, modeProp);
 
 				EditorGUI.BeginChangeCheck();
-				int index = EditorGUILayout.Popup(modeProp.enumValueIndex, options, s, GUILayout.Width(25.0f));
+				int index = EditorGUILayout.Popup(modeProp.enumValueIndex, Options, s, GUILayout.Width(25.0f));
 				if (EditorGUI.EndChangeCheck()) {
 					prop.FindPropertyRelative("modeProp").enumValueIndex = index;
 				}

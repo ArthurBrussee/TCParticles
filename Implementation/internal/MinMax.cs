@@ -173,7 +173,7 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// Minium value at this time
+		/// Minimum value at this time
 		/// </summary>
 		public float Min {
 			get {
@@ -242,11 +242,7 @@ namespace TC {
 		public float Value {
 			get {
 				if (IsConstant) {
-					if (IsCurve) {
-						return valueCurve.Evaluate(t);
-					}
-
-					return valueProp;
+					return IsCurve ? valueCurve.Evaluate(t) : valueProp;
 				}
 
 				if (IsCurve) {

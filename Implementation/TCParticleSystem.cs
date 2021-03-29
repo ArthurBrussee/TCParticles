@@ -14,15 +14,10 @@ namespace TC {
 	/// </remarks>
 	[AddComponentMenu("TC Particles/TC Particle Manager"), ExecuteInEditMode]
 	public class TCParticleSystem : MonoBehaviour, ITracked {
-		int m_index = -1;
-
 		/// <summary>
 		/// Unique index in Tracker list
 		/// </summary>
-		public int Index {
-			get => m_index;
-			set => m_index = value;
-		}
+		public int Index { get; set; } = -1;
 
 		[SerializeField] ParticleColliderManager _colliderManager = new ParticleColliderManager();
 		[SerializeField] ParticleEmitter _emitter = new ParticleEmitter();
@@ -33,23 +28,22 @@ namespace TC {
 		bool m_doVisualize;
 
 #if UNITY_EDITOR
-
 		/// <summary>
 		/// Should this system be visualized (editor only)
 		/// </summary>
 		public bool DoVisualize {
 			get => m_doVisualize;
 			set {
-				if (value != m_doVisualize) {
-					m_doVisualize = value;
+				if (value == m_doVisualize) {
+					return;
+				}
 
-					if (!m_doVisualize) {
-						Clear();
-					}
+				m_doVisualize = value;
+				if (!m_doVisualize) {
+					Clear();
 				}
 			}
 		}
-
 #endif
 
 		public static void UpdateCacheForEmitMesh(Mesh mesh) {
@@ -99,7 +93,6 @@ namespace TC {
 		/// </summary>
 		public int MaxParticles {
 			get => _manager.MaxParticles;
-
 			set => _manager.MaxParticles = value;
 		}
 
@@ -200,7 +193,7 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// The amount of damping particles recieve each frame
+		/// The amount of damping particles receive each frame
 		/// </summary>
 		public float Damping {
 			get => _manager.damping;
@@ -331,7 +324,7 @@ namespace TC {
 		}
 
 		/// <summary>
-		/// Simulate the system for a given amout of time
+		/// Simulate the system for a given amount of time
 		/// </summary>
 		/// <param name="time">The time to simulate</param>
 		/// <param name="withChildren">Should children be simulated as well?</param>
@@ -351,7 +344,7 @@ namespace TC {
 		/// <summary>
 		/// Clear all particles in the system
 		/// </summary>
-		/// <param name="withChildren">Should the childrens particles be stopped as well?</param>
+		/// <param name="withChildren">Should the children particles be stopped as well?</param>
 		public void Clear(bool withChildren = true) {
 			_manager.Clear(withChildren);
 		}

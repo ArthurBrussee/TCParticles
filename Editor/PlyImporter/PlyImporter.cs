@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using TC;
-using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
@@ -148,12 +147,6 @@ namespace Pcx {
 			}
 
 			context.SetMainObject(gameObject);
-		}
-
-		static Material GetDefaultMaterial() {
-			return AssetDatabase.LoadAssetAtPath<Material>(
-				"Assets/Pcx/Editor/Default Point.mat"
-			);
 		}
 
 		enum DataProperty {
@@ -580,7 +573,6 @@ namespace Pcx {
 						data.Colors[i].b = b;
 						data.Colors[i].a = a;
 					}
-
 					break;
 			}
 
