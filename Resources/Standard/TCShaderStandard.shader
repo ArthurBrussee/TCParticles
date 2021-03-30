@@ -83,6 +83,7 @@
 		#pragma multi_compile_instancing
 		#pragma instancing_options procedural:TCDefaultProc
         #pragma surface surf Standard nolightmap nometa noforwardadd keepalpha noshadowmask nolppv
+        
         #include "TcStandardParticles.cginc"
         ENDCG
     }

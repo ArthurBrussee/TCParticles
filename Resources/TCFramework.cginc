@@ -153,7 +153,8 @@ struct TCFragment {
 
 		#define TC_DO_PARTICLE(input)      Particle tc_Particle; \
 		{ \
-			UNITY_SETUP_INSTANCE_ID(input); \
+			UnitySetupInstanceID(UNITY_GET_INSTANCE_ID(input)); \
+			UnitySetupCompoundMatrices(); \
 			tc_Particle = particlesRead[GetId(unity_InstanceID)]; \
 			TCParticleProc procIn = (TCParticleProc)0; \
 			procIn.vertex = input.vertex; \
