@@ -136,6 +136,9 @@ struct TCFragment {
 	float4 pos : SV_POSITION;
 	float4 col : COLOR;
 	half2 uv : TEXCOORD0;
+
+	UNITY_VERTEX_INPUT_INSTANCE_ID 
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
 //Instancing proc func override system	
@@ -150,7 +153,7 @@ struct TCFragment {
 
 		#define TC_DO_PARTICLE(input)      Particle tc_Particle; \
 		{ \
-			unity_InstanceID = UNITY_GET_INSTANCE_ID(input); \
+			UNITY_SETUP_INSTANCE_ID(input); \
 			tc_Particle = particlesRead[GetId(unity_InstanceID)]; \
 			TCParticleProc procIn = (TCParticleProc)0; \
 			procIn.vertex = input.vertex; \

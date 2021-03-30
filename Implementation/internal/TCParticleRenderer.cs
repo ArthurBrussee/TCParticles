@@ -4,6 +4,7 @@ using System.Linq;
 using TC.Internal;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.XR;
 using Object = UnityEngine.Object;
 
 namespace TC {
@@ -469,9 +470,15 @@ namespace TC {
 				return;
 			}
 
+			uint drawCount = (uint) SystemComp.ParticleCount;
+
+			if (cam.stereoEnabled) {
+				drawCount *= 2;
+			}
+			
 			//TODO: How to do submeshes?
 			m_argsData[0] = m_particleMesh.GetIndexCount(0);
-			m_argsData[1] = (uint) SystemComp.ParticleCount;
+			m_argsData[1] = drawCount;
 			m_argsData[2] = 0;
 			m_argsData[3] = 0;
 			m_argsData[4] = 0;
@@ -491,6 +498,7 @@ namespace TC {
 			//Setup DrawM
 			Bounds bounds = UseFrustumCulling ? _bounds : new Bounds(Vector3.zero, Vector3.one * 100000);
 			int layer = SystemComp.gameObject.layer;
+			
 			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, CastShadows, ReceiveShadows, layer, cam);
 		}
 
