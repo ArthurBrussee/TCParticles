@@ -1,5 +1,5 @@
 //Include tc particles frammework code
-#include "Packages/com.akb.tcparticles/Resources/TCFramework.cginc"
+#include "../../Resources/TCFramework.cginc"
 
 //Kernels we can call from script
 #pragma kernel WriteInitialPos
