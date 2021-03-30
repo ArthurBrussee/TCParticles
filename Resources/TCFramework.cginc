@@ -231,7 +231,6 @@ void TCDefaultProc(){}
 		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;
 		
         #ifdef TC_BILLBOARD
-            //TODO: Do we include this in the actual rotation matrix?
             float angle = tc_Particle.rotation;
             
             float c = cos(angle);
@@ -276,7 +275,6 @@ void TCDefaultProc(){}
             float spriteSheetTime = _LifeMinMax.y > 0 ? (tc_Particle.life / _LifeMinMax.y) : 0.0f;
             spriteSheetTime += frac(_Time.y * _SpriteSheetBaseSpeed);
             
-            //TODO: Make adding random controllable
             spriteSheetTime += tc_Particle.random * _SpriteSheetRandomStart;
             
             //Normalize to 0-1

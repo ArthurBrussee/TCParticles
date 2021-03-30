@@ -1,6 +1,5 @@
 // Pcx - Point cloud importer & renderer for Unity
 // https://github.com/keijiro/Pcx
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +9,7 @@ using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
 namespace Pcx {
-	internal class PclBinaryReader {
+	class PclBinaryReader {
 		byte[] m_bytes;
 		public int Position;
 
@@ -39,19 +38,17 @@ namespace Pcx {
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float ReadSingleLittleEndian() {
-			m_scratchRead[0] = m_bytes[Position++];
-			m_scratchRead[1] = m_bytes[Position++];
-			m_scratchRead[2] = m_bytes[Position++];
-			m_scratchRead[3] = m_bytes[Position++];
+			for (int i = 0; i < 4; ++i) {
+				m_scratchRead[i] = ReadByte();
+			}
 			return BitConverter.ToSingle(m_scratchRead, 0);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float ReadSingleBigEndian() {
-			m_scratchRead[3] = m_bytes[Position++];
-			m_scratchRead[2] = m_bytes[Position++];
-			m_scratchRead[1] = m_bytes[Position++];
-			m_scratchRead[0] = m_bytes[Position++];
+			for (int i = 3; i >= 0; --i) {
+				m_scratchRead[i] = ReadByte();
+			}
 			return BitConverter.ToSingle(m_scratchRead, 0);
 		}
 
@@ -104,9 +101,10 @@ namespace Pcx {
 	}
 
 	[ScriptedImporter(1, "ply")]
-	internal class PlyImporter : ScriptedImporter {
+	class PlyImporter : ScriptedImporter {
 		[Header("Point Cloud Data Settings")]
 		public float Scale = 1;
+		
 #pragma warning disable 649
 		public Vector3 PivotOffset;
 		public Vector3 NormalRotation;
@@ -119,7 +117,8 @@ namespace Pcx {
 			// ComputeBuffer container
 			// Create a prefab with PointCloudRenderer.
 			var gameObject = new GameObject();
-			var data = ImportAsPointCloudData(context.assetPath);
+			
+			PointCloudData data = ImportAsPointCloudData(context.assetPath);
 
 			var system = gameObject.AddComponent<TCParticleSystem>();
 			system.Emitter.Shape = EmitShapes.PointCloud;
@@ -220,11 +219,11 @@ namespace Pcx {
 		}
 
 		PointCloudData ImportAsPointCloudData(string path) {
-			var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+			FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 			var reader = new PclBinaryReader(ReadFully(stream));
 
-			var header = ReadDataHeader(reader);
-			var body = ReadDataBody(header, reader);
+			DataHeader header = ReadDataHeader(reader);
+			DataBody body = ReadDataBody(header, reader);
 
 			var data = ScriptableObject.CreateInstance<PointCloudData>();
 			data.Initialize(body.Vertices, body.Normals, body.Colors, Scale, PivotOffset, NormalRotation);
@@ -274,15 +273,12 @@ namespace Pcx {
 						case "binary_little_endian":
 							data.Format = PlyFormat.BinaryLittleEndian;
 							break;
-
 						case "binary_big_endian":
 							data.Format = PlyFormat.BinaryBigEndian;
 							break;
-
 						case "ascii":
 							data.Format = PlyFormat.Ascii;
 							break;
-
 						default:
 							throw new ArgumentException("Unrecognized ply format! " + line);
 					}
@@ -381,18 +377,12 @@ namespace Pcx {
 						case "float":
 						case "float32": {
 							if (prop == DataProperty.Invalid) {
-								if (data.Format == PlyFormat.Ascii) {
-									prop = DataProperty.DataAscii;
-								} else {
-									prop = DataProperty.Data32;
-								}
+								prop = data.Format == PlyFormat.Ascii ? DataProperty.DataAscii : DataProperty.Data32;
 							} else if (GetPropertySize(prop) != 4) {
 								throw new ArgumentException("Invalid property type ('" + line + "').");
 							}
-
 							break;
 						}
-
 						default:
 							throw new ArgumentException("Unsupported property type ('" + line + "').");
 					}
@@ -407,14 +397,13 @@ namespace Pcx {
 
 		DataBody ReadDataBody(DataHeader header, PclBinaryReader reader) {
 			var data = new DataBody(header.VertexCount);
-
 			byte r = 255, g = 255, b = 255, a = 255;
 
 			switch (header.Format) {
 				case PlyFormat.BinaryLittleEndian:
-					for (var i = 0; i < header.VertexCount; i++) {
-						for (int j = 0; j < header.Properties.Count; ++j) {
-							switch (header.Properties[j]) {
+					for (int i = 0; i < header.VertexCount; i++) {
+						foreach (DataProperty prop in header.Properties) {
+							switch (prop) {
 								case DataProperty.X:
 									data.Vertices[i].x = reader.ReadSingleLittleEndian();
 									break;
@@ -424,9 +413,10 @@ namespace Pcx {
 								case DataProperty.Z:
 									data.Vertices[i].z = reader.ReadSingleLittleEndian();
 									break;
-
+   
 								case DataProperty.NX:
-									data.Normals[i].x = reader.ReadSingleLittleEndian();
+									float normalX = reader.ReadSingleLittleEndian();
+									data.Normals[i].x = normalX;
 									break;
 								case DataProperty.NY:
 									data.Normals[i].y = reader.ReadSingleLittleEndian();
@@ -469,9 +459,9 @@ namespace Pcx {
 					break;
 
 				case PlyFormat.BinaryBigEndian:
-					for (var i = 0; i < header.VertexCount; i++) {
-						for (int j = 0; j < header.Properties.Count; ++j) {
-							switch (header.Properties[j]) {
+					for (int i = 0; i < header.VertexCount; i++) {
+						foreach (DataProperty prop in header.Properties) {
+							switch (prop) {
 								case DataProperty.X:
 									data.Vertices[i].x = reader.ReadSingleBigEndian();
 									break;

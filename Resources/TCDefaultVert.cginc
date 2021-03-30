@@ -5,8 +5,6 @@ sampler2D _MainTex;
 float4 _MainTex_ST;
 
 TCFragment TCDefaultVert (appdata_full input) {
-	
-	
 	TC_DO_PARTICLE(input)
 
 	TCFragment o;

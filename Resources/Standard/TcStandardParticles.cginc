@@ -18,12 +18,11 @@ half _Glossiness;
 half _Cutoff;
 
 #if defined (_COLORADDSUBDIFF_ON)
-half4 _ColorAddSubDiff;
+    half4 _ColorAddSubDiff;
 #endif
 
 // Vertex shader input
-struct appdata_particles
-{
+struct appdata_particles {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float4 color : COLOR;
@@ -38,55 +37,46 @@ struct appdata_particles
 };
 
 // Surface shader input
-struct Input
-{
+struct Input {
     float4 color : COLOR;
     float2 uv_MainTex;
 };
 
 // Non-surface shader v2f structure
-struct VertexOutput
-{
+struct VertexOutput {
     float4 vertex : SV_POSITION;
     float4 color : COLOR;
-
     UNITY_FOG_COORDS(0)
-
     float4 texcoord : TEXCOORD1;
 };
 
 //TODO: Flipbook blending not supported yet!
-float4 readTexture(sampler2D tex, Input IN)
-{
+float4 readTexture(sampler2D tex, Input IN) {
     float4 color = tex2D (tex, IN.uv_MainTex.xy);
     return color;
 }
 
-float4 readTexture(sampler2D tex, VertexOutput IN)
-{
+float4 readTexture(sampler2D tex, VertexOutput IN) {
     float4 color = tex2D (tex, IN.texcoord.xy);
     return color;
 }
 
 #if defined(_COLORCOLOR_ON)
-half3 RGBtoHSV(half3 arg1)
-{
-    half4 K = half4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-    half4 P = lerp(half4(arg1.bg, K.wz), half4(arg1.gb, K.xy), step(arg1.b, arg1.g));
-    half4 Q = lerp(half4(P.xyw, arg1.r), half4(arg1.r, P.yzx), step(P.x, arg1.r));
-    half D = Q.x - min(Q.w, Q.y);
-    half E = 1e-10;
-    return half3(abs(Q.z + (Q.w - Q.y) / (6.0 * D + E)), D / (Q.x + E), Q.x);
-}
+    half3 RGBtoHSV(half3 arg1) {
+        half4 K = half4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+        half4 P = lerp(half4(arg1.bg, K.wz), half4(arg1.gb, K.xy), step(arg1.b, arg1.g));
+        half4 Q = lerp(half4(P.xyw, arg1.r), half4(arg1.r, P.yzx), step(P.x, arg1.r));
+        half D = Q.x - min(Q.w, Q.y);
+        half E = 1e-10;
+        return half3(abs(Q.z + (Q.w - Q.y) / (6.0 * D + E)), D / (Q.x + E), Q.x);
+    }
 
-half3 HSVtoRGB(half3 arg1)
-{
-    half4 K = half4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    half3 P = abs(frac(arg1.xxx + K.xyz) * 6.0 - K.www);
-    return arg1.z * lerp(K.xxx, saturate(P - K.xxx), arg1.y);
-}
+    half3 HSVtoRGB(half3 arg1) {
+        half4 K = half4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+        half3 P = abs(frac(arg1.xxx + K.xyz) * 6.0 - K.www);
+        return arg1.z * lerp(K.xxx, saturate(P - K.xxx), arg1.y);
+    }
 #endif
-
 
 // Color blending fragment function
 #if defined(_COLOROVERLAY_ON)
@@ -111,28 +101,25 @@ half3 HSVtoRGB(half3 arg1)
 
 // Pre-multiplied alpha helper
 #if defined(_ALPHAPREMULTIPLY_ON)
-#define ALBEDO_MUL albedo
+    #define ALBEDO_MUL albedo
 #else
-#define ALBEDO_MUL albedo.a
+    #define ALBEDO_MUL albedo.a
 #endif
 
-void surf (Input IN, inout SurfaceOutputStandard o)
-{
+void surf (Input IN, inout SurfaceOutputStandard o) {
     half4 albedo = readTexture (_MainTex, IN);
 	albedo *= _Color;
-	   
+    
 	fragColorMode(IN);
 
     #if defined(_METALLICGLOSSMAP)
-		float2 metallicGloss = readTexture (_MetallicGlossMap, IN).ra * float2(1.0, _Glossiness);
+		float2 metallicGloss = readTexture(_MetallicGlossMap, IN).ra * float2(1.0, _Glossiness);
     #else
 		float2 metallicGloss = float2(_Metallic, _Glossiness);
     #endif
 
     #if defined(_NORMALMAP)
-		float3 normal = normalize (UnpackScaleNormal (readTexture (_BumpMap, IN), _BumpScale));
-    #else
-		float3 normal = float3(0,0,1);
+		float3 normal = normalize(UnpackScaleNormal(readTexture(_BumpMap, IN), _BumpScale));
     #endif
 
     #if defined(_EMISSION)
@@ -146,13 +133,11 @@ void surf (Input IN, inout SurfaceOutputStandard o)
     #if defined(_NORMALMAP)
 		o.Normal = normal;
     #endif
+    
     o.Emission = emission * _EmissionColor;
     o.Metallic = metallicGloss.r;
     o.Smoothness = metallicGloss.g;
     					
-    // TODO: Remove when shipping TC Particles!!
-    // o.Smoothness = IN.color.a;
-
     #if defined(_ALPHABLEND_ON) || defined(_ALPHAPREMULTIPLY_ON) || defined(_ALPHAOVERLAY_ON)
 		o.Alpha = albedo.a;
     #else
@@ -168,4 +153,4 @@ void surf (Input IN, inout SurfaceOutputStandard o)
     #endif
 }
 
-#endif // UNITY_STANDARD_PARTICLES_INCLUDED
+#endif 

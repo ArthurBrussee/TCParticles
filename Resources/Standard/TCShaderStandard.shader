@@ -47,29 +47,6 @@
         ZWrite [_ZWrite]
         Cull [_Cull]
 
-        Pass {
-            Name "ShadowCaster"
-            Tags { "LightMode" = "ShadowCaster" }
-
-            Cull Off
-
-            CGPROGRAM
-            #pragma target 4.6
-			#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-            #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
-
-			#pragma multi_compile_instancing
-			#pragma instancing_options procedural:TCDefaultProc
-			
-            #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
-            
-			#pragma multi_compile_shadowcaster
-            #pragma vertex vertParticleShadowCaster
-            #pragma fragment fragParticleShadowCaster
-            #include "TcStandardParticleShadow.cginc"
-            ENDCG
-        }
-
         CGPROGRAM
 		#pragma target 4.6
 		#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
@@ -82,7 +59,7 @@
 		
 		#pragma multi_compile_instancing
 		#pragma instancing_options procedural:TCDefaultProc
-        #pragma surface surf Standard nolightmap nometa noforwardadd keepalpha noshadowmask nolppv
+        #pragma surface surf Standard nolightmap nometa noforwardadd keepalpha noshadowmask nolppv addshadow
         
         #include "TcStandardParticles.cginc"
         ENDCG
