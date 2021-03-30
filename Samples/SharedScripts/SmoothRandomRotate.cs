@@ -20,8 +20,8 @@ public class SmoothRandomRotate : MonoBehaviour {
 	void Update() {
 		//Adjust speed with three random noise tracks
 		m_rotateSpeed += new Vector3(SmoothRand(0.0f),
-			               SmoothRand(1.0f),
-			               SmoothRand(2.0f)) * strength * Time.deltaTime * 3.0f;
+			SmoothRand(1.0f),
+			SmoothRand(2.0f)) * (strength * Time.deltaTime * 3.0f);
 
 		m_rotateSpeed *= m_friction;
 
