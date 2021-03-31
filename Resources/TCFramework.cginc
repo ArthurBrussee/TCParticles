@@ -217,22 +217,22 @@ void TCDefaultProc(){}
 		float3 normal;
 	};
 
-	void TCDefaultProc(inout TCParticleProc input, in Particle tc_Particle) {
+	void TCDefaultProc(inout TCParticleProc input, in Particle particle) {
 		unity_ObjectToWorld = TC_MATRIX_M;
 		unity_WorldToObject = TC_MATRIX_M_INV;
 
-		float life = 1 - tc_Particle.life / _LifeMinMax.y;
+		float life = 1 - particle.life / _LifeMinMax.y;
 		float4 lifeTex = tex2Dlod(_LifetimeTexture, float4(life, 0, 0, 0));
-		float3 realVelocity = tc_Particle.velocity + lifeTex.xyz;
+		float3 realVelocity = particle.velocity + lifeTex.xyz;
 		float velLength = length(realVelocity);
 
-		float4 partColor = UnpackColor(tc_Particle.color);
+		float4 partColor = UnpackColor(particle.color);
 
-		float totalSize = (tc_Particle.baseSize * lifeTex.a);
-		input.vertex.xyz *= tc_Particle.life > 0 ? totalSize : 0;
+		float totalSize = (particle.baseSize * lifeTex.a);
+		input.vertex.xyz *= particle.life > 0 ? totalSize : 0;
 		
         #ifdef TC_BILLBOARD
-            float angle = tc_Particle.rotation;
+            float angle = particle.rotation;
             
             float c = cos(angle);
             float s = sin(angle);
@@ -265,7 +265,7 @@ void TCDefaultProc(){}
                 input.vertex.xyz = input.vertex.x * localX + input.vertex.y * localY + input.vertex.z * localZ;
             #endif
             
-            input.vertex.xyz += tc_Particle.pos;
+            input.vertex.xyz += particle.pos;
         #endif
 
 		float4 tp = float4(lerp(life, velLength * _MaxSpeed, _ColorSpeedLerp), 0.0f, 0.0f, 0.0f);
@@ -273,10 +273,10 @@ void TCDefaultProc(){}
 
         if (_UvSpriteAnimation > 0) {
             float2 uv = input.texcoord.xy;
-            float spriteSheetTime = _LifeMinMax.y > 0 ? (tc_Particle.life / _LifeMinMax.y) : 0.0f;
+            float spriteSheetTime = _LifeMinMax.y > 0 ? (particle.life / _LifeMinMax.y) : 0.0f;
             spriteSheetTime += frac(_Time.y * _SpriteSheetBaseSpeed);
             
-            spriteSheetTime += tc_Particle.random * _SpriteSheetRandomStart;
+            spriteSheetTime += particle.random * _SpriteSheetRandomStart;
             
             //Normalize to 0-1
             spriteSheetTime = frac(spriteSheetTime);

@@ -39,116 +39,33 @@
         [HideInInspector] _DistortionStrengthScaled ("__distortionstrengthscaled", Float) = 0.0
     }
 
-    Category {
-        SubShader {
-            Tags { "RenderType"="Opaque" "IgnoreProjector"="True" "PreviewType"="Plane" "PerformanceChecks"="False" "TC_LIT"="False" }
+    SubShader {
+        Tags { "RenderType"="Opaque" "IgnoreProjector"="True" "PreviewType"="Plane" "PerformanceChecks"="False" "TC_LIT"="False" }
 
-            BlendOp [_BlendOp]
-            Blend [_SrcBlend] [_DstBlend]
-            ZWrite [_ZWrite]
-            Cull [_Cull]
-            ColorMask RGB
+        BlendOp [_BlendOp]
+        Blend [_SrcBlend] [_DstBlend]
+        ZWrite [_ZWrite]
+        Cull [_Cull]
+    	
 
-            Pass {
-                Name "ShadowCaster"
-                Tags { "LightMode" = "ShadowCaster" }
+        CGPROGRAM
+		#pragma target 4.6
+		#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
+        #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
 
-                BlendOp Add
-                Blend One Zero
-                ZWrite On
-                Cull Off
+		#pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
+        #pragma shader_feature _EMISSION
+		
+		#pragma multi_compile_instancing
+		#pragma instancing_options procedural:TCDefaultProc
+        #pragma surface surf NoLighting fullforwardshadows nolightmap keepalpha nolppv addshadow
+        
+        #include "TcStandardParticles.cginc"
 
-                CGPROGRAM
-				#pragma target 4.5
-				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-                #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
-
-				#pragma multi_compile_instancing
-				#pragma instancing_options procedural:TCDefaultProc
-
-                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
-                #pragma shader_feature _ _COLOROVERLAY_ON _COLORCOLOR_ON _COLORADDSUBDIFF_ON
-                
-                #pragma multi_compile_shadowcaster
-
-                #pragma vertex vertParticleShadowCaster
-                #pragma fragment fragParticleShadowCaster
-
-                #include "TcStandardParticleShadow.cginc"
-                ENDCG
-            }
-
-            Pass
-            {
-                Tags { "LightMode"="ForwardBase" }
-
-                CGPROGRAM
-				#pragma target 4.5
-				#pragma multi_compile TC_BILLBOARD TC_BILLBOARD_STRETCHED TC_MESH
-                #pragma multi_compile _ TC_CUSTOM_NORMAL_ORIENT
-
-				#pragma multi_compile_instancing
-				#pragma instancing_options procedural:TCDefaultProc
-    
-                #pragma multi_compile_fog
-
-                #pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON
-                #pragma shader_feature _ _COLOROVERLAY_ON _COLORCOLOR_ON _COLORADDSUBDIFF_ON
-                #pragma shader_feature _EMISSION
-
-                #pragma vertex vertParticleUnlit
-                #pragma fragment fragParticleUnlit
-
-                #include "TcStandardParticles.cginc"
-				float4      _MainTex_ST;
-
-				VertexOutput vertParticleUnlit (appdata_full v) {
-					VertexOutput o;
-					UNITY_SETUP_INSTANCE_ID(v);
-
-					o.pos = UnityObjectToClipPos(v.vertex);
-					o.texcoord = float4(TRANSFORM_TEX(v.texcoord, _MainTex), 0, 0);
-					o.color = v.color;
-
-					UNITY_TRANSFER_FOG(o, o.vertex);
-					return o;
-				}
-
-				half4 fragParticleUnlit (VertexOutput IN) : SV_Target {
-					half4 albedo = readTexture (_MainTex, IN) * _Color;
-					albedo *= _Color;
-					
-					fragColorMode(IN);
-
-					#if defined(_EMISSION)
-						half3 emission = readTexture (_EmissionMap, IN).rgb;
-					#else
-						half3 emission = 0;
-					#endif
-
-					half4 result = albedo;
-
-					#if defined(_ALPHAMODULATE_ON)
-						result.rgb = lerp(half3(1.0, 1.0, 1.0), albedo.rgb, albedo.a);
-					#endif
-
-					result.rgb += emission * _EmissionColor;
-
-					#if !defined(_ALPHABLEND_ON) && !defined(_ALPHAPREMULTIPLY_ON) && !defined(_ALPHAOVERLAY_ON)
-						result.a = 1;
-					#endif
-
-					#if defined(_ALPHATEST_ON)
-						clip (albedo.a - _Cutoff + 0.0001);
-					#endif
-
-					UNITY_APPLY_FOG_COLOR(IN.fogCoord, result, float4(0,0,0,0));					
-					return result;
-				}
-
-                ENDCG
-            }
-        }
+		 float4 LightingNoLighting(SurfaceOutputStandard s, float3 lightDir, float atten) {
+	         return float4(s.Albedo, s.Alpha);
+	     }
+        ENDCG
     }
 
     CustomEditor "TcStandardParticlesShaderGUI"

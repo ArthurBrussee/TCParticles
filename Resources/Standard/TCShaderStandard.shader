@@ -2,17 +2,15 @@
     Properties {
         _MainTex("Albedo", 2D) = "white" {}
         _Color("Color", Color) = (1,1,1,1)
+    	
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 
-        _MetallicGlossMap("Metallic", 2D) = "white" {}
-        [Gamma] _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
-        _Glossiness("Smoothness", Range(0.0, 1.0)) = 0.5
-
-        _BumpScale("Scale", Float) = 1.0
+    	_BumpScale("Scale", Float) = 1.0
         _BumpMap("Normal Map", 2D) = "bump" {}
-
-        _EmissionColor("Color", Color) = (0,0,0)
+    	
+    	_EmissionColor("Color", Color) = (0,0,0)
         _EmissionMap("Emission", 2D) = "white" {}
+
         _DistortionStrength("Strength", Float) = 1.0
         _DistortionBlend("Blend", Range(0.0, 1.0)) = 0.5
 
@@ -20,6 +18,11 @@
         _SoftParticlesFarFadeDistance("Soft Particles Far Fade", Float) = 1.0
         _CameraNearFadeDistance("Camera Near Fade", Float) = 1.0
         _CameraFarFadeDistance("Camera Far Fade", Float) = 2.0
+
+    	[Gamma] _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
+        _Glossiness("Smoothness", Range(0.0, 1.0)) = 0.5
+    	
+	    _MetallicGlossMap("Metallic", 2D) = "white" {}
 
         // Hidden properties
         [HideInInspector] _Mode ("__mode", Float) = 0.0
