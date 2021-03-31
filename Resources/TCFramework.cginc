@@ -171,7 +171,8 @@ struct TCFragment {
 
 		//Override for unity surface shader
 		#undef UNITY_TRANSFER_INSTANCE_ID
-		#define UNITY_TRANSFER_INSTANCE_ID(input, output) TC_DO_PARTICLE(input)
+		#define UNITY_TRANSFER_INSTANCE_ID(input, output) TC_DO_PARTICLE(input) \
+			output.instanceID = UNITY_GET_INSTANCE_ID(input)
 
 		//Redefine transform for normal vertex shaders
 		#if defined(TC_BILLBOARD) || defined(TC_BILLBOARD_STRETCHED)
