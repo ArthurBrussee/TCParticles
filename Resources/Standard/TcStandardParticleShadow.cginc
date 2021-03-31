@@ -99,7 +99,6 @@ void vertParticleShadowCaster (VertexInput v,
     out float4 opos : SV_POSITION)
 {
     UNITY_SETUP_INSTANCE_ID(v);
-	TC_DO_PARTICLE(v);
 
     #ifdef UNITY_STANDARD_USE_STEREO_SHADOW_OUTPUT_STRUCT
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(os);

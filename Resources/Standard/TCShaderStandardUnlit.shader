@@ -102,11 +102,11 @@
                 #include "TcStandardParticles.cginc"
 				float4      _MainTex_ST;
 
-				VertexOutput vertParticleUnlit (appdata_particles v) {
+				VertexOutput vertParticleUnlit (appdata_full v) {
 					VertexOutput o;
-					TC_DO_PARTICLE(v);
+					UNITY_SETUP_INSTANCE_ID(v);
 
-					o.vertex = UnityObjectToClipPos(v.vertex);
+					o.pos = UnityObjectToClipPos(v.vertex);
 					o.texcoord = float4(TRANSFORM_TEX(v.texcoord, _MainTex), 0, 0);
 					o.color = v.color;
 

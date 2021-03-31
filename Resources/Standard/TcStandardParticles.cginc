@@ -7,34 +7,19 @@
 
 sampler2D _MainTex;
 
-half4 _Color;
+float4 _Color;
 sampler2D _BumpMap;
-half _BumpScale;
+float _BumpScale;
 sampler2D _EmissionMap;
-half3 _EmissionColor;
+float4 _EmissionColor;
 sampler2D _MetallicGlossMap;
-half _Metallic;
-half _Glossiness;
-half _Cutoff;
+float _Metallic;
+float _Glossiness;
+float _Cutoff;
 
 #if defined (_COLORADDSUBDIFF_ON)
-    half4 _ColorAddSubDiff;
+    float4 _ColorAddSubDiff;
 #endif
-
-// Vertex shader input
-struct appdata_particles {
-    float4 vertex : POSITION;
-    float3 normal : NORMAL;
-    float4 color : COLOR;
-    float4 texcoord : TEXCOORD0;
-    float4 texcoord1 : TEXCOORD1;
-
-    #if defined(_NORMALMAP)
-		float4 tangent : TANGENT;
-    #endif
-
-	UNITY_VERTEX_INPUT_INSTANCE_ID
-};
 
 // Surface shader input
 struct Input {
@@ -44,15 +29,17 @@ struct Input {
 
 // Non-surface shader v2f structure
 struct VertexOutput {
-    float4 vertex : SV_POSITION;
+    UNITY_POSITION(pos);
     float4 color : COLOR;
     UNITY_FOG_COORDS(0)
     float4 texcoord : TEXCOORD1;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
 //TODO: Flipbook blending not supported yet!
 float4 readTexture(sampler2D tex, Input IN) {
-    float4 color = tex2D (tex, IN.uv_MainTex.xy);
+    float4 color = tex2D(tex, IN.uv_MainTex.xy);
     return color;
 }
 
