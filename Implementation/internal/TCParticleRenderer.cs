@@ -196,6 +196,7 @@ namespace TC {
 		uint[] m_argsData = new uint[5];
 
 		ComputeBuffer m_argsBuffer;
+		ComputeBuffer m_shadowArgsBuffer;
 		ComputeBuffer m_customNormalsBuffer;
 
 		Mesh m_tailStretchMesh;
@@ -221,6 +222,7 @@ namespace TC {
 			m_cacheMaterial = new Material(_material.shader);
 			m_prevRenderModeMesh = Mesh;
 			m_argsBuffer = new ComputeBuffer(5, 4, ComputeBufferType.IndirectArguments);
+			m_shadowArgsBuffer = new ComputeBuffer(5, 4, ComputeBufferType.IndirectArguments);
 
 			BuildBuffer();
 
@@ -285,6 +287,7 @@ namespace TC {
 
 		void ReleaseBuffers() {
 			Release(ref m_argsBuffer);
+			Release(ref m_shadowArgsBuffer);
 			Release(ref m_customNormalsBuffer);
 		}
 
@@ -324,8 +327,7 @@ namespace TC {
 		internal void SetupDrawCall(Camera cam) {
 			if (UseFrustumCulling) {
 				// TODO: Frustum culling needs to account for XR.
-				Camera currentCam = Camera.current;
-				GeometryUtility.CalculateFrustumPlanes(currentCam.projectionMatrix * currentCam.worldToCameraMatrix, s_planes);
+				GeometryUtility.CalculateFrustumPlanes(cam.projectionMatrix * cam.worldToCameraMatrix, s_planes);
 				IsVisible |= GeometryUtility.TestPlanesAABB(s_planes, Bounds);
 			}
 
@@ -345,19 +347,16 @@ namespace TC {
 				case GeometryRenderMode.Billboard:
 					index = 0;
 					break;
-
 				case GeometryRenderMode.StretchedBillboard:
 				case GeometryRenderMode.TailStretchBillboard:
 					index = 1;
 					break;
-
 				case GeometryRenderMode.Mesh:
 					index = 2;
 					break;
 			}
 
 			ChooseKeyword("TC_BILLBOARD", "TC_BILLBOARD_STRETCHED", "TC_MESH", index);
-
 			m_cacheMaterial.SetInt("_UvSpriteAnimation", spriteSheetAnimation ? 1 : 0);
 
 			//enable sprite uv animation keyword
@@ -470,20 +469,13 @@ namespace TC {
 				return;
 			}
 
-			uint drawCount = (uint) SystemComp.ParticleCount;
-
-			if (cam.stereoEnabled) {
-				drawCount *= 2;
-			}
-			
-			//TODO: How to do submeshes?
 			m_argsData[0] = m_particleMesh.GetIndexCount(0);
-			m_argsData[1] = drawCount;
+			m_argsData[1] = (uint)(SystemComp.ParticleCount * (cam.stereoEnabled ? 2 : 1));
 			m_argsData[2] = 0;
 			m_argsData[3] = 0;
 			m_argsData[4] = 0;
 			m_argsBuffer.SetData(m_argsData);
-
+			
 			//Setup proper size mult depending on camera ortho size
 			if (isPixelSize) {
 				float pixelMult = Mathf.Max(1.0f / Screen.width, 1.0f / Screen.height);
@@ -499,7 +491,18 @@ namespace TC {
 			Bounds bounds = UseFrustumCulling ? _bounds : new Bounds(Vector3.zero, Vector3.one * 100000);
 			int layer = SystemComp.gameObject.layer;
 			
-			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, CastShadows, ReceiveShadows, layer, cam);
+			Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_argsBuffer, 0, null, ShadowCastingMode.Off, ReceiveShadows, layer, cam);
+
+			if (CastShadows == ShadowCastingMode.On || CastShadows == ShadowCastingMode.TwoSided) {
+				// Draw shadows in a separate command, as in stereo VR rendering we don't want to duplicate the nr. of shadow particles rendered
+				m_argsData[0] = m_particleMesh.GetIndexCount(0);
+				m_argsData[1] = (uint)SystemComp.ParticleCount;
+				m_argsData[2] = 0;
+				m_argsData[3] = 0;
+				m_argsData[4] = 0;
+				m_shadowArgsBuffer.SetData(m_argsData);
+				Graphics.DrawMeshInstancedIndirect(m_particleMesh, 0, m_cacheMaterial, bounds, m_shadowArgsBuffer, 0, null, ShadowCastingMode.ShadowsOnly, false, layer, cam);
+			}
 		}
 
 		internal void OnDestroy() {
